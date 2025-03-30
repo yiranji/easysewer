@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "easysewer"
+version = "0.0.1"
+authors = [
+    {name = "Yiran Ji", email = "yiranji@zju.edu.cn"}
+]
+description = "An urban drainage modeling toolkit"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "AGPL-3.0-only"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/yourusername/easysewer"
+Documentation = "https://github.com/yourusername/easysewer#readme"
+
+[tool.setuptools]
+packages = [
+    "easysewer",
+    "easysewer.libs",
+    "easysewer.libs.win",
+    "easysewer.libs.linux"
+]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+easysewer = [
+    "libs/win/*.dll",
+    "libs/linux/*.so"
+]
