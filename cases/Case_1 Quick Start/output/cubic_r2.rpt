@@ -1,0 +1,290 @@
+
+  EPA STORM WATER MANAGEMENT MODEL - VERSION 5.2 (Build 5.2.4)
+  ------------------------------------------------------------
+
+  
+  ****************
+  Analysis Options
+  ****************
+  Flow Units ............... LPS
+  Process Models:
+    Rainfall/Runoff ........ YES
+    RDII ................... NO
+    Snowmelt ............... NO
+    Groundwater ............ NO
+    Flow Routing ........... YES
+    Ponding Allowed ........ NO
+    Water Quality .......... NO
+  Infiltration Method ...... HORTON
+  Flow Routing Method ...... DYNWAVE
+  Surcharge Method ......... EXTRAN
+  Starting Date ............ 01/01/1998 00:00:00
+  Ending Date .............. 01/01/1998 15:00:00
+  Antecedent Dry Days ...... 5.0
+  Report Time Step ......... 00:05:00
+  Wet Time Step ............ 00:01:00
+  Dry Time Step ............ 01:00:00
+  Routing Time Step ........ 30.00 sec
+  Variable Time Step ....... YES
+  Maximum Trials ........... 8
+  Number of Threads ........ 1
+  Head Tolerance ........... 0.005000 m
+  
+  
+  **************************        Volume         Depth
+  Runoff Quantity Continuity     hectare-m            mm
+  **************************     ---------       -------
+  Total Precipitation ......         0.184         6.400
+  Evaporation Loss .........         0.000         0.000
+  Infiltration Loss ........         0.099         3.434
+  Surface Runoff ...........         0.074         2.575
+  Final Storage ............         0.011         0.392
+  Continuity Error (%) .....        -0.023
+  
+  
+  **************************        Volume        Volume
+  Flow Routing Continuity        hectare-m      10^6 ltr
+  **************************     ---------     ---------
+  Dry Weather Inflow .......         0.000         0.000
+  Wet Weather Inflow .......         0.074         0.741
+  Groundwater Inflow .......         0.000         0.000
+  RDII Inflow ..............         0.000         0.000
+  External Inflow ..........         0.000         0.000
+  External Outflow .........         0.064         0.636
+  Flooding Loss ............         0.011         0.106
+  Evaporation Loss .........         0.000         0.000
+  Exfiltration Loss ........         0.000         0.000
+  Initial Stored Volume ....         0.000         0.000
+  Final Stored Volume ......         0.000         0.001
+  Continuity Error (%) .....        -0.344
+  
+  
+  *************************
+  Highest Continuity Errors
+  *************************
+  Node N9 (4.75%)
+  Node N10 (-1.81%)
+  Node N2 (1.71%)
+  
+  
+  ***************************
+  Time-Step Critical Elements
+  ***************************
+  None
+  
+  
+  ********************************
+  Highest Flow Instability Indexes
+  ********************************
+  All links are stable.
+  
+  
+  *********************************
+  Most Frequent Nonconverging Nodes
+  *********************************
+  Node N5 (0.11%)
+  Node N14 (0.11%)
+  
+  
+  *************************
+  Routing Time Step Summary
+  *************************
+  Minimum Time Step           :    15.46 sec
+  Average Time Step           :    29.88 sec
+  Maximum Time Step           :    30.00 sec
+  % of Time in Steady State   :     0.00
+  Average Iterations per Step :     2.07
+  % of Steps Not Converging   :     0.11
+  Time Step Frequencies       :
+     30.000 - 13.228 sec      :   100.00 %
+     13.228 -  5.833 sec      :     0.00 %
+      5.833 -  2.572 sec      :     0.00 %
+      2.572 -  1.134 sec      :     0.00 %
+      1.134 -  0.500 sec      :     0.00 %
+  
+  
+  ***************************
+  Subcatchment Runoff Summary
+  ***************************
+  
+  ------------------------------------------------------------------------------------------------------------------------------
+                            Total      Total      Total      Total     Imperv       Perv      Total       Total     Peak  Runoff
+                           Precip      Runon       Evap      Infil     Runoff     Runoff     Runoff      Runoff   Runoff   Coeff
+  Subcatchment                 mm         mm         mm         mm         mm         mm         mm    10^6 ltr      LPS
+  ------------------------------------------------------------------------------------------------------------------------------
+  S1                         6.40       0.00       0.00       3.20       3.11       0.00       3.11        0.13    57.41   0.486
+  S2                         6.40       0.00       0.00       2.56       3.34       0.00       3.34        0.14    57.87   0.522
+  S3                         6.40       0.00       0.00       1.92       3.78       0.00       3.78        0.08    66.35   0.591
+  S4                         6.40       0.00       0.00       3.84       2.32       0.00       2.32        0.05    30.62   0.362
+  S5                         6.40       0.00       0.00       5.12       0.96       0.00       0.96        0.06    38.78   0.150
+  S6                         6.40       0.00       0.00       1.28       4.25       0.00       4.25        0.21    72.61   0.663
+  S7                         6.40       0.00       0.00       5.12       1.22       0.00       1.22        0.02    15.86   0.191
+  S8                         6.40       0.00       0.00       4.48       1.75       0.00       1.75        0.07    65.21   0.274
+  
+  
+  ******************
+  Node Depth Summary
+  ******************
+  
+  ---------------------------------------------------------------------------------
+                                 Average  Maximum  Maximum  Time of Max    Reported
+                                   Depth    Depth      HGL   Occurrence   Max Depth
+  Node                 Type       Meters   Meters   Meters  days hr:min      Meters
+  ---------------------------------------------------------------------------------
+  N1                   JUNCTION     0.02     0.18   304.98     0  00:34        0.18
+  N2                   JUNCTION     0.05     0.91   304.18     0  00:33        0.91
+  N3                   JUNCTION     0.01     0.16   303.43     0  00:32        0.15
+  N4                   JUNCTION     0.02     0.31   302.06     0  00:38        0.30
+  N5                   JUNCTION     0.04     0.91   301.74     0  00:33        0.91
+  N6                   JUNCTION     0.06     0.52   300.74     0  00:46        0.51
+  N7                   JUNCTION     0.04     0.29   298.99     0  00:50        0.29
+  N8                   JUNCTION     0.01     0.10   307.94     0  00:32        0.09
+  N9                   JUNCTION     0.01     0.09   306.41     0  00:34        0.09
+  N10                  JUNCTION     0.35     0.66   302.41     0  00:44        0.66
+  N11                  JUNCTION     0.04     0.30   301.13     0  00:43        0.30
+  N12                  JUNCTION     0.09     0.91   302.66     0  00:25        0.91
+  N13                  JUNCTION     0.04     0.30   300.22     0  00:47        0.30
+  N14                  OUTFALL      0.04     0.28   297.46     0  00:51        0.27
+  
+  
+  *******************
+  Node Inflow Summary
+  *******************
+  
+  -------------------------------------------------------------------------------------------------
+                                  Maximum  Maximum                  Lateral       Total        Flow
+                                  Lateral    Total  Time of Max      Inflow      Inflow     Balance
+                                   Inflow   Inflow   Occurrence      Volume      Volume       Error
+  Node                 Type           LPS      LPS  days hr:min    10^6 ltr    10^6 ltr     Percent
+  -------------------------------------------------------------------------------------------------
+  N1                   JUNCTION        57       57     0  00:33       0.126       0.126      -0.229
+  N2                   JUNCTION        58  1.1e+02     0  00:33       0.136       0.262       1.737
+  N3                   JUNCTION        66       66     0  00:31      0.0766      0.0766      -0.564
+  N4                   JUNCTION         0       64     0  00:32           0      0.0771       0.643
+  N5                   JUNCTION        39       80     0  00:33      0.0584       0.135      -0.883
+  N6                   JUNCTION         0  1.6e+02     0  00:43           0        0.45      -0.096
+  N7                   JUNCTION         0  1.7e+02     0  00:48           0       0.566       0.096
+  N8                   JUNCTION        16       16     0  00:31      0.0198      0.0198      -0.482
+  N9                   JUNCTION         0       15     0  00:32           0      0.0199       4.988
+  N10                  JUNCTION         0    1e+02     0  00:36           0       0.267      -1.779
+  N11                  JUNCTION        31  1.1e+02     0  00:43       0.047       0.319      -0.122
+  N12                  JUNCTION        73       73     0  00:33       0.207       0.207      -0.066
+  N13                  JUNCTION         0  1.7e+02     0  00:46           0       0.566       0.001
+  N14                  OUTFALL         65  1.8e+02     0  00:50       0.071       0.636       0.000
+  
+  
+  **********************
+  Node Surcharge Summary
+  **********************
+  
+  Surcharging occurs when water rises above the top of the highest conduit.
+  ---------------------------------------------------------------------
+                                               Max. Height   Min. Depth
+                                   Hours       Above Crown    Below Rim
+  Node                 Type      Surcharged         Meters       Meters
+  ---------------------------------------------------------------------
+  N2                   JUNCTION        0.28          0.550        0.000
+  N5                   JUNCTION        0.36          0.550        0.000
+  N6                   JUNCTION        0.04          0.012        0.388
+  N12                  JUNCTION        1.08          0.710        0.000
+  
+  
+  *********************
+  Node Flooding Summary
+  *********************
+  
+  Flooding refers to all water that overflows a node, whether it ponds or not.
+  --------------------------------------------------------------------------
+                                                             Total   Maximum
+                                 Maximum   Time of Max       Flood    Ponded
+                        Hours       Rate    Occurrence      Volume     Depth
+  Node                 Flooded       LPS   days hr:min    10^6 ltr    Meters
+  --------------------------------------------------------------------------
+  N2                      0.20        37      0  00:33       0.010     0.000
+  N5                      0.20        27      0  00:33       0.005     0.000
+  N12                     0.94        56      0  00:33       0.092     0.000
+  
+  
+  ***********************
+  Outfall Loading Summary
+  ***********************
+  
+  -----------------------------------------------------------
+                         Flow       Avg       Max       Total
+                         Freq      Flow      Flow      Volume
+  Outfall Node           Pcnt       LPS       LPS    10^6 ltr
+  -----------------------------------------------------------
+  N14                   99.78        12   1.8e+02       0.636
+  -----------------------------------------------------------
+  System                99.78        12   1.8e+02       0.636
+  
+  
+  ********************
+  Link Flow Summary
+  ********************
+  
+  -----------------------------------------------------------------------------
+                                 Maximum  Time of Max   Maximum    Max/    Max/
+                                  |Flow|   Occurrence   |Veloc|    Full    Full
+  Link                 Type          LPS  days hr:min     m/sec    Flow   Depth
+  -----------------------------------------------------------------------------
+  L1                   CONDUIT        56     0  00:34      0.78    0.50    0.75
+  L2                   CONDUIT        15     0  00:32      1.10    0.48    0.46
+  L3                   CONDUIT        13     0  00:35      1.02    0.40    0.57
+  L4                   CONDUIT        90     0  00:37      0.95    1.31    1.00
+  L5                   CONDUIT        90     0  00:45      0.78    0.62    0.55
+  L6                   CONDUIT     1e+02     0  00:44      0.62    0.64    0.79
+  L7                   CONDUIT   1.7e+02     0  00:51      1.42    0.62    0.56
+  L8                   CONDUIT        64     0  00:32      1.26    0.42    0.60
+  L9                   CONDUIT        42     0  00:33      0.48    0.73    0.93
+  L10                  CONDUIT        60     0  00:35      0.63    1.52    1.00
+  L11                  CONDUIT        17     0  00:35      0.58    1.27    1.00
+  L12                  CONDUIT   1.5e+02     0  00:46      0.88    1.24    0.80
+  L13                  CONDUIT   1.7e+02     0  00:48      1.36    0.66    0.58
+  
+  
+  ***************************
+  Flow Classification Summary
+  ***************************
+  
+  -------------------------------------------------------------------------------------
+                      Adjusted    ---------- Fraction of Time in Flow Class ---------- 
+                       /Actual         Up    Down  Sub   Sup   Up    Down  Norm  Inlet 
+  Conduit               Length    Dry  Dry   Dry   Crit  Crit  Crit  Crit  Ltd   Ctrl  
+  -------------------------------------------------------------------------------------
+  L1                      1.00   0.00  0.00  0.00  0.99  0.01  0.00  0.00  0.98  0.00
+  L2                      1.00   0.00  0.00  0.00  0.92  0.08  0.00  0.00  0.96  0.00
+  L3                      1.00   0.00  0.00  0.00  0.04  0.00  0.00  0.95  0.04  0.00
+  L4                      1.00   0.00  0.00  0.00  0.97  0.00  0.00  0.02  0.94  0.00
+  L5                      1.00   0.02  0.00  0.00  0.00  0.00  0.00  0.98  0.00  0.00
+  L6                      1.00   0.00  0.00  0.00  1.00  0.00  0.00  0.00  0.97  0.00
+  L7                      1.00   0.00  0.00  0.00  0.53  0.47  0.00  0.00  0.00  0.00
+  L8                      1.00   0.00  0.00  0.00  0.97  0.03  0.00  0.00  0.98  0.00
+  L9                      1.00   0.00  0.00  0.00  1.00  0.00  0.00  0.00  0.98  0.00
+  L10                     1.00   0.00  0.00  0.00  1.00  0.00  0.00  0.00  0.93  0.00
+  L11                     1.00   0.00  0.00  0.00  1.00  0.00  0.00  0.00  0.23  0.00
+  L12                     1.00   0.00  0.00  0.00  1.00  0.00  0.00  0.00  0.00  0.00
+  L13                     1.00   0.00  0.00  0.00  0.97  0.03  0.00  0.00  0.94  0.00
+  
+  
+  *************************
+  Conduit Surcharge Summary
+  *************************
+  
+  ----------------------------------------------------------------------------
+                                                           Hours        Hours 
+                         --------- Hours Full --------   Above Full   Capacity
+  Conduit                Both Ends  Upstream  Dnstream   Normal Flow   Limited
+  ----------------------------------------------------------------------------
+  L1                          0.01      0.01      0.28      0.01         0.01
+  L4                          0.01      0.28      0.01      0.36         0.01
+  L6                          0.01      0.01      0.04      0.01         0.01
+  L9                          0.01      0.01      0.36      0.01         0.01
+  L10                         0.31      0.36      0.53      0.32         0.26
+  L11                         0.68      1.08      0.68      1.12         0.68
+  L12                         0.01      0.04      0.01      0.32         0.01
+  
+
+  Analysis begun on:  Tue Apr  1 09:24:39 2025
+  Analysis ended on:  Tue Apr  1 09:24:39 2025
+  Total elapsed time: < 1 sec
