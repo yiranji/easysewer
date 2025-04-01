@@ -8,6 +8,66 @@ time series data, and rainfall patterns for the drainage model.
 from .utils import *
 
 
+class NamedList:
+    """A list-like collection that allows access by index or name.
+    
+    This class implements common list methods and adds the ability to access items
+    by their name attribute.
+    
+    Attributes:
+        data (list): The underlying list of items
+    """
+    
+    def __init__(self, data=None):
+        self.data = data if data is not None else []
+    
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self.data[key]
+        elif isinstance(key, str):
+            for item in self.data:
+                if item.name == key:
+                    return item
+            raise KeyError(f"No item found with name '{key}'")
+        else:
+            raise TypeError("Key must be an integer or a string")
+    
+    def __iter__(self):
+        return iter(self.data)
+    
+    def __contains__(self, item):
+        return item in self.data
+    
+    def append(self, item):
+        """Add an item to the collection.
+        
+        Args:
+            item: The item to add
+        """
+        self.data.append(item)
+
+
+class TimeSeriesList(NamedList):
+    """A specialized collection for TimeSeries objects.
+    
+    Inherits all functionality from NamedList and may add TimeSeries-specific
+    methods in the future.
+    """
+    pass
+
+
+class RainGageList(NamedList):
+    """A specialized collection for RainGage objects.
+    
+    Inherits all functionality from NamedList and may add RainGage-specific
+    methods in the future.
+    """
+    pass
+
+
 def parse_swmm_datetime(date_str=None, time_str=None):
     """Convert SWMM date and time strings to minutes since start of day
 
@@ -85,8 +145,8 @@ class Rain:
         ts_list (list): Collection of time series data
     """
     def __init__(self):
-        self.ts_list = []
-        self.gage_list = []
+        self.ts_list = TimeSeriesList()
+        self.gage_list = RainGageList()
 
     def __repr__(self):
         if len(self.gage_list) == 0:
