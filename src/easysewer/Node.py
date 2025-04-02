@@ -79,44 +79,133 @@ class Outfall(Node):
 
 
 class OutfallFree(Outfall):
+    """
+    Free outfall node type.
+    
+    Represents an outfall with free boundary condition where water can freely exit the system.
+    
+    Attributes:
+        Inherits all attributes from Outfall class
+    """
     def __init__(self):
         Outfall.__init__(self)
 
 
 class OutfallNormal(Outfall):
+    """
+    Normal outfall node type.
+    
+    Represents an outfall with normal boundary condition where water exits with normal depth.
+    
+    Attributes:
+        Inherits all attributes from Outfall class
+    """
     def __init__(self):
         Outfall.__init__(self)
 
 
 class OutfallFixed(Outfall):
+    """
+    Fixed outfall node type.
+    
+    Represents an outfall with fixed boundary condition where water exits at a fixed stage.
+    
+    Attributes:
+        Inherits all attributes from Outfall class
+        stage (float): Fixed water surface elevation at the outfall
+    """
     def __init__(self):
         Outfall.__init__(self)
         self.stage = 0.0
 
 
 class OutfallTidal(Outfall):
+    """
+    Tidal outfall node type.
+    
+    Represents an outfall with tidal boundary condition where water level varies with tides.
+    
+    Attributes:
+        Inherits all attributes from Outfall class
+        tidal (str): Tidal condition identifier or time series name
+    """
     def __init__(self):
         Outfall.__init__(self)
         self.tidal = ''
 
 
 class OutfallTimeseries(Outfall):
+    """
+    Timeseries outfall node type.
+    
+    Represents an outfall with time-varying boundary condition specified by a time series.
+    
+    Attributes:
+        Inherits all attributes from Outfall class
+        time_series (str): Name of time series defining water surface elevation
+    """
     def __init__(self):
         Outfall.__init__(self)
         self.time_series = ''
 
 
 class NodeList:
+    """
+    A collection class for managing nodes in a drainage network.
+    
+    This class provides storage and management for various types of nodes (junctions, outfalls),
+    with methods for adding, accessing, and processing nodes. It maintains spatial bounds
+    information for all contained nodes.
+    
+    Attributes:
+        data (list): List containing all node objects
+        bounds (dict): Dictionary tracking spatial bounds of all nodes with keys:
+            'min_x' (float): Minimum x-coordinate
+            'min_y' (float): Minimum y-coordinate
+            'max_x' (float): Maximum x-coordinate
+            'max_y' (float): Maximum y-coordinate
+    """
     def __init__(self):
         self.data = []
+        self.bounds = {
+            'min_x': float('inf'),
+            'min_y': float('inf'),
+            'max_x': float('-inf'),
+            'max_y': float('-inf')
+        }
 
     def __repr__(self):
+        """
+        Returns a string representation of the NodeList.
+        
+        Returns:
+            str: A string showing the count of nodes in the list
+        """
         return f'{len(self.data)} Nodes'
 
     def __len__(self):
+        """
+        Returns the number of nodes in the list.
+        
+        Returns:
+            int: Number of nodes in the list
+        """
         return len(self.data)
 
     def __getitem__(self, key):
+        """
+        Gets a node by index or name.
+        
+        Args:
+            key (int|str): Index or name of node to retrieve
+            
+        Returns:
+            Node: The requested node
+            
+        Raises:
+            KeyError: If node name not found
+            TypeError: If key is not int or str
+        """
         if isinstance(key, int):
             return self.data[key]
         elif isinstance(key, str):
@@ -128,219 +217,523 @@ class NodeList:
             raise TypeError("Key must be an integer or a string")
 
     def __iter__(self):
+        """
+        Returns an iterator for the node list.
+        
+        Returns:
+            iterator: Iterator for the nodes
+        """
         return iter(self.data)
 
     def __contains__(self, item):
+        """
+        Checks if a node exists in the list.
+        
+        Args:
+            item: Node to check for
+            
+        Returns:
+            bool: True if node exists in list
+        """
         return item in self.data
 
-    def add_node(self, node_type, node_information):
-        def execute(func1, func2):
-            def inner():
-                # new an object according to node_type
-                new_node = func1()
-                # add essential information
-                if 'name' in node_information:
-                    new_node.name = node_information['name']
-                else:  # if it can not find name, raise error
-                    # print('Unknown Node: Can not recognize node name')
-                    return -1
-                if 'coordinate' in node_information:
-                    new_node.coordinate = node_information['coordinate']
-                if 'elevation' in node_information:
-                    new_node.elevation = node_information['elevation']
-                # for Outfalls
-                if 'flap_gate' in node_information:
-                    new_node.flap_gate = True if node_information['flap_gate'] == 'YES' else False
-                if 'route_to' in node_information:
-                    new_node.route_to = node_information['route_to']
-                # add node_type related information
-                func2(new_node)
-                # update node_list
-                self.data.append(new_node)
-                return 0
+    def add_node(self, node_type, node_information=None):
+        """
+        Add a new node to the data structure based on its type and information.
+        Generates default values for missing essential attributes.
 
-            return inner
+        Args:
+            node_type (str): Type of node to add (e.g., 'junction', 'outfall_free')
+            node_information (dict, optional): Dictionary containing node attributes
+                                              Defaults to empty dict if None
 
-        match node_type:
-            case 'junction' | 'Junction':
-                def junction_type(new_node):
-                    if 'maximum_depth' in node_information:
-                        new_node.maximum_depth = node_information['maximum_depth']
-                    if 'initial_depth' in node_information:
-                        new_node.initial_depth = node_information['initial_depth']
-                    if 'overload_depth' in node_information:
-                        new_node.overload_depth = node_information['overload_depth']
-                    if 'surface_ponding_area' in node_information:
-                        new_node.surface_ponding_area = node_information['surface_ponding_area']
-                    if 'dwf_base_value' in node_information:
-                        new_node.dwf_base_value = node_information['dwf_base_value']
-                    if 'dwf_patterns' in node_information:
-                        new_node.dwf_patterns = node_information['dwf_patterns']
+        Returns:
+            Node: The newly created node object
 
-                return execute(Junction, junction_type)()
+        Raises:
+            TypeError: If node_type is not recognized
+            ValueError: If a node with the same name already exists
+                        or generated default name conflicts
 
-            case 'outfall_free' | 'OutfallFree':
-                def outfall_free_type(_):
-                    pass
+        Example:
+            >>> nodes = NodeList()
+            >>> nodes.add_node('junction', {'name': 'J1', 'elevation': 100.0})
+            <Node J1>
+        """
+        # Initialize node_information dict if not provided
+        if node_information is None:
+            node_information = {}
 
-                return execute(OutfallFree, outfall_free_type)()
+        # Normalize node type: lowercase and remove underscores
+        normalized_type = node_type.lower().replace('_', '')
 
-            case 'outfall_normal' | 'OutfallNormal':
-                def outfall_normal_type(_):
-                    pass
+        # Check if a name is provided and if it already exists in the collection
+        if 'name' in node_information:
+            requested_name = node_information['name']
+            if any(node.name == requested_name for node in self.data):
+                raise ValueError(f"Node with name '{requested_name}' already exists")
 
-                return execute(OutfallNormal, outfall_normal_type)()
+        # Define attribute hierarchy based on class inheritance
+        # Level 1: Common attributes for all Node types with defaults
+        node_base_attrs = {
+            'name': lambda node_type, info: info.get('name', self._generate_default_name(node_type)),
+            'coordinate': lambda _, info: info.get('coordinate', self._generate_default_coordinate()),
+            'elevation': lambda _, info: info.get('elevation', 0.0)
+        }
 
-            case 'outfall_fixed' | 'OutfallFixed':
-                def outfall_fixed_type(new_node):
-                    if 'stage' in node_information:
-                        new_node.stage = node_information['stage']
+        # Level 2: Attributes by node category with defaults
+        junction_attrs = {
+            'maximum_depth': lambda _, info: info.get('maximum_depth', 10.0),
+            'initial_depth': lambda _, info: info.get('initial_depth', 0.0),
+            'overload_depth': lambda _, info: info.get('overload_depth', 0.0),
+            'surface_ponding_area': lambda _, info: info.get('surface_ponding_area', 0.0),
+            'dwf_base_value': lambda _, info: info.get('dwf_base_value', 0.0),
+            'dwf_patterns': lambda _, info: info.get('dwf_patterns', None)
+        }
 
-                return execute(OutfallFixed, outfall_fixed_type)()
+        outfall_base_attrs = {
+            'flap_gate': lambda _, info: True if info.get('flap_gate') in ('YES', True) else False,
+            'route_to': lambda _, info: info.get('route_to', None)
+        }
 
-            case 'outfall_tidal' | 'OutfallTidal':
-                def outfall_tidal_type(new_node):
-                    if 'tidal' in node_information:
-                        new_node.tidal = node_information['tidal']
+        # Level 3: Specific attributes for outfall subtypes with defaults
+        outfall_specific_attrs = {
+            'outfallfixed': {
+                'stage': lambda _, info: info.get('stage', 0.0)
+            },
+            'outfalltidal': {
+                'tidal': lambda _, info: info.get('tidal', None)
+            },
+            'outfalltimeseries': {
+                'time_series': lambda _, info: info.get('time_series', None)
+            },
+            'outfallfree': {},
+            'outfallnormal': {}
+        }
 
-                return execute(OutfallTidal, outfall_tidal_type)()
+        # Define node type configurations
+        node_types = {
+            'junction': {
+                'class': Junction,
+                'attrs': {**node_base_attrs, **junction_attrs}
+            },
+            'outfallfree': {
+                'class': OutfallFree,
+                'attrs': {**node_base_attrs, **outfall_base_attrs, **outfall_specific_attrs['outfallfree']}
+            },
+            'outfallnormal': {
+                'class': OutfallNormal,
+                'attrs': {**node_base_attrs, **outfall_base_attrs, **outfall_specific_attrs['outfallnormal']}
+            },
+            'outfallfixed': {
+                'class': OutfallFixed,
+                'attrs': {**node_base_attrs, **outfall_base_attrs, **outfall_specific_attrs['outfallfixed']}
+            },
+            'outfalltidal': {
+                'class': OutfallTidal,
+                'attrs': {**node_base_attrs, **outfall_base_attrs, **outfall_specific_attrs['outfalltidal']}
+            },
+            'outfalltimeseries': {
+                'class': OutfallTimeseries,
+                'attrs': {**node_base_attrs, **outfall_base_attrs, **outfall_specific_attrs['outfalltimeseries']}
+            }
+        }
 
-            case 'outfall_time_series' | 'OutfallTimeseries':
-                def outfall_time_series_type(new_node):
-                    if 'time_series' in node_information:
-                        new_node.time_series = node_information['time_series']
+        # Check if normalized node type exists
+        if normalized_type not in node_types:
+            raise TypeError(
+                f"Unknown node type '{node_type}', failed to add {node_information.get('name', 'unnamed node')}"
+            )
 
-                return execute(OutfallTimeseries, outfall_time_series_type)()
+        # Get node configuration
+        node_config = node_types[normalized_type]
+        node_class = node_config['class']
+        attrs = node_config['attrs']
 
-            case _:
-                raise TypeError(f"Unknown node type, failed to add {node_information['name']}")
+        # Create new node
+        new_node = node_class()
+
+        # Set all applicable attributes according to hierarchy, using default generators
+        for attr, default_generator in attrs.items():
+            value = default_generator(normalized_type, node_information)
+            setattr(new_node, attr, value)
+
+        # Check if the generated default name is unique (when name wasn't explicitly provided)
+        if 'name' not in node_information and any(node.name == new_node.name for node in self.data):
+            raise ValueError(f"Generated default name '{new_node.name}' already exists")
+
+        # Update coordinate bounds if coordinate is set
+        if hasattr(new_node, 'coordinate') and new_node.coordinate:
+            self._update_bounds(new_node.coordinate)
+
+        # Add node to data structure
+        self.data.append(new_node)
+
+        return new_node  # Return the created node for immediate use if needed
+
+    def _update_bounds(self, coordinate):
+        """
+        Update the coordinate bounds based on a new node's position.
+        
+        Args:
+            coordinate (list): [x, y] coordinates of the node
+        """
+        if not coordinate:
+            return
+
+        x, y = coordinate
+        self.bounds['min_x'] = min(self.bounds['min_x'], x)
+        self.bounds['min_y'] = min(self.bounds['min_y'], y)
+        self.bounds['max_x'] = max(self.bounds['max_x'], x)
+        self.bounds['max_y'] = max(self.bounds['max_y'], y)
+
+    def _generate_default_name(self, node_type):
+        """
+        Generate a default name for a node based on its type and existing nodes count.
+        
+        Args:
+            node_type (str): Type of node (e.g. 'junction', 'outfall_free')
+            
+        Returns:
+            str: Generated name in format 'TYPE##' where TYPE is first 3 letters of node type
+                 and ## is sequential number
+        """
+        # Get count of nodes with the same type prefix
+        prefix = node_type[:3].upper()  # First 3 letters of node type
+        existing_count = sum(1 for node in self.data if hasattr(node, 'name') and
+                             node.name and node.name.startswith(prefix))
+
+        # Generate name with next number
+        return f"{prefix}{existing_count + 1}"
+
+    def _generate_default_coordinate(self):
+        """
+        Generate a sensible default coordinate based on existing nodes.
+        
+        Returns:
+            tuple: (x, y) coordinates
+            
+        Logic:
+            1. If no nodes exist, returns (0, 0)
+            2. If bounds are established, returns center with slight offset
+            3. Otherwise places near last node with offset
+        """
+        # If no nodes exist yet, start at origin
+        if not self.data:
+            return 0, 0
+
+        # If bounds are established, place in center with slight offset
+        if self.bounds['min_x'] != float('inf'):
+            center_x = (self.bounds['min_x'] + self.bounds['max_x']) / 2
+            center_y = (self.bounds['min_y'] + self.bounds['max_y']) / 2
+            # Add a small offset to avoid perfect overlap
+            offset = len(self.data) * 10
+            return center_x + offset, center_y + offset
+
+        # Fallback - place near the last node
+        last_node = self.data[-1]
+        if hasattr(last_node, 'coordinate') and last_node.coordinate:
+            last_x, last_y = last_node.coordinate
+            return last_x + 50, last_y + 50
+
+        return 0, 0
 
     def read_from_swmm_inp(self, filename):
-        junction_contents = get_swmm_inp_content(filename, '[JUNCTIONS]')
-        coordinates = get_swmm_inp_content(filename, '[COORDINATES]')
-        outfall_contents = get_swmm_inp_content(filename, '[OUTFALLS]')
-        dwf_contents = get_swmm_inp_content(filename, '[DWF]')
-        inflow_contents = get_swmm_inp_content(filename, '[INFLOWS]')
+        """
+        Read node data from a SWMM input file.
+        
+        Processes the following sections from SWMM input file:
+        - [JUNCTIONS]
+        - [OUTFALLS]
+        - [COORDINATES]
+        - [DWF]
+        - [INFLOWS]
+        
+        Args:
+            filename (str): Path to the SWMM input file
+            
+        Returns:
+            int: 0 if successful
+            
+        Raises:
+            FileNotFoundError: If the input file doesn't exist
+            ValueError: If required sections are missing
+            Exception: For unsupported inflow types
+            
+        Note:
+            Continues processing other nodes if errors occur with individual nodes
+        """
+        try:
+            # Read all required sections
+            junction_contents = get_swmm_inp_content(filename, '[JUNCTIONS]')
+            coordinates = get_swmm_inp_content(filename, '[COORDINATES]')
+            outfall_contents = get_swmm_inp_content(filename, '[OUTFALLS]')
+            dwf_contents = get_swmm_inp_content(filename, '[DWF]')
+            inflow_contents = get_swmm_inp_content(filename, '[INFLOWS]')
 
-        # coordinate list
+            # Process coordinates (needed by both junctions and outfalls)
+            coordinates_dic = self._process_coordinates(coordinates)
+
+            # Process each node type
+            self._process_junctions(junction_contents, coordinates_dic)
+            self._process_outfalls(outfall_contents, coordinates_dic)
+            self._process_dry_weather_flows(dwf_contents)
+            self._process_inflows(inflow_contents)
+
+            return 0
+        except Exception as e:
+            # Re-raise with more context
+            raise type(e)(f"Error reading SWMM input file: {str(e)}")
+
+    def _process_coordinates(self, coordinates):
+        """Process coordinates data from SWMM input file."""
         coordinates_dic = {}
         for line in coordinates:
             keys = line.split()
-            coordinates_dic[keys[0]] = [float(keys[1]), float(keys[2])]
-        # process junctions
+            if len(keys) >= 3:  # Ensure we have at least node name, x, y
+                coordinates_dic[keys[0]] = [float(keys[1]), float(keys[2])]
+        return coordinates_dic
+
+    def _process_junctions(self, junction_contents, coordinates_dic):
+        """Process junction data from SWMM input file."""
         for line in junction_contents:
-            pair = line.split()
-            dic = {'name': pair[0], 'coordinate': [0.0, 0.0], 'elevation': float(pair[1]),
-                   'maximum_depth': float(pair[2]), 'initial_depth': float(pair[3]),
-                   'overload_depth': float(pair[4]), 'surface_ponding_area': float(pair[5])}
-            dic['coordinate'] = coordinates_dic[dic['name']]
-            self.add_node('junction', dic)
-        # process outfalls
+            parts = line.split()
+            if len(parts) < 6:  # Skip lines with insufficient data
+                continue
+
+            try:
+                dic = {
+                    'name': parts[0],
+                    'coordinate': coordinates_dic.get(parts[0], [0.0, 0.0]),
+                    'elevation': float(parts[1]),
+                    'maximum_depth': float(parts[2]),
+                    'initial_depth': float(parts[3]),
+                    'overload_depth': float(parts[4]),
+                    'surface_ponding_area': float(parts[5])
+                }
+                self.add_node('junction', dic)
+            except (ValueError, KeyError) as e:
+                # Log error but continue processing other junctions
+                print(f"Warning: Error processing junction '{parts[0]}': {str(e)}")
+
+    def _process_outfalls(self, outfall_contents, coordinates_dic):
+        """Process outfall data from SWMM input file."""
         for line in outfall_contents:
-            pair = line.split()
-            dic = {'name': pair[0], 'coordinate': [0.0, 0.0], 'elevation': float(pair[1])}
-            dic['coordinate'] = coordinates_dic[dic['name']]
-            #
-            if pair[-1] == 'YES':
-                dic['flap_gate'] = 'YES'
-            elif pair[-1] == 'NO':
-                dic['flap_gate'] = 'NO'
-            else:
-                dic['flap_gate'] = pair[-2]
-                dic['route_to'] = pair[-1]
-            #
-            match pair[2]:
-                case 'FREE':
+            parts = line.split()
+            if len(parts) < 3:  # Skip lines with insufficient data
+                continue
+
+            try:
+                # Set up common attributes
+                dic = {
+                    'name': parts[0],
+                    'coordinate': coordinates_dic.get(parts[0], [0.0, 0.0]),
+                    'elevation': float(parts[1])
+                }
+
+                # Process flap gate and route to parameters (last elements)
+                if parts[-1] == 'YES':
+                    dic['flap_gate'] = 'YES'
+                elif parts[-1] == 'NO':
+                    dic['flap_gate'] = 'NO'
+                else:
+                    dic['flap_gate'] = parts[-2]
+                    dic['route_to'] = parts[-1]
+
+                # Process outfall type
+                outfall_type = parts[2]
+                if outfall_type == 'FREE':
                     self.add_node('outfall_free', dic)
-                case 'NORMAL':
+                elif outfall_type == 'NORMAL':
                     self.add_node('outfall_normal', dic)
-                case 'FIXED':
-                    dic['stage'] = float(pair[2])
+                elif outfall_type == 'FIXED':
+                    dic['stage'] = float(parts[3])
                     self.add_node('outfall_fixed', dic)
-                case 'TIDAL':
-                    dic['tidal'] = float(pair[2])
+                elif outfall_type == 'TIDAL':
+                    dic['tidal'] = parts[3]
                     self.add_node('outfall_tidal', dic)
-                case 'TIMESERIES':
-                    dic['time_series'] = float(pair[2])
+                elif outfall_type == 'TIMESERIES':
+                    dic['time_series'] = parts[3]
                     self.add_node('outfall_time_series', dic)
-                case _:
-                    pass
-        # process DWF
+            except (ValueError, KeyError) as e:
+                # Log error but continue processing other outfalls
+                print(f"Warning: Error processing outfall '{parts[0]}': {str(e)}")
+
+    def _process_dry_weather_flows(self, dwf_contents):
+        """Process dry weather flow data from SWMM input file."""
         for line in dwf_contents:
-            pair = line.split()
-            for node in self.data:
-                if node.name == pair[0]:
-                    node.dwf_base_value = pair[2]
-                    for pattern in pair[3::]:
-                        node.dwf_patterns.append(pattern)
-        # process inflow
+            parts = line.split()
+            if len(parts) < 3:  # Skip lines with insufficient data
+                continue
+
+            node_name = parts[0]
+            try:
+                node = self.index_of(node_name, return_node=True)
+            except ValueError:
+                node = None
+
+            if node and hasattr(node, 'dwf_base_value'):
+                node.dwf_base_value = parts[2]
+                node.dwf_patterns = parts[3:] if len(parts) > 3 else []
+
+    def _process_inflows(self, inflow_contents):
+        """Process inflow data from SWMM input file."""
         for line in inflow_contents:
-            pair = line.split()
-            if pair[1] != 'FLOW':
+            parts = line.split()
+            if len(parts) < 8:  # Skip lines with insufficient data
+                continue
+
+            if parts[1] != 'FLOW':
                 raise Exception('Unsupported inflow type, only FLOW is accepted.')
-            for node in self.data:
-                if node.name == pair[0]:
-                    result = {'time_series': pair[2], 'type': pair[3], 'm_factor': float(pair[4]),
-                              's_factor': float(pair[5]), 'baseline': float(pair[6]), 'pattern': pair[7]}
-                    node.inflow = result
-        return 0
+
+            node_name = parts[0]
+            try:
+                node = self.index_of(node_name, return_node=True)
+            except ValueError:
+                node = None
+
+            if node:
+                inflow_data = {
+                    'time_series': parts[2],
+                    'type': parts[3],
+                    'm_factor': float(parts[4]),
+                    's_factor': float(parts[5]),
+                    'baseline': float(parts[6]),
+                    'pattern': parts[7]
+                }
+                if hasattr(node, 'inflow'):
+                    node.inflow = inflow_data
 
     def write_to_swmm_inp(self, filename):
-        with open(filename, 'a', encoding='utf-8') as f:
-            f.write('\n\n[JUNCTIONS]\n')
-            f.write(';;Name  Elevation  MaxDepth  InitDepth  SurDepth  Ponding\n')
-            for node in self.data:
-                if isinstance(node, Junction):
-                    f.write(
-                        f'{node.name:8}  {node.elevation:8.3f}  {node.maximum_depth:8.3f}  {node.initial_depth:8.3f}  {node.overload_depth:8.3f}  {node.surface_ponding_area:8.3f}\n')
-            #
-            f.write('\n\n[OUTFALLS]\n')
-            f.write(';;Name  Elevation  Type  //  Gated  RouteTo\n')
-            for node in self.data:
-                if isinstance(node, OutfallFree):
-                    msg = 'YES' if node.flap_gate else 'NO'
-                    f.write(f'{node.name:8}  {node.elevation:8.3f}    FREE    {msg:8}  {node.route_to}\n')
-                if isinstance(node, OutfallNormal):
-                    msg = 'YES' if node.flap_gate else 'NO'
-                    f.write(f'{node.name:8}  {node.elevation:8.3f}    NORMAL    {msg:8}  {node.route_to}\n')
-                if isinstance(node, OutfallFixed):
-                    msg = 'YES' if node.flap_gate else 'NO'
-                    f.write(
-                        f'{node.name:8}  {node.elevation:8.3f}    FIXED    {node.stage:8}  {msg}  {node.route_to}\n')
-                if isinstance(node, OutfallTidal):
-                    msg = 'YES' if node.flap_gate else 'NO'
-                    f.write(
-                        f'{node.name:8}  {node.elevation:8.3f}    TIDAL    {node.tidal:8}  {msg}  {node.route_to}\n')
-                if isinstance(node, OutfallTimeseries):
-                    msg = 'YES' if node.flap_gate else 'NO'
-                    f.write(
-                        f'{node.name:8}  {node.elevation:8.3f}    TIMESERIES    {node.time_series:8}  {msg}  {node.route_to}\n')
-            #
-            f.write('\n\n[COORDINATES]\n')
-            f.write(';;Name  X-Coord  Y-Coord\n')
-            for node in self.data:
-                f.write(f'{node.name:8}  {node.coordinate[0]:8.2f}  {node.coordinate[1]:8.2f}\n')
-            #
-            f.write('\n\n[DWF]\n')
-            f.write(';;Node           Constituent      Baseline   Patterns  \n')
-            for node in self.data:
-                if isinstance(node, Junction):
-                    if node.dwf_base_value != 0:
-                        string = ' '.join(node.dwf_patterns)
-                        f.write(f'{node.name}  FLOW  {node.dwf_base_value}  {string}\n')
-            #
-            f.write('\n\n[INFLOWS]\n')
-            f.write(';;Node           Constituent      Time Series      Type     Mfactor  Sfactor  Baseline Pattern\n')
-            for node in self.data:
-                if isinstance(node, Junction):
-                    if node.inflow is not None:
-                        res = [str(i) for i in list(node.inflow.values())]
-                        res = '    '.join(res)
-                        f.write(f'{node.name}  FLOW  {res}  \n')
-        return 0
+        """
+        Write node data to a SWMM input file.
+        
+        Writes the following sections to SWMM input file:
+        - [JUNCTIONS]
+        - [OUTFALLS]
+        - [COORDINATES]
+        - [DWF]
+        - [INFLOWS]
+        
+        Args:
+            filename (str): Path to the SWMM input file
+            
+        Returns:
+            int: 0 if successful
+            
+        Raises:
+            IOError: If there's an error writing to the file
+            
+        Note:
+            Appends to existing file content
+        """
+        try:
+            with open(filename, 'a', encoding='utf-8') as f:
+                # Write junctions section
+                self._write_junctions_section(f)
 
-    def index_of(self, node_name):
+                # Write outfalls section
+                self._write_outfalls_section(f)
+
+                # Write coordinates section
+                self._write_coordinates_section(f)
+
+                # Write DWF section
+                self._write_dwf_section(f)
+
+                # Write inflows section
+                self._write_inflows_section(f)
+
+            return 0
+        except IOError as e:
+            raise IOError(f"Error writing to SWMM input file: {str(e)}")
+
+    def _write_junctions_section(self, file):
+        """Write junctions section to the SWMM input file."""
+        file.write('\n\n[JUNCTIONS]\n')
+        file.write(';;Name  Elevation  MaxDepth  InitDepth  SurDepth  Ponding\n')
+
+        for node in self.data:
+            if isinstance(node, Junction):
+                file.write(
+                    f'{node.name:8}  {node.elevation:8.3f}  {node.maximum_depth:8.3f}  '
+                    f'{node.initial_depth:8.3f}  {node.overload_depth:8.3f}  {node.surface_ponding_area:8.3f}\n')
+
+    def _write_outfalls_section(self, file):
+        """Write outfalls section to the SWMM input file."""
+        file.write('\n\n[OUTFALLS]\n')
+        file.write(';;Name  Elevation  Type  //  Gated  RouteTo\n')
+
+        outfall_types = {
+            OutfallFree: ('FREE', None),
+            OutfallNormal: ('NORMAL', None),
+            OutfallFixed: ('FIXED', 'stage'),
+            OutfallTidal: ('TIDAL', 'tidal'),
+            OutfallTimeseries: ('TIMESERIES', 'time_series')
+        }
+
+        for node in self.data:
+            for outfall_class, (type_name, extra_attr) in outfall_types.items():
+                if isinstance(node, outfall_class):
+                    route_to = node.route_to if hasattr(node, 'route_to') and node.route_to else ''
+                    gate_flag = 'YES' if node.flap_gate else 'NO'
+
+                    if extra_attr:
+                        extra_value = getattr(node, extra_attr, '')
+                        file.write(
+                            f'{node.name:8}  {node.elevation:8.3f}    {type_name}    '
+                            f'{extra_value:8}  {gate_flag}  {route_to}\n')
+                    else:
+                        file.write(
+                            f'{node.name:8}  {node.elevation:8.3f}    {type_name}    '
+                            f'{gate_flag:8}  {route_to}\n')
+
+    def _write_coordinates_section(self, file):
+        """Write coordinates section to the SWMM input file."""
+        file.write('\n\n[COORDINATES]\n')
+        file.write(';;Name  X-Coord  Y-Coord\n')
+
+        for node in self.data:
+            if hasattr(node, 'coordinate') and len(node.coordinate) >= 2:
+                file.write(f'{node.name:8}  {node.coordinate[0]:8.2f}  {node.coordinate[1]:8.2f}\n')
+
+    def _write_dwf_section(self, file):
+        """Write dry weather flow section to the SWMM input file."""
+        file.write('\n\n[DWF]\n')
+        file.write(';;Node           Constituent      Baseline   Patterns  \n')
+
+        for node in self.data:
+            if isinstance(node, Junction) and hasattr(node, 'dwf_base_value') and node.dwf_base_value != 0:
+                patterns = ' '.join(node.dwf_patterns if hasattr(node, 'dwf_patterns') and node.dwf_patterns else [])
+                file.write(f'{node.name}  FLOW  {node.dwf_base_value}  {patterns}\n')
+
+    def _write_inflows_section(self, file):
+        """Write inflows section to the SWMM input file."""
+        file.write('\n\n[INFLOWS]\n')
+        file.write(';;Node           Constituent      Time Series      Type     Mfactor  Sfactor  Baseline Pattern\n')
+
+        for node in self.data:
+            if isinstance(node, Junction) and hasattr(node, 'inflow') and node.inflow is not None:
+                values = list(node.inflow.values())
+                formatted_values = '    '.join(str(value) for value in values)
+                file.write(f'{node.name}  FLOW  {formatted_values}  \n')
+
+    def index_of(self, node_name, return_node=False):
+        """
+        Find a node's index by name.
+
+        Args:
+            node_name (str): The name of the node to find
+            return_node (bool): If True, returns the node object instead of index
+
+        Returns:
+            int or object: The index of the node or the node object if return_node is True
+
+        Raises:
+            ValueError: If no node with the given name is found
+        """
         for index, item in enumerate(self.data):
             if item.name == node_name:
-                return index
+                return item if return_node else index
         raise ValueError(f"No item found with name '{node_name}'")
+
