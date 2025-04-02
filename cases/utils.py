@@ -23,8 +23,9 @@ def plot_model(model):
     for node in model.node:
         name = node.name
         x, y = node.coordinate
+        elevation = node.elevation
         is_outfall = isinstance(node, easysewer.Node.Outfall)  # Using the fully qualified class name
-        nodes[name] = {'x': x, 'y': y, 'is_outfall': is_outfall}
+        nodes[name] = {'x': x, 'y': y, 'elevation': elevation, 'is_outfall': is_outfall}
 
     # Process links
     links = []
