@@ -11,6 +11,8 @@ The model supports:
 - Handling rainfall and calculation settings
 - Supporting various hydraulic elements like conduits and junctions
 """
+import json
+from pathlib import Path
 
 from .Options import CalculationInformation
 from .Link import LinkList
@@ -18,7 +20,6 @@ from .Node import NodeList
 from .Area import AreaList
 from .Rain import Rain
 from .Curve import ValueList
-import json
 from .utils import get_swmm_inp_content
 
 
@@ -68,32 +69,56 @@ class UrbanDrainageModel:
 
     def to_inp(self, filename):
         """
-        Writes the model to a SWMM .inp file.
-
+        Writes the model to a SWMM .inp file, creating parent directories if needed.
         Args:
-            filename (str): Path to the output .inp file
-
+            filename (str or Path): Path to the output .inp file
         Returns:
-            int: 0 on success
+            int: 0 on success, raises exceptions on failure
+        Raises:
+            OSError: If file operations fail
+            TypeError: If JSON serialization fails
         """
-        with open(filename, 'w', encoding='utf-8') as f:
-            # Write TITLE section first
-            f.write('[TITLE]\n')
-            if self.label:
-                try:
-                    f.write(json.dumps(self.label, indent=2))
-                    f.write('\n\n')
-                except:
-                    f.write(str(self.label.get('TITLE', '')) + '\n\n')
+        # Convert to Path object if it isn't already
+        filepath = Path(filename)
 
-        # Continue with other sections
-        self.calc.write_to_swmm_inp(filename)
-        self.node.write_to_swmm_inp(filename)
-        self.link.write_to_swmm_inp(filename)
-        self.area.write_to_swmm_inp(filename)
-        self.rain.write_to_swmm_inp(filename)
-        self.value.write_to_swmm_inp(filename)
-        return 0
+        # Create parent directories if they don't exist
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                # Write TITLE section first
+                f.write('[TITLE]\n')
+                if self.label:
+                    try:
+                        # Only attempt JSON if it's a dictionary
+                        if isinstance(self.label, dict):
+                            f.write(json.dumps(self.label, indent=2))
+                        else:
+                            f.write(str(self.label))
+                        f.write('\n\n')
+                    except (TypeError, ValueError) as e:
+                        # Fallback to simple string representation
+                        f.write(str(self.label.get('TITLE', '')) if isinstance(self.label, dict) else str(self.label))
+                        f.write('\n\n')
+
+            # Continue with other sections - now using the same filepath
+            self.calc.write_to_swmm_inp(filepath)
+            self.node.write_to_swmm_inp(filepath)
+            self.link.write_to_swmm_inp(filepath)
+            self.area.write_to_swmm_inp(filepath)
+            self.rain.write_to_swmm_inp(filepath)
+            self.value.write_to_swmm_inp(filepath)
+
+            return 0
+
+        except Exception as e:
+            # Clean up partially written file if there was an error
+            if filepath.exists():
+                try:
+                    filepath.unlink()
+                except:
+                    pass  # Don't mask the original error
+            raise  # Re-raise the original exception
 
     def read_inp(self, filename):
         """
