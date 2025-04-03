@@ -73,6 +73,16 @@ class Conduit(Link):
 
 
 class ConduitCircle(Conduit):
+    """
+    Circular conduit type.
+    
+    Represents a conduit with circular cross-section.
+    
+    Attributes:
+        Inherits all attributes from Conduit class
+        barrels_number (int): Number of identical barrels (pipes)
+        height (float): Diameter of the circular conduit
+    """
     def __init__(self):
         Conduit.__init__(self)
         self.barrels_number = 1
@@ -80,6 +90,17 @@ class ConduitCircle(Conduit):
 
 
 class ConduitFilledCircle(Conduit):
+    """
+    Partially filled circular conduit type.
+    
+    Represents a circular conduit with sediment or partial filling.
+    
+    Attributes:
+        Inherits all attributes from Conduit class
+        barrels_number (int): Number of identical barrels (pipes)
+        height (float): Diameter of the circular conduit
+        filled (float): Height of filling/sediment from bottom
+    """
     def __init__(self):
         Conduit.__init__(self)
         self.barrels_number = 1
@@ -88,6 +109,17 @@ class ConduitFilledCircle(Conduit):
 
 
 class ConduitRectangleOpen(Conduit):
+    """
+    Open rectangular conduit type.
+    
+    Represents an open channel with rectangular cross-section.
+    
+    Attributes:
+        Inherits all attributes from Conduit class
+        barrels_number (int): Number of identical barrels (channels)
+        height (float): Height of the rectangular channel
+        width (float): Width of the rectangular channel
+    """
     def __init__(self):
         Conduit.__init__(self)
         self.barrels_number = 1
@@ -96,6 +128,17 @@ class ConduitRectangleOpen(Conduit):
 
 
 class ConduitCustom(Conduit):
+    """
+    Custom conduit type.
+    
+    Represents a conduit with custom-defined cross-section based on a curve.
+    
+    Attributes:
+        Inherits all attributes from Conduit class
+        barrels_number (int): Number of identical barrels
+        height (float): Maximum height of the custom cross-section
+        curve (str): Name of the curve defining the custom cross-section
+    """
     def __init__(self):
         Conduit.__init__(self)
         self.barrels_number = 1
@@ -104,16 +147,50 @@ class ConduitCustom(Conduit):
 
 
 class LinkList:
+    """
+    A collection class for managing links in a drainage network.
+    
+    This class provides storage and management for various types of links (conduits),
+    with methods for adding, accessing, and processing links.
+    
+    Attributes:
+        data (list): List containing all link objects
+    """
     def __init__(self):
         self.data = []
 
     def __repr__(self):
+        """
+        Returns a string representation of the LinkList.
+        
+        Returns:
+            str: A string showing the count of links in the list
+        """
         return f'{len(self.data)} Links'
 
     def __len__(self):
+        """
+        Returns the number of links in the list.
+        
+        Returns:
+            int: Number of links in the list
+        """
         return len(self.data)
 
     def __getitem__(self, key):
+        """
+        Gets a link by index or name.
+        
+        Args:
+            key (int|str): Index or name of link to retrieve
+            
+        Returns:
+            Link: The requested link
+            
+        Raises:
+            KeyError: If link name not found
+            TypeError: If key is not int or str
+        """
         if isinstance(key, int):
             return self.data[key]
         elif isinstance(key, str):
@@ -125,170 +202,403 @@ class LinkList:
             raise TypeError("Key must be an integer or a string")
 
     def __iter__(self):
+        """
+        Returns an iterator for the link list.
+        
+        Returns:
+            iterator: Iterator for the links
+        """
         return iter(self.data)
 
     def __contains__(self, item):
+        """
+        Checks if a link exists in the list.
+        
+        Args:
+            item: Link to check for
+            
+        Returns:
+            bool: True if link exists in list
+        """
         return item in self.data
 
-    def add_link(self, link_type, link_information):
-        def execute(func1, func2):
-            def inner():
-                new_link = func1()
-                # basic information of conduit
-                new_link.name = link_information['name']
-                new_link.upstream_node = link_information['upstream_node']
-                new_link.downstream_node = link_information['downstream_node']
-                new_link.length = link_information['length']
-                new_link.roughness = link_information['roughness']
-                new_link.upstream_offset = link_information['upstream_offset']
-                new_link.downstream_offset = link_information['downstream_offset']
-                if 'initial_flow' in link_information:
-                    new_link.initial_flow = link_information['initial_flow']
-                if 'maximum_flow' in link_information:
-                    new_link.maximum_flow = link_information['maximum_flow']
-                # specific information of different conduit type
-                func2(new_link)
-                # add new link to link list
-                self.data.append(new_link)
-                return 0
+    def add_link(self, link_type, link_information=None):
+        """
+        Add a new link to the data structure based on its type and information.
+        Generates default values for missing essential attributes.
 
-            return inner
+        Args:
+            link_type (str): Type of link to add (e.g., 'conduit_circle', 'conduit_filled_circle')
+            link_information (dict, optional): Dictionary containing link attributes
+                                              Defaults to empty dict if None
 
-        match link_type:
-            case 'conduit_circle' | 'ConduitCircle':
-                def conduit_circle(new_link):
-                    new_link.height = link_information['height']
-                    if 'barrels_number' in link_information:
-                        new_link.barrels_number = link_information['barrels_number']
+        Returns:
+            Link: The newly created link object
 
-                return execute(ConduitCircle, conduit_circle)()
+        Raises:
+            TypeError: If link_type is not recognized
+            ValueError: If a link with the same name already exists
+                        or if required attributes are missing
 
-            case 'conduit_filled_circle' | 'ConduitFilledCircle':
+        Example:
+            >>> links = LinkList()
+            >>> links.add_link('conduit_circle', {'name': 'C1', 'upstream_node': 'J1', 
+            ...                                  'downstream_node': 'J2', 'height': 0.5})
+            <Link C1>
+        """
+        # Initialize link_information dict if not provided
+        if link_information is None:
+            link_information = {}
 
-                def conduit_filled_circle(new_link):
-                    new_link.height = link_information['height']
-                    new_link.filled = link_information['filled']
-                    if 'barrels_number' in link_information:
-                        new_link.barrels_number = link_information['barrels_number']
+        # Normalize link type: lowercase and handle both formats
+        normalized_type = link_type.lower().replace('_', '')
+        if normalized_type.startswith('conduit'):
+            normalized_type = normalized_type
+        else:
+            normalized_type = 'conduit' + normalized_type
 
-                return execute(ConduitFilledCircle, conduit_filled_circle)()
+        # Check if a name is provided and if it already exists in the collection
+        if 'name' in link_information:
+            requested_name = link_information['name']
+            if any(link.name == requested_name for link in self.data):
+                raise ValueError(f"Link with name '{requested_name}' already exists")
 
-            case 'conduit_rectangle_open' | 'ConduitRectangleOpen':
-                def conduit_rectangle_open(new_link):
-                    new_link.height = link_information['height']
-                    new_link.width = link_information['width']
-                    if 'barrels_number' in link_information:
-                        new_link.barrels_number = link_information['barrels_number']
+        # Define attribute hierarchy based on class inheritance
+        # Level 1: Common attributes for all Link types with defaults
+        link_base_attrs = {
+            'name': lambda link_type, info: info.get('name', self._generate_default_name(link_type))
+        }
 
-                return execute(ConduitRectangleOpen, conduit_rectangle_open)()
+        # Level 2: Attributes for all Conduit types with defaults
+        conduit_base_attrs = {
+            'upstream_node': lambda _, info: info.get('upstream_node', ''),
+            'downstream_node': lambda _, info: info.get('downstream_node', ''),
+            'length': lambda _, info: info.get('length', 4.29),
+            'roughness': lambda _, info: info.get('roughness', 0.013),  # Default Manning's n
+            'upstream_offset': lambda _, info: info.get('upstream_offset', 0.0),
+            'downstream_offset': lambda _, info: info.get('downstream_offset', 0.0),
+            'initial_flow': lambda _, info: info.get('initial_flow', 0.0),
+            'maximum_flow': lambda _, info: info.get('maximum_flow', 0.0)
+        }
 
-            case 'conduit_custom' | 'ConduitCustom':
-                def conduit_custom(new_link):
-                    new_link.height = link_information['height']
-                    new_link.curve = link_information['curve']
-                    if 'barrels_number' in link_information:
-                        new_link.barrels_number = link_information['barrels_number']
+        # Level 3: Specific attributes for conduit subtypes with defaults
+        conduit_specific_attrs = {
+            'conduitcircle': {
+                'barrels_number': lambda _, info: info.get('barrels_number', 1),
+                'height': lambda _, info: info.get('height', 0.3)
+            },
+            'conduitfilledcircle': {
+                'barrels_number': lambda _, info: info.get('barrels_number', 1),
+                'height': lambda _, info: info.get('height', 0.3),
+                'filled': lambda _, info: info.get('filled', 0.0)
+            },
+            'conduitrectangleopen': {
+                'barrels_number': lambda _, info: info.get('barrels_number', 1),
+                'height': lambda _, info: info.get('height', 2.0),
+                'width': lambda _, info: info.get('width', 1.0)
+            },
+            'conduitcustom': {
+                'barrels_number': lambda _, info: info.get('barrels_number', 1),
+                'height': lambda _, info: info.get('height', 1.0),
+                'curve': lambda _, info: info.get('curve', '')
+            }
+        }
 
-                return execute(ConduitCustom, conduit_custom)()
+        # Define link type configurations
+        link_types = {
+            'conduitcircle': {
+                'class': ConduitCircle,
+                'attrs': {**link_base_attrs, **conduit_base_attrs, **conduit_specific_attrs['conduitcircle']}
+            },
+            'conduitfilledcircle': {
+                'class': ConduitFilledCircle,
+                'attrs': {**link_base_attrs, **conduit_base_attrs, **conduit_specific_attrs['conduitfilledcircle']}
+            },
+            'conduitrectangleopen': {
+                'class': ConduitRectangleOpen,
+                'attrs': {**link_base_attrs, **conduit_base_attrs, **conduit_specific_attrs['conduitrectangleopen']}
+            },
+            'conduitcustom': {
+                'class': ConduitCustom,
+                'attrs': {**link_base_attrs, **conduit_base_attrs, **conduit_specific_attrs['conduitcustom']}
+            }
+        }
 
-            case _:
-                raise TypeError(f"Unknown link type, failed to add {link_information['name']}")
+        # Check if normalized link type exists
+        if normalized_type not in link_types:
+            raise TypeError(
+                f"Unknown link type '{link_type}', failed to add {link_information.get('name', 'unnamed link')}"
+            )
+
+        # Get link configuration
+        link_config = link_types[normalized_type]
+        link_class = link_config['class']
+        attrs = link_config['attrs']
+
+        # Create new link
+        new_link = link_class()
+
+        # Set all applicable attributes according to hierarchy, using default generators
+        for attr, default_generator in attrs.items():
+            value = default_generator(normalized_type, link_information)
+            setattr(new_link, attr, value)
+
+        # Check if the generated default name is unique (when name wasn't explicitly provided)
+        if 'name' not in link_information and any(link.name == new_link.name for link in self.data):
+            raise ValueError(f"Generated default name '{new_link.name}' already exists")
+
+        # Add link to data structure
+        self.data.append(new_link)
+
+        return new_link  # Return the created link for immediate use if needed
+
+    def _generate_default_name(self, link_type):
+        """
+        Generate a default name for a link based on its type and existing links count.
+        
+        Args:
+            link_type (str): Type of link (e.g. 'conduit_circle', 'conduit_custom')
+            
+        Returns:
+            str: Generated name in format 'TYPE##' where TYPE is first 3 letters of link type
+                 and ## is sequential number
+        """
+        # Extract the specific type after 'conduit_'
+        if '_' in link_type:
+            specific_type = link_type.split('_')[1]
+        else:
+            specific_type = link_type.replace('conduit', '')
+            
+        # Get first 3 letters of the specific type
+        prefix = specific_type[:3].upper()  # First 3 letters of link type
+        
+        # Get count of links with the same type prefix
+        existing_count = sum(1 for link in self.data if hasattr(link, 'name') and 
+                             link.name and link.name.startswith(prefix))
+
+        # Generate name with next number
+        return f"{prefix}{existing_count + 1}"
 
     def read_from_swmm_inp(self, filename):
-        conduit_contents = get_swmm_inp_content(filename, '[CONDUITS]')
-        # fill in default values
+        """
+        Read link data from a SWMM input file.
+        
+        Processes the following sections from SWMM input file:
+        - [CONDUITS]
+        - [XSECTIONS]
+        - [VERTICES]
+        
+        Args:
+            filename (str): Path to the SWMM input file
+            
+        Returns:
+            int: 0 if successful
+            
+        Raises:
+            FileNotFoundError: If the input file doesn't exist
+            ValueError: If required sections are missing or data is malformed
+            Exception: For other processing errors
+        """
+        try:
+            # Read all required sections
+            conduit_contents = get_swmm_inp_content(filename, '[CONDUITS]')
+            x_section_contents = get_swmm_inp_content(filename, '[XSECTIONS]')
+            vertices_contents = get_swmm_inp_content(filename, '[VERTICES]')
+            
+            # Process conduits and cross-sections
+            self._process_conduits_and_xsections(conduit_contents, x_section_contents)
+            
+            # Process vertices
+            self._process_vertices(vertices_contents)
+            
+            return 0
+        except Exception as e:
+            # Re-raise with more context
+            raise type(e)(f"Error reading SWMM input file: {str(e)}")
+            
+    def _process_conduits_and_xsections(self, conduit_contents, x_section_contents):
+        """
+        Process conduit and cross-section data from SWMM input file.
+        
+        Args:
+            conduit_contents (list): Lines from the [CONDUITS] section
+            x_section_contents (list): Lines from the [XSECTIONS] section
+        """
+        # Fill in default values for conduit contents
         for index, line in enumerate(conduit_contents):
-            if len(line.split()) == 7:
-                conduit_contents[index] += '  0  0'
-            elif len(line.split()) == 8:
-                conduit_contents[index] += '  0'
-        x_section = get_swmm_inp_content(filename, '[XSECTIONS]')
-        content = combine_swmm_inp_contents(conduit_contents, x_section)
-        for line in content:
-            pair = line.split()
-            dic = {'name': pair[0], 'upstream_node': pair[1], 'downstream_node': pair[2], 'length': float(pair[3]),
-                   'roughness': float(pair[4]), 'upstream_offset': float(pair[5]), 'downstream_offset': float(pair[6]),
-                   'initial_flow': float(pair[7]), 'maximum_flow': float(pair[8])}
-
-            match pair[9]:
-                case 'CIRCULAR':
-                    dic['height'] = float(pair[10])
-                    # optional variable: Barrels
-                    if len(pair) >= 15:
-                        dic['barrels_number'] = int(pair[14])
-                    self.add_link('conduit_circle', dic)
-
-                case 'FILLED_CIRCULAR':
-                    dic['height'] = float(pair[10])
-                    dic['filled'] = float(pair[11])
-                    # optional variable: Barrels
-                    if len(pair) >= 15:
-                        dic['barrels_number'] = int(pair[14])
-                    self.add_link('conduit_filled_circle', dic)
-
-                case 'RECT_OPEN':
-                    dic['height'] = float(pair[10])
-                    dic['width'] = float(pair[11])
-                    # optional variable: Barrels
-                    if len(pair) >= 15:
-                        dic['barrels_number'] = int(pair[14])
-                    self.add_link('conduit_rectangle_open', dic)
-
-                case 'CUSTOM':
-                    dic['height'] = float(pair[10])
-                    dic['curve'] = pair[11]
-                    # optional variable: Barrels
-                    if len(pair) >= 13:
-                        dic['barrels_number'] = int(pair[-1])
-                    self.add_link('conduit_custom', dic)
-        #
-        vertices_contents = get_swmm_inp_content(filename, '[VERTICES]')
+            parts = line.split()
+            if len(parts) == 7:
+                conduit_contents[index] += '  0  0'  # Add default initial_flow and maximum_flow
+            elif len(parts) == 8:
+                conduit_contents[index] += '  0'  # Add default maximum_flow
+        
+        # Combine conduit and cross-section data
+        combined_content = combine_swmm_inp_contents(conduit_contents, x_section_contents)
+        
+        # Process each combined line
+        for line in combined_content:
+            try:
+                parts = line.split()
+                if len(parts) < 10:  # Need at least basic conduit info + shape
+                    continue
+                    
+                # Create basic conduit dictionary
+                conduit_data = {
+                    'name': parts[0],
+                    'upstream_node': parts[1],
+                    'downstream_node': parts[2],
+                    'length': float(parts[3]),
+                    'roughness': float(parts[4]),
+                    'upstream_offset': float(parts[5]),
+                    'downstream_offset': float(parts[6]),
+                    'initial_flow': float(parts[7]),
+                    'maximum_flow': float(parts[8])
+                }
+                
+                # Process based on cross-section shape
+                shape = parts[9]
+                if shape == 'CIRCULAR':
+                    if len(parts) > 10:
+                        conduit_data['height'] = float(parts[10])
+                    if len(parts) >= 15:
+                        conduit_data['barrels_number'] = int(parts[14])
+                    self.add_link('conduit_circle', conduit_data)
+                    
+                elif shape == 'FILLED_CIRCULAR':
+                    if len(parts) > 11:
+                        conduit_data['height'] = float(parts[10])
+                        conduit_data['filled'] = float(parts[11])
+                    if len(parts) >= 15:
+                        conduit_data['barrels_number'] = int(parts[14])
+                    self.add_link('conduit_filled_circle', conduit_data)
+                    
+                elif shape == 'RECT_OPEN':
+                    if len(parts) > 11:
+                        conduit_data['height'] = float(parts[10])
+                        conduit_data['width'] = float(parts[11])
+                    if len(parts) >= 15:
+                        conduit_data['barrels_number'] = int(parts[14])
+                    self.add_link('conduit_rectangle_open', conduit_data)
+                    
+                elif shape == 'CUSTOM':
+                    if len(parts) > 11:
+                        conduit_data['height'] = float(parts[10])
+                        conduit_data['curve'] = parts[11]
+                    if len(parts) >= 13:
+                        conduit_data['barrels_number'] = int(parts[-1])
+                    self.add_link('conduit_custom', conduit_data)
+            except (ValueError, IndexError) as e:
+                # Log error but continue processing other conduits
+                print(f"Warning: Error processing conduit in line '{line}': {str(e)}")
+                
+    def _process_vertices(self, vertices_contents):
+        """
+        Process vertex data from SWMM input file.
+        
+        Args:
+            vertices_contents (list): Lines from the [VERTICES] section
+        """
         for line in vertices_contents:
-            pair = line.split()
-            for link in self.data:
-                if link.name == pair[0]:
-                    link.vertices.x.append(float(pair[1]))
-                    link.vertices.y.append(float(pair[2]))
-                    link.vertices.link_name = pair[0]
-        return 0
+            try:
+                parts = line.split()
+                if len(parts) < 3:  # Need at least link name, x, y
+                    continue
+                    
+                link_name = parts[0]
+                x_coord = float(parts[1])
+                y_coord = float(parts[2])
+                
+                # Find the link and add vertex
+                for link in self.data:
+                    if link.name == link_name:
+                        link.vertices.x.append(x_coord)
+                        link.vertices.y.append(y_coord)
+                        link.vertices.link_name = link_name
+                        break
+            except (ValueError, IndexError) as e:
+                # Log error but continue processing other vertices
+                print(f"Warning: Error processing vertex in line '{line}': {str(e)}")
 
     def write_to_swmm_inp(self, filename):
-        with open(filename, 'a', encoding='utf-8') as f:
-            f.write('\n\n[CONDUITS]\n')
-            f.write(
-                ';;Name                          Upstream  Downstream  Length  Roughness  Up-offset Down-offset  Init_flow Max_flow\n')
-            for link in self.data:
+        """
+        Write link data to a SWMM input file.
+        
+        Writes the following sections to the SWMM input file:
+        - [CONDUITS]
+        - [XSECTIONS]
+        - [VERTICES]
+        
+        Args:
+            filename (str): Path to the SWMM input file to write to
+            
+        Returns:
+            int: 0 if successful
+            
+        Raises:
+            IOError: If the file cannot be opened or written to
+        """
+        try:
+            with open(filename, 'a', encoding='utf-8') as f:
+                # Write CONDUITS section
+                f.write('\n\n[CONDUITS]\n')
                 f.write(
-                    f'{link.name:30}  {link.upstream_node:8}  {link.downstream_node:8}  {link.length:8.2f}  {link.roughness:8.3f}  {link.upstream_offset:8.3f}  {link.downstream_offset:8.3f}  {link.initial_flow:8.2f}  {link.maximum_flow:8.2f}\n')
-            #
-            f.write('\n\n[XSECTIONS]\n')
-            f.write(
-                ';;Name                          Shape         Geom1      Geom2      Geom3      Geom4      Barrels      (Culvert)\n')
-            for link in self.data:
-                zero = 0
-                if isinstance(link, ConduitCircle):
+                    ';;Name                          Upstream  Downstream  Length  Roughness  Up-offset Down-offset  Init_flow Max_flow\n')
+                for link in self.data:
                     f.write(
-                        f'{link.name:30}  CIRCULAR  {link.height:8.2f}  {zero:8}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
-                if isinstance(link, ConduitFilledCircle):
-                    f.write(
-                        f'{link.name:30}  FILLED_CIRCULAR  {link.height:8.2f}  {link.filled:8.2f}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
-                if isinstance(link, ConduitRectangleOpen):
-                    f.write(
-                        f'{link.name:30}  RECT_OPEN {link.height:8.2f}  {link.width:8.2f}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
-                if isinstance(link, ConduitCustom):
-                    f.write(
-                        f'{link.name:30}  CUSTOM    {link.height:8.2f}  {link.curve:8}  0  0  {link.barrels_number:8}\n')
-            #
-            f.write('\n\n[VERTICES]\n')
-            f.write(';;Link           X-Coord            Y-Coord\n')
-            for link in self.data:
-                if link.vertices.link_name is not None:
-                    for xi, yi in zip(link.vertices.x, link.vertices.y):
-                        f.write(f'{link.vertices.link_name}  {xi}  {yi}\n')
-        return 0
+                        f'{link.name:30}  {link.upstream_node:8}  {link.downstream_node:8}  {link.length:8.2f}  {link.roughness:8.3f}  {link.upstream_offset:8.3f}  {link.downstream_offset:8.3f}  {link.initial_flow:8.2f}  {link.maximum_flow:8.2f}\n')
+                
+                # Write XSECTIONS section
+                f.write('\n\n[XSECTIONS]\n')
+                f.write(
+                    ';;Name                          Shape         Geom1      Geom2      Geom3      Geom4      Barrels      (Culvert)\n')
+                for link in self.data:
+                    zero = 0
+                    if isinstance(link, ConduitCircle):
+                        f.write(
+                            f'{link.name:30}  CIRCULAR  {link.height:8.2f}  {zero:8}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
+                    elif isinstance(link, ConduitFilledCircle):
+                        f.write(
+                            f'{link.name:30}  FILLED_CIRCULAR  {link.height:8.2f}  {link.filled:8.2f}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
+                    elif isinstance(link, ConduitRectangleOpen):
+                        f.write(
+                            f'{link.name:30}  RECT_OPEN {link.height:8.2f}  {link.width:8.2f}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
+                    elif isinstance(link, ConduitCustom):
+                        f.write(
+                            f'{link.name:30}  CUSTOM    {link.height:8.2f}  {link.curve:8}  0  0  {link.barrels_number:8}\n')
+                
+                # Write VERTICES section
+                f.write('\n\n[VERTICES]\n')
+                f.write(';;Link           X-Coord            Y-Coord\n')
+                for link in self.data:
+                    if link.vertices.link_name is not None:
+                        for xi, yi in zip(link.vertices.x, link.vertices.y):
+                            f.write(f'{link.vertices.link_name}  {xi}  {yi}\n')
+            return 0
+        except IOError as e:
+            raise IOError(f"Error writing to SWMM input file: {str(e)}")
 
-    def index_of(self, link_name):
+    def index_of(self, link_name, return_link=False):
+        """
+        Find the index of a link by name.
+        
+        Args:
+            link_name (str): Name of the link to find
+            return_link (bool, optional): If True, returns the link object instead of index
+                                         Defaults to False
+            
+        Returns:
+            int or Link: Index of the link in the data list, or the link object if return_link is True
+            
+        Raises:
+            ValueError: If no link with the given name is found
+            
+        Example:
+            >>> links = LinkList()
+            >>> links.add_link('conduit_circle', {'name': 'C1'})
+            >>> links.index_of('C1')
+            0
+        """
         for index, item in enumerate(self.data):
             if item.name == link_name:
-                return index
+                return item if return_link else index
         raise ValueError(f"No item found with name '{link_name}'")
