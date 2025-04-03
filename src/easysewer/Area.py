@@ -233,6 +233,23 @@ class AreaList:
         """
         return item in self.data
 
+    def _generate_default_name(self):
+        """
+        Generate a default name for an area based on existing areas count.
+        
+        Returns:
+            str: Generated name in format 'Area##' where ## is sequential number
+        """
+        # Use 'Area' as the prefix for all generated area names
+        prefix = 'Area'
+        
+        # Get count of areas with the same prefix
+        existing_count = sum(1 for area in self.data if hasattr(area, 'name') and 
+                             area.name and area.name.startswith(prefix))
+
+        # Generate name with next number
+        return f"{prefix}{existing_count + 1}"
+
     def add_area(self, area_information):
         """
         Creates and adds a new Area object to the list based on provided information.
@@ -242,11 +259,20 @@ class AreaList:
             
         Returns:
             Area: The newly created and added area object
+            
+        Raises:
+            ValueError: If an area with the same name already exists
         """
+        # Check if a name is provided and if it already exists in the collection
+        if 'name' in area_information:
+            requested_name = area_information['name']
+            if any(area.name == requested_name for area in self.data):
+                raise ValueError(f"Area with name '{requested_name}' already exists")
+                
         new_area = Area()
         
         # Set identification attributes
-        new_area.name = area_information.get('name', f'Area{len(self.data) + 1}')
+        new_area.name = area_information.get('name', self._generate_default_name())
         new_area.rain_gage = area_information.get('rain_gage', '')
         new_area.outlet = area_information.get('outlet', '')
         
@@ -303,6 +329,10 @@ class AreaList:
             if 'curve_number_soil_saturated_hydraulic_conductivity' in area_information:
                 new_area.infiltration.curve_number.soil_saturated_hydraulic_conductivity = area_information.get('curve_number_soil_saturated_hydraulic_conductivity')
         
+        # Check if the generated default name is unique (when name wasn't explicitly provided)
+        if 'name' not in area_information and any(area.name == new_area.name for area in self.data):
+            raise ValueError(f"Generated default name '{new_area.name}' already exists")
+            
         # Add the new area to the collection
         self.data.append(new_area)
         return new_area
