@@ -21,12 +21,19 @@ class InfiltrationHorton:
         dry_time (float): Time needed for soil to fully dry (days)
         maximum_infiltration_volume (float): Maximum infiltration volume (mm), 0 if not applicable
     """
+    # Default parameters for Horton model
+    MAX_RATE_DEFAULT = 50  # mm/h
+    MIN_RATE_DEFAULT = 5  # mm/h
+    DECAY_RATE_DEFAULT = 5  # 1/h
+    DRY_TIME_DEFAULT = 7  # days
+    MAX_INFIL_VOLUME_DEFAULT = 0  # mm
+
     def __init__(self):
-        self.maximum_rate = 50  # mm/h
-        self.minimum_rate = 5  # mm/h
-        self.decay_rate = 5  # 1/h
-        self.dry_time = 7  # day
-        self.maximum_infiltration_volume = 0  # mm, 0 if not applicable
+        self.maximum_rate = self.MAX_RATE_DEFAULT
+        self.minimum_rate = self.MIN_RATE_DEFAULT
+        self.decay_rate = self.DECAY_RATE_DEFAULT
+        self.dry_time = self.DRY_TIME_DEFAULT
+        self.maximum_infiltration_volume = self.MAX_INFIL_VOLUME_DEFAULT
 
 
 class InfiltrationGreenAmpt:
@@ -41,10 +48,16 @@ class InfiltrationGreenAmpt:
         soil_saturated_hydraulic_conductivity (float): Saturated hydraulic conductivity (mm/h)
         initial_soil_moisture_deficit (float): Initial soil moisture deficit (fraction)
     """
+    # Default parameters for sandy loam soil
+    CAPILLARY_SUCTION_DEFAULT = 110.0  # mm
+    HYDRAULIC_CONDUCTIVITY_DEFAULT = 10.0  # mm/h
+    MOISTURE_DEFICIT_DEFAULT = 0.3  # fraction
+
     def __init__(self):
-        self.soil_capillary_suction = 0
-        self.soil_saturated_hydraulic_conductivity = 0
-        self.initial_soil_moisture_deficit = 0
+        # Default values for sandy loam soil
+        self.soil_capillary_suction = self.CAPILLARY_SUCTION_DEFAULT
+        self.soil_saturated_hydraulic_conductivity = self.HYDRAULIC_CONDUCTIVITY_DEFAULT
+        self.initial_soil_moisture_deficit = self.MOISTURE_DEFICIT_DEFAULT
 
 
 class InfiltrationCurveNumber:
@@ -59,10 +72,16 @@ class InfiltrationCurveNumber:
         dry_time (float): Time for fully saturated soil to completely dry (days)
         soil_saturated_hydraulic_conductivity (float): Saturated hydraulic conductivity (mm/h)
     """
+    # Default parameters for HSG-B soil
+    CURVE_NUMBER_DEFAULT = 79
+    CN_DRY_TIME_DEFAULT = 7  # days
+    CN_HYDRAULIC_CONDUCTIVITY_DEFAULT = 8.0  # mm/h
+
     def __init__(self):
-        self.curve_number = 0
-        self.dry_time = 0
-        self.soil_saturated_hydraulic_conductivity = 0
+        # Default values for open space (poor condition)
+        self.curve_number = self.CURVE_NUMBER_DEFAULT
+        self.dry_time = self.CN_DRY_TIME_DEFAULT
+        self.soil_saturated_hydraulic_conductivity = self.CN_HYDRAULIC_CONDUCTIVITY_DEFAULT
 
 
 class Infiltration:
@@ -277,21 +296,57 @@ class AreaList:
         new_area.outlet = area_information.get('outlet', '')
         
         # Set physical attributes
-        new_area.area = area_information.get('area', 0.0)
-        new_area.impervious_ratio = area_information.get('impervious_ratio', 0)
-        new_area.width = area_information.get('width', 0)
-        new_area.slope = area_information.get('slope', 0)
+        # Validate and set physical attributes
+        area_value = area_information.get('area', 0.0)
+        if area_value <= 0:
+            raise ValueError(f"Area must be a positive number, got {area_value}")
+        new_area.area = area_value
+        
+        impervious_ratio_value = area_information.get('impervious_ratio', 0)
+        if not (0 <= impervious_ratio_value <= 100):
+            raise ValueError(f"Impervious ratio must be between 0 and 100, got {impervious_ratio_value}")
+        new_area.impervious_ratio = impervious_ratio_value
+        
+        width_value = area_information.get('width', 0)
+        if width_value <= 0:
+            raise ValueError(f"Width must be positive number, got {width_value}")
+        new_area.width = width_value
+        
+        slope_value = area_information.get('slope', 0)
+        if slope_value <= 0:
+            raise ValueError(f"Slope must be positive number, got {slope_value}")
+        new_area.slope = slope_value
         
         # Set surface attributes
         new_area.curb_length = area_information.get('curb_length', 0)
         new_area.snow_pack = area_information.get('snow_pack', '')
         
         # Set hydraulic attributes
-        new_area.manning_impervious = area_information.get('manning_impervious', 0)
-        new_area.manning_pervious = area_information.get('manning_pervious', 0)
-        new_area.depression_impervious = area_information.get('depression_impervious', 0)
-        new_area.depression_pervious = area_information.get('depression_pervious', 0)
-        new_area.impervious_without_depression = area_information.get('impervious_without_depression', 0)
+        # Validate hydraulic parameters
+        manning_impervious = area_information.get('manning_impervious', 0)
+        if not (0.01 <= manning_impervious <= 0.5):
+            raise ValueError(f"Manning's n for impervious area must be between 0.01-0.5, got {manning_impervious}")
+        new_area.manning_impervious = manning_impervious
+        
+        manning_pervious = area_information.get('manning_pervious', 0)
+        if not (0.05 <= manning_pervious <= 0.8):
+            raise ValueError(f"Manning's n for pervious area must be between 0.05-0.8, got {manning_pervious}")
+        new_area.manning_pervious = manning_pervious
+        
+        depression_impervious = area_information.get('depression_impervious', 0)
+        if depression_impervious < 0:
+            raise ValueError(f"Depression storage for impervious area cannot be negative, got {depression_impervious}")
+        new_area.depression_impervious = depression_impervious
+        
+        depression_pervious = area_information.get('depression_pervious', 0)
+        if depression_pervious < 0:
+            raise ValueError(f"Depression storage for pervious area cannot be negative, got {depression_pervious}")
+        new_area.depression_pervious = depression_pervious
+        
+        impervious_without_depression = area_information.get('impervious_without_depression', 0)
+        if not (0 <= impervious_without_depression <= 100):
+            raise ValueError(f"Impervious without depression must be 0-100%, got {impervious_without_depression}")
+        new_area.impervious_without_depression = impervious_without_depression
         
         # Set routing attributes
         new_area.route_type = area_information.get('route_type', 'OUTLET')
@@ -301,7 +356,7 @@ class AreaList:
         if 'infiltration' in area_information:
             new_area.infiltration = area_information['infiltration']
         else:
-            # Set default values for Horton infiltration
+            # Set values for Horton infiltration
             if 'horton_maximum_rate' in area_information:
                 new_area.infiltration.horton.maximum_rate = area_information.get('horton_maximum_rate')
             if 'horton_minimum_rate' in area_information:
@@ -313,7 +368,7 @@ class AreaList:
             if 'horton_maximum_infiltration_volume' in area_information:
                 new_area.infiltration.horton.maximum_infiltration_volume = area_information.get('horton_maximum_infiltration_volume')
             
-            # Set default values for Green-Ampt infiltration
+            # Set values for Green-Ampt infiltration
             if 'green_ampt_soil_capillary_suction' in area_information:
                 new_area.infiltration.green_ampt.soil_capillary_suction = area_information.get('green_ampt_soil_capillary_suction')
             if 'green_ampt_soil_saturated_hydraulic_conductivity' in area_information:
@@ -321,7 +376,7 @@ class AreaList:
             if 'green_ampt_initial_soil_moisture_deficit' in area_information:
                 new_area.infiltration.green_ampt.initial_soil_moisture_deficit = area_information.get('green_ampt_initial_soil_moisture_deficit')
             
-            # Set default values for Curve Number infiltration
+            # Set values for Curve Number infiltration
             if 'curve_number' in area_information:
                 new_area.infiltration.curve_number.curve_number = area_information.get('curve_number')
             if 'curve_number_dry_time' in area_information:
@@ -337,7 +392,8 @@ class AreaList:
         self.data.append(new_area)
         return new_area
 
-    def _prepare_section_contents(self, filename):
+    @staticmethod
+    def _prepare_section_contents(filename):
         """
         Prepares and combines section contents from SWMM input file.
         
@@ -373,8 +429,9 @@ class AreaList:
             return content, polygon_contents
         except Exception as e:
             raise IOError(f"Error preparing SWMM input sections: {str(e)}")
-    
-    def _parse_infiltration_data(self, pair, infiltration_type):
+
+    @staticmethod
+    def _parse_infiltration_data(pair, infiltration_type):
         """
         Parses infiltration data based on the specified infiltration type.
         
@@ -383,29 +440,28 @@ class AreaList:
             infiltration_type (str): Type of infiltration model
             
         Returns:
-            Infiltration: Configured infiltration object
+            dict: Dictionary containing infiltration parameters
         """
-        new_infiltration = Infiltration()
-        
         try:
+            infiltration_data = {}
             match infiltration_type:
                 case 'Horton':
-                    new_infiltration.horton.maximum_rate = float(pair[16])
-                    new_infiltration.horton.minimum_rate = float(pair[17])
-                    new_infiltration.horton.decay_rate = float(pair[18])
-                    new_infiltration.horton.dry_time = float(pair[19])
-                    new_infiltration.horton.maximum_infiltration_volume = float(pair[20])
+                    infiltration_data['horton_maximum_rate'] = float(pair[16])
+                    infiltration_data['horton_minimum_rate'] = float(pair[17])
+                    infiltration_data['horton_decay_rate'] = float(pair[18])
+                    infiltration_data['horton_dry_time'] = float(pair[19])
+                    infiltration_data['horton_maximum_infiltration_volume'] = float(pair[20])
                 case 'GreenAmpt':
-                    new_infiltration.green_ampt.soil_capillary_suction = float(pair[16])
-                    new_infiltration.green_ampt.soil_saturated_hydraulic_conductivity = float(pair[17])
-                    new_infiltration.green_ampt.initial_soil_moisture_deficit = float(pair[18])
+                    infiltration_data['green_ampt_soil_capillary_suction'] = float(pair[16])
+                    infiltration_data['green_ampt_soil_saturated_hydraulic_conductivity'] = float(pair[17])
+                    infiltration_data['green_ampt_initial_soil_moisture_deficit'] = float(pair[18])
                 case 'CurveNumber':
-                    new_infiltration.curve_number.curve_number = float(pair[16])
-                    new_infiltration.curve_number.soil_saturated_hydraulic_conductivity = float(pair[17])
-                    new_infiltration.curve_number.dry_time = float(pair[18])
+                    infiltration_data['curve_number'] = float(pair[16])
+                    infiltration_data['curve_number_soil_saturated_hydraulic_conductivity'] = float(pair[17])
+                    infiltration_data['curve_number_dry_time'] = float(pair[18])
                 case _:
                     raise ValueError(f"Unsupported infiltration type: {infiltration_type}")
-            return new_infiltration
+            return infiltration_data
         except (IndexError, ValueError) as e:
             raise ValueError(f"Error parsing infiltration data: {str(e)}")
     
@@ -489,6 +545,10 @@ class AreaList:
                     'route_type': pair[14]
                 }
                 
+                # Parse and add infiltration data
+                infiltration_data = self._parse_infiltration_data(pair, infiltration_type)
+                dic.update(infiltration_data)
+                
                 # Handle special cases
                 if dic['curb_length'] < 10e-5:
                     dic['curb_length'] = int(0)
@@ -498,9 +558,6 @@ class AreaList:
                     
                 if pair[15] != '100':
                     dic['route_type_ratio'] = float(pair[15])
-                
-                # Parse infiltration data
-                dic['infiltration'] = self._parse_infiltration_data(pair, infiltration_type)
                 
                 # Add the area to the collection
                 self.add_area(dic)

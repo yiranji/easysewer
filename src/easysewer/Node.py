@@ -485,7 +485,8 @@ class NodeList:
             # Re-raise with more context
             raise type(e)(f"Error reading SWMM input file: {str(e)}")
 
-    def _process_coordinates(self, coordinates):
+    @staticmethod
+    def _process_coordinates(coordinates):
         """Process coordinates data from SWMM input file."""
         coordinates_dic = {}
         for line in coordinates:
