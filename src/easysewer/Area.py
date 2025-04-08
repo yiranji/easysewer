@@ -329,8 +329,8 @@ class AreaList:
         new_area.manning_impervious = manning_impervious
         
         manning_pervious = area_information.get('manning_pervious', 0)
-        if not (0.05 <= manning_pervious <= 0.8):
-            raise ValueError(f"Manning's n for pervious area must be between 0.05-0.8, got {manning_pervious}")
+        if not (0.01 <= manning_pervious <= 0.8):
+            raise ValueError(f"Manning's n for pervious area must be between 0.01-0.8, got {manning_pervious}")
         new_area.manning_pervious = manning_pervious
         
         depression_impervious = area_information.get('depression_impervious', 0)
