@@ -645,19 +645,58 @@ class AreaList:
             case _:
                 raise ValueError(f"Unsupported infiltration type: {infiltration_type}")
     
-    def _write_polygons_section(self, f):
+    def _write_polygons_section(self, file):
         """
         Writes the Polygons section to the file.
         
         Args:
-            f (file): Open file handle to write to
+            file (file): Open file handle to write to
         """
-        f.write('\n\n[Polygons]\n')
-        f.write(';;Subcatchment   X-Coord            Y-Coord\n')
-        for area in self.data:
-            if area.polygon.area_name is not None:
-                for xi, yi in zip(area.polygon.x, area.polygon.y):
-                    f.write(f'{area.polygon.area_name}  {xi}  {yi}\n')
+        # Check if any areas have polygon data
+        has_polygons = any(area.polygon.area_name is not None for area in self.data)
+
+        if has_polygons:
+            # Read file line by line to find sections
+            with open(file.name, 'r') as read_file:
+                lines = read_file.readlines()
+            # Find [Polygons] section
+            polygons_line = -1
+            next_section_line = -1
+            for i, line in enumerate(lines):
+                if line.strip() == '[Polygons]':
+                    polygons_line = i
+                elif polygons_line != -1 and line.strip().startswith('['):
+                    next_section_line = i
+                    break
+            if polygons_line == -1:
+                # No existing section, create new one at current position
+                file.write('\n\n[Polygons]\n')
+                file.write(';;Name          X-Coord            Y-Coord\n')
+
+                # Write polygon data
+                for area in self.data:
+                    if area.polygon.area_name is not None:
+                        for xi, yi in zip(area.polygon.x, area.polygon.y):
+                            file.write(f'{area.polygon.area_name}  {xi}  {yi}\n')
+            else:
+                # Section exists, we need to modify file content
+                # Insert our polygon data just after the header line
+                insert_position = polygons_line + 2  # +1 for the header, +1 for the column labels
+
+                # Prepare polygon data lines
+                new_lines = []
+                for area in self.data:
+                    if area.polygon.area_name is not None:
+                        for xi, yi in zip(area.polygon.x, area.polygon.y):
+                            new_lines.append(f'{area.polygon.area_name}  {xi}  {yi}\n')
+
+                # Insert the new lines at the appropriate position
+                lines[insert_position:insert_position] = new_lines
+
+                # Rewrite the entire file
+                file.seek(0)
+                file.writelines(lines)
+                file.truncate()
     
     def write_to_swmm_inp(self, filename):
         """
