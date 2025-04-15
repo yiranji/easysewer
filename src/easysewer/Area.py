@@ -292,8 +292,8 @@ class AreaList:
         
         # Set identification attributes
         new_area.name = area_information.get('name', self._generate_default_name())
-        new_area.rain_gage = area_information.get('rain_gage', '')
-        new_area.outlet = area_information.get('outlet', '')
+        new_area.rain_gage = area_information.get('rain_gage', '*')
+        new_area.outlet = area_information.get('outlet', '*')
         
         # Set physical attributes
         # Validate and set physical attributes
