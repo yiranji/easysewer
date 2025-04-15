@@ -21,6 +21,7 @@ class Node:
         coordinate (list): [x, y] coordinates of the node
         elevation (float): Node invert elevation
     """
+
     def __init__(self):
         self.name = ''
         self.coordinate = [0.0, 0.0]
@@ -46,6 +47,7 @@ class Junction(Node):
         dwf_patterns (list): Time patterns for dry weather flow
         inflow (dict): Inflow characteristics and time series
     """
+
     def __init__(self):
         Node.__init__(self)
         self.maximum_depth = 0
@@ -72,6 +74,7 @@ class Outfall(Node):
         flap_gate (bool): Whether backflow prevention is present
         route_to (str): Routing destination for diverted flow
     """
+
     def __init__(self):
         Node.__init__(self)
         self.flap_gate = False
@@ -87,6 +90,7 @@ class OutfallFree(Outfall):
     Attributes:
         Inherits all attributes from Outfall class
     """
+
     def __init__(self):
         Outfall.__init__(self)
 
@@ -100,6 +104,7 @@ class OutfallNormal(Outfall):
     Attributes:
         Inherits all attributes from Outfall class
     """
+
     def __init__(self):
         Outfall.__init__(self)
 
@@ -114,6 +119,7 @@ class OutfallFixed(Outfall):
         Inherits all attributes from Outfall class
         stage (float): Fixed water surface elevation at the outfall
     """
+
     def __init__(self):
         Outfall.__init__(self)
         self.stage = 0.0
@@ -129,6 +135,7 @@ class OutfallTidal(Outfall):
         Inherits all attributes from Outfall class
         tidal (str): Tidal condition identifier or time series name
     """
+
     def __init__(self):
         Outfall.__init__(self)
         self.tidal = ''
@@ -144,9 +151,117 @@ class OutfallTimeseries(Outfall):
         Inherits all attributes from Outfall class
         time_series (str): Name of time series defining water surface elevation
     """
+
     def __init__(self):
         Outfall.__init__(self)
         self.time_series = ''
+
+
+class Polygon:
+    """
+    Geometric representation of a node's boundary.
+    
+    Stores the polygon vertices that define the boundary of a node.
+    
+    Attributes:
+        node_name (str): Name of the associated node
+        x (list): List of x-coordinates of polygon vertices
+        y (list): List of y-coordinates of polygon vertices
+    """
+
+    def __init__(self):
+        self.node_name = None
+        self.x = []
+        self.y = []
+
+
+class Storage(Node):
+    """
+    Base class for storage nodes in the drainage network.
+    
+    Represents a storage unit in the drainage network with volume and depth properties.
+    
+    Attributes:
+        maximum_depth (float): Maximum water depth in storage unit
+        initial_depth (float): Initial water depth at start of simulation
+        overload_depth (float): Depth above which overflows occur
+        evaporation_factor (float): Factor adjusting evaporation rate
+        seepage_suction_head (float): Soil suction head for seepage calculations
+        seepage_conductivity (float): Soil hydraulic conductivity for seepage
+        seepage_initial_deficit (float): Initial soil moisture deficit
+        inflow (dict): Inflow characteristics and time series
+        polygon (Polygon): Geometric representation of the storage node boundary
+    """
+
+    def __init__(self):
+        Node.__init__(self)
+        self.maximum_depth = 0
+        self.initial_depth = 0
+        self.overload_depth = 0
+        self.evaporation_factor = 0
+        self.seepage_suction_head = None
+        self.seepage_conductivity = None
+        self.seepage_initial_deficit = None
+        #
+        # inflow
+        self.inflow = None
+        #
+        # polygon boundary
+        self.polygon = Polygon()
+
+
+class StorageFunctional(Storage):
+    """
+    Functional storage node type.
+    
+    Represents a storage unit with volume defined by a functional relationship.
+    
+    Attributes:
+        Inherits all attributes from Storage class
+        constant (float): Constant term in functional relationship
+        coefficient (float): Coefficient in functional relationship
+        exponent (float): Exponent in functional relationship
+    """
+
+    def __init__(self):
+        Storage.__init__(self)
+        self.constant = 0.0
+        self.coefficient = 0.0
+        self.exponent = 0.0
+
+
+class StorageCylindrical(Storage):
+    """
+    Cylindrical storage node type.
+    
+    Represents a storage unit with cylindrical shape.
+    
+    Attributes:
+        Inherits all attributes from Storage class
+        major_axis_length (float): Length of major axis
+        minor_axis_length (float): Length of minor axis
+    """
+
+    def __init__(self):
+        Storage.__init__(self)
+        self.major_axis_length = 0.0
+        self.minor_axis_length = 0.0
+
+
+class StorageTabular(Storage):
+    """
+    Tabular storage node type.
+    
+    Represents a storage unit with volume defined by a tabular curve.
+    
+    Attributes:
+        Inherits all attributes from Storage class
+        storage_curve_name (str): Name of curve defining storage volume
+    """
+
+    def __init__(self):
+        Storage.__init__(self)
+        self.storage_curve_name = ''
 
 
 class NodeList:
@@ -165,6 +280,7 @@ class NodeList:
             'max_x' (float): Maximum x-coordinate
             'max_y' (float): Maximum y-coordinate
     """
+
     def __init__(self):
         self.data = []
         self.bounds = {
@@ -311,6 +427,33 @@ class NodeList:
             'outfallnormal': {}
         }
 
+        # Level 2: Attributes for storage nodes with defaults
+        storage_attrs = {
+            'maximum_depth': lambda _, info: info.get('maximum_depth', 10.0),
+            'initial_depth': lambda _, info: info.get('initial_depth', 0.0),
+            'overload_depth': lambda _, info: info.get('overload_depth', 0.0),
+            'evaporation_factor': lambda _, info: info.get('evaporation_factor', 0.0),
+            'seepage_suction_head': lambda _, info: info.get('seepage_suction_head', None),
+            'seepage_conductivity': lambda _, info: info.get('seepage_conductivity', None),
+            'seepage_initial_deficit': lambda _, info: info.get('seepage_initial_deficit', None)
+        }
+
+        # Level 3: Specific attributes for storage subtypes with defaults
+        storage_specific_attrs = {
+            'storagefunctional': {
+                'constant': lambda _, info: info.get('constant', 0.0),
+                'coefficient': lambda _, info: info.get('coefficient', 0.0),
+                'exponent': lambda _, info: info.get('exponent', 0.0)
+            },
+            'storagecylindrical': {
+                'major_axis_length': lambda _, info: info.get('major_axis_length', 0.0),
+                'minor_axis_length': lambda _, info: info.get('minor_axis_length', 0.0)
+            },
+            'storagetabular': {
+                'storage_curve_name': lambda _, info: info.get('storage_curve_name', '')
+            }
+        }
+
         # Define node type configurations
         node_types = {
             'junction': {
@@ -336,6 +479,18 @@ class NodeList:
             'outfalltimeseries': {
                 'class': OutfallTimeseries,
                 'attrs': {**node_base_attrs, **outfall_base_attrs, **outfall_specific_attrs['outfalltimeseries']}
+            },
+            'storagefunctional': {
+                'class': StorageFunctional,
+                'attrs': {**node_base_attrs, **storage_attrs, **storage_specific_attrs['storagefunctional']}
+            },
+            'storagecylindrical': {
+                'class': StorageCylindrical,
+                'attrs': {**node_base_attrs, **storage_attrs, **storage_specific_attrs['storagecylindrical']}
+            },
+            'storagetabular': {
+                'class': StorageTabular,
+                'attrs': {**node_base_attrs, **storage_attrs, **storage_specific_attrs['storagetabular']}
             }
         }
 
@@ -445,9 +600,11 @@ class NodeList:
         Processes the following sections from SWMM input file:
         - [JUNCTIONS]
         - [OUTFALLS]
+        - [STORAGE]
         - [COORDINATES]
         - [DWF]
         - [INFLOWS]
+        - [Polygons] (for Storage nodes)
         
         Args:
             filename (str): Path to the SWMM input file
@@ -468,17 +625,21 @@ class NodeList:
             junction_contents = get_swmm_inp_content(filename, '[JUNCTIONS]')
             coordinates = get_swmm_inp_content(filename, '[COORDINATES]')
             outfall_contents = get_swmm_inp_content(filename, '[OUTFALLS]')
+            storage_contents = get_swmm_inp_content(filename, '[STORAGE]')
             dwf_contents = get_swmm_inp_content(filename, '[DWF]')
             inflow_contents = get_swmm_inp_content(filename, '[INFLOWS]')
+            polygon_contents = get_swmm_inp_content(filename, '[Polygons]')
 
-            # Process coordinates (needed by both junctions and outfalls)
+            # Process coordinates (needed by all node types)
             coordinates_dic = self._process_coordinates(coordinates)
 
             # Process each node type
             self._process_junctions(junction_contents, coordinates_dic)
             self._process_outfalls(outfall_contents, coordinates_dic)
+            self._process_storage(storage_contents, coordinates_dic)
             self._process_dry_weather_flows(dwf_contents)
             self._process_inflows(inflow_contents)
+            self._process_polygons(polygon_contents)
 
             return 0
         except Exception as e:
@@ -560,6 +721,113 @@ class NodeList:
                 # Log error but continue processing other outfalls
                 print(f"Warning: Error processing outfall '{parts[0]}': {str(e)}")
 
+    def _process_storage(self, storage_contents, coordinates_dic):
+        """Process storage data from SWMM input file."""
+        for line in storage_contents:
+            parts = line.split()
+            if len(parts) < 5:  # Skip lines with insufficient data
+                continue
+
+            try:
+                # Set up common attributes
+                dic = {
+                    'name': parts[0],
+                    'coordinate': coordinates_dic.get(parts[0], [0.0, 0.0]),
+                    'elevation': float(parts[1]),
+                    'maximum_depth': float(parts[2]),
+                    'initial_depth': float(parts[3])
+                }
+
+                # Process storage type - check the 5th element (index 4)
+                storage_type = parts[4]
+
+                # Process specific storage type parameters based on storage type
+                if storage_type == 'FUNCTIONAL':
+                    # For FUNCTIONAL: coefficient exponent constant
+                    if len(parts) > 7:  # Ensure we have at least the required parameters
+                        dic['coefficient'] = float(parts[5])
+                        dic['exponent'] = float(parts[6])
+                        dic['constant'] = float(parts[7])
+
+                        # Process required parameters: overload_depth and evaporation_factor
+                        idx = 8  # Start index for additional parameters
+
+                        # overload_depth and evaporation_factor are required
+                        if len(parts) > idx + 1:  # Need both overload_depth and evaporation_factor
+                            dic['overload_depth'] = float(parts[idx])
+                            dic['evaporation_factor'] = float(parts[idx + 1])
+                            idx += 2
+
+                            # Check for seepage parameters - all three must be present or none
+                            if len(parts) > idx + 2:  # Need all three seepage parameters
+                                dic['seepage_suction_head'] = float(parts[idx])
+                                dic['seepage_conductivity'] = float(parts[idx + 1])
+                                dic['seepage_initial_deficit'] = float(parts[idx + 2])
+                        else:
+                            # Default values for required parameters if not provided
+                            dic['overload_depth'] = 0.0
+                            dic['evaporation_factor'] = 0.0
+
+                    self.add_node('storage_functional', dic)
+
+                elif storage_type == 'CYLINDRICAL':
+                    # For CYLINDRICAL: major_axis_length minor_axis_length 0
+                    if len(parts) > 7:  # Ensure we have at least the required parameters
+                        dic['major_axis_length'] = float(parts[5])
+                        dic['minor_axis_length'] = float(parts[6])
+                        # Skip the placeholder value '0' at index 7
+
+                        # Process required parameters: overload_depth and evaporation_factor
+                        idx = 8  # Start index for additional parameters
+
+                        # overload_depth and evaporation_factor are required
+                        if len(parts) > idx + 1:  # Need both overload_depth and evaporation_factor
+                            dic['overload_depth'] = float(parts[idx])
+                            dic['evaporation_factor'] = float(parts[idx + 1])
+                            idx += 2
+
+                            # Check for seepage parameters - all three must be present or none
+                            if len(parts) > idx + 2:  # Need all three seepage parameters
+                                dic['seepage_suction_head'] = float(parts[idx])
+                                dic['seepage_conductivity'] = float(parts[idx + 1])
+                                dic['seepage_initial_deficit'] = float(parts[idx + 2])
+                        else:
+                            # Default values for required parameters if not provided
+                            dic['overload_depth'] = 0.0
+                            dic['evaporation_factor'] = 0.0
+
+                    self.add_node('storage_cylindrical', dic)
+
+                elif storage_type == 'TABULAR':
+                    # For TABULAR: storage_curve_name
+                    if len(parts) > 5:  # Ensure we have at least the required parameters
+                        dic['storage_curve_name'] = parts[5]
+
+                        # Process required parameters: overload_depth and evaporation_factor
+                        idx = 6  # Start index for additional parameters
+
+                        # overload_depth and evaporation_factor are required
+                        if len(parts) > idx + 1:  # Need both overload_depth and evaporation_factor
+                            dic['overload_depth'] = float(parts[idx])
+                            dic['evaporation_factor'] = float(parts[idx + 1])
+                            idx += 2
+
+                            # Check for seepage parameters - all three must be present or none
+                            if len(parts) > idx + 2:  # Need all three seepage parameters
+                                dic['seepage_suction_head'] = float(parts[idx])
+                                dic['seepage_conductivity'] = float(parts[idx + 1])
+                                dic['seepage_initial_deficit'] = float(parts[idx + 2])
+                        else:
+                            # Default values for required parameters if not provided
+                            dic['overload_depth'] = 0.0
+                            dic['evaporation_factor'] = 0.0
+
+                    self.add_node('storage_tabular', dic)
+
+            except (ValueError, KeyError) as e:
+                # Log error but continue processing other storage nodes
+                print(f"Warning: Error processing storage '{parts[0]}': {str(e)}")
+
     def _process_dry_weather_flows(self, dwf_contents):
         """Process dry weather flow data from SWMM input file."""
         for line in dwf_contents:
@@ -605,6 +873,24 @@ class NodeList:
                 if hasattr(node, 'inflow'):
                     node.inflow = inflow_data
 
+    def _process_polygons(self, polygon_contents):
+        """Process polygon data from SWMM input file for Storage nodes."""
+        for line in polygon_contents:
+            try:
+                parts = line.split()
+                node_name = parts[0]
+                x_coord = float(parts[1])
+                y_coord = float(parts[2])
+
+                for node in self.data:
+                    if isinstance(node, Storage) and node.name == node_name:
+                        node.polygon.x.append(x_coord)
+                        node.polygon.y.append(y_coord)
+                        node.polygon.node_name = node_name
+            except (IndexError, ValueError) as e:
+                # Log warning but continue processing other polygons
+                print(f"Warning: Error processing polygon data: {str(e)}")
+
     def write_to_swmm_inp(self, filename):
         """
         Write node data to a SWMM input file.
@@ -612,9 +898,11 @@ class NodeList:
         Writes the following sections to SWMM input file:
         - [JUNCTIONS]
         - [OUTFALLS]
+        - [STORAGE]
         - [COORDINATES]
         - [DWF]
         - [INFLOWS]
+        - [Polygons] (for Storage nodes)
         
         Args:
             filename (str): Path to the SWMM input file
@@ -636,6 +924,9 @@ class NodeList:
                 # Write outfalls section
                 self._write_outfalls_section(f)
 
+                # Write storage section
+                self._write_storage_section(f)
+
                 # Write coordinates section
                 self._write_coordinates_section(f)
 
@@ -644,6 +935,9 @@ class NodeList:
 
                 # Write inflows section
                 self._write_inflows_section(f)
+
+                # Write polygons section for Storage nodes
+                self._write_polygons_section(f)
 
             return 0
         except IOError as e:
@@ -708,16 +1002,110 @@ class NodeList:
                 patterns = ' '.join(node.dwf_patterns if hasattr(node, 'dwf_patterns') and node.dwf_patterns else [])
                 file.write(f'{node.name}  FLOW  {node.dwf_base_value}  {patterns}\n')
 
+    def _write_storage_section(self, file):
+        """Write storage section to the SWMM input file."""
+        file.write('\n\n[STORAGE]\n')
+        file.write(
+            ';;Name           Elev.    MaxDepth   InitDepth  Shape      Curve/Params                  SurDepth  Fevap    Seepage\n')
+
+        for node in self.data:
+            if isinstance(node, Storage):
+                # Common parameters for all storage types
+                base_params = f'{node.name:14}  {node.elevation:8.3f}  {node.maximum_depth:8.3f}  {node.initial_depth:8.3f}  '
+
+                # Storage type specific parameters
+                if isinstance(node, StorageFunctional):
+                    # For FUNCTIONAL: coefficient exponent constant
+                    shape_params = f'FUNCTIONAL  {node.coefficient:8.3f}  {node.exponent:8.3f}  {node.constant:8.3f}  '
+                elif isinstance(node, StorageCylindrical):
+                    # For CYLINDRICAL: major_axis_length minor_axis_length 0
+                    shape_params = f'CYLINDRICAL  {node.major_axis_length:8.3f}  {node.minor_axis_length:8.3f}  0  '
+                elif isinstance(node, StorageTabular):
+                    # For TABULAR: storage_curve_name
+                    shape_params = f'TABULAR  {node.storage_curve_name:8}  '
+                else:
+                    # Skip unknown storage types
+                    continue
+
+                # Required parameters (overload_depth and evaporation_factor are always included)
+                required_params = f'{node.overload_depth:8.3f}  {node.evaporation_factor:8.3f}  '
+
+                # Seepage parameters (if present)
+                if (node.seepage_suction_head is not None and
+                        node.seepage_conductivity is not None and
+                        node.seepage_initial_deficit is not None):
+                    seepage_params = f'{node.seepage_suction_head:8.3f}  {node.seepage_conductivity:8.3f}  {node.seepage_initial_deficit:8.3f}'
+                else:
+                    seepage_params = ''
+
+                # Write the complete line
+                file.write(f'{base_params}{shape_params}{required_params}{seepage_params}\n')
+
     def _write_inflows_section(self, file):
         """Write inflows section to the SWMM input file."""
         file.write('\n\n[INFLOWS]\n')
         file.write(';;Node           Constituent      Time Series      Type     Mfactor  Sfactor  Baseline Pattern\n')
 
         for node in self.data:
-            if isinstance(node, Junction) and hasattr(node, 'inflow') and node.inflow is not None:
+            if (isinstance(node, Junction) or isinstance(node, Storage)) and hasattr(node,'inflow') and node.inflow is not None:
                 values = list(node.inflow.values())
                 formatted_values = '    '.join(str(value) for value in values)
                 file.write(f'{node.name}  FLOW  {formatted_values}  \n')
+
+    def _write_polygons_section(self, file):
+        """Write polygons section to the SWMM input file for Storage nodes."""
+        # Check if any Storage nodes have polygon data
+        has_polygons = any(isinstance(node, Storage) and
+                           hasattr(node, 'polygon') and
+                           node.polygon.node_name is not None and
+                           len(node.polygon.x) > 0 for node in self.data)
+
+        if has_polygons:
+            # Read file line by line to find sections
+            with open(file.name, 'r') as read_file:
+                lines = read_file.readlines()
+            # Find [Polygons] section
+            polygons_line = -1
+            next_section_line = -1
+            for i, line in enumerate(lines):
+                if line.strip() == '[Polygons]':
+                    polygons_line = i
+                elif polygons_line != -1 and line.strip().startswith('['):
+                    next_section_line = i
+                    break
+            if polygons_line == -1:
+                # No existing section, create new one at current position
+                file.write('\n\n[Polygons]\n')
+                file.write(';;Name          X-Coord            Y-Coord\n')
+
+                # Write polygon data
+                for node in self.data:
+                    if (isinstance(node, Storage) and
+                            hasattr(node, 'polygon') and
+                            node.polygon.node_name is not None):
+                        for xi, yi in zip(node.polygon.x, node.polygon.y):
+                            file.write(f'{node.polygon.node_name}  {xi}  {yi}\n')
+            else:
+                # Section exists, we need to modify file content
+                # Insert our polygon data just after the header line
+                insert_position = polygons_line + 2  # +1 for the header, +1 for the column labels
+
+                # Prepare polygon data lines
+                new_lines = []
+                for node in self.data:
+                    if (isinstance(node, Storage) and
+                            hasattr(node, 'polygon') and
+                            node.polygon.node_name is not None):
+                        for xi, yi in zip(node.polygon.x, node.polygon.y):
+                            new_lines.append(f'{node.polygon.node_name}  {xi}  {yi}\n')
+
+                # Insert the new lines at the appropriate position
+                lines[insert_position:insert_position] = new_lines
+
+                # Rewrite the entire file
+                file.seek(0)
+                file.writelines(lines)
+                file.truncate()
 
     def index_of(self, node_name, return_node=False):
         """
@@ -737,4 +1125,3 @@ class NodeList:
             if item.name == node_name:
                 return item if return_node else index
         raise ValueError(f"No item found with name '{node_name}'")
-
