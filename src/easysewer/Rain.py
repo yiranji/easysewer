@@ -4,7 +4,7 @@ Rainfall Data Management Module
 This module handles rainfall data input and processing, including rain gages,
 time series data, and rainfall patterns for the drainage model.
 """
-
+from warnings import warn
 from .utils import *
 
 
@@ -116,21 +116,23 @@ class RainGage:
 
     Attributes:
         name (str): Unique identifier for the rain gage
-        format (str): Format of the rainfall data (INTENSITY/VOLUME/CUMULATIVE)
+        form (str): Format of the rainfall data (INTENSITY/VOLUME/CUMULATIVE)
         interval (float): Recording time interval
-        snow_catch (float): Snow catch deficiency correction
-        data_source (str): Source of the rainfall data
-        time_series (str): Name of associated time series data
+        source_type (str): Source type (TIMESERIES or FILE)
+        unit (str): Unit for FILE source (e.g., mm)
     """
     def __init__(self):
         self.name = ''
         self.form = ''  # INTENSIFY: mm/h
         self.interval = ''
         self.SCF = 1  # snow catch deficiency correction factor (use 1.0 for no adjustment)
-        self.source = ''  # timeseries name
+        self.source = ''  # timeseries name or file name
+        self.source_type = 'TIMESERIES'  # TIMESERIES or FILE
+        self.station_id = None  # Only for FILE source
+        self.unit = None  # Only for FILE source
 
     def __repr__(self):
-        return f'RainGage<{self.name}>: {self.source}'
+        return f'RainGage<{self.name}>: {self.source} ({self.source_type})'
 
 
 class Rain:
@@ -217,13 +219,34 @@ class Rain:
         # rain gage section
         content = get_swmm_inp_content(filename, '[RAINGAGES]')
         for line in content:
-            name, form, interval, SCF, _, tise = line.split()
-            this_gage = RainGage()
-            this_gage.name = name
-            this_gage.form = form
-            this_gage.interval = interval
-            this_gage.SCF = SCF
-            this_gage.source = tise
+            parts = line.split()
+            if len(parts) < 6:
+                continue  # skip malformed lines
+            source_type = parts[4]
+            if source_type == 'TIMESERIES' and len(parts) == 6:
+                name, form, interval, SCF, source_type, tise = parts
+                this_gage = RainGage()
+                this_gage.name = name
+                this_gage.form = form
+                this_gage.interval = interval
+                this_gage.SCF = SCF
+                this_gage.source_type = source_type
+                this_gage.source = tise
+                # unit remains default
+            elif source_type == 'FILE' and len(parts) == 8:
+                name, form, interval, SCF, source_type, filepath, station_id, unit = parts
+                this_gage = RainGage()
+                this_gage.name = name
+                this_gage.form = form
+                this_gage.interval = interval
+                this_gage.SCF = SCF
+                this_gage.source_type = source_type
+                this_gage.source = filepath
+                this_gage.station_id = station_id
+                this_gage.unit = unit
+            else:
+                warn(f'Failed to add rain gauge for content "{line}".')
+                continue  # skip malformed lines
             self.add_gage(this_gage)
         return 0
 
@@ -262,8 +285,14 @@ class Rain:
                 f.write(';;\n')
 
             f.write('\n\n[RAINGAGES]\n')
-            f.write(';;Name  Format   Interval  SCF  Source    \n')
-            f.write(';;----- -------- --------- ---- ----------\n')
+            f.write(';;Name  Format   Interval  SCF  SourceType  Source    [Unit]\n')
+            f.write(';;----- -------- --------- ---- ----------  ---------- -------\n')
             for gage in self.gage_list:
-                f.write(f'{gage.name}  {gage.form}  {gage.interval}  {gage.SCF}  TIMESERIES  {gage.source}\n')
+                if gage.source_type == 'TIMESERIES':
+                    f.write(f'{gage.name}  {gage.form}  {gage.interval}  {gage.SCF}  TIMESERIES  {gage.source}\n')
+                elif gage.source_type == 'FILE':
+                    f.write(f'{gage.name}  {gage.form}  {gage.interval}  {gage.SCF}  FILE  {gage.source}  {gage.station_id}  {gage.unit}\n')
+                else:
+                    # fallback for unknown type
+                    raise ValueError(f"Unknown source type: {gage.source_type}")
             return 0
