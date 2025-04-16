@@ -4,6 +4,7 @@ Subcatchment Area Management Module
 This module handles subcatchment areas in the drainage network, including their
 physical characteristics, infiltration parameters, and routing behavior.
 """
+from warnings import warn
 from .utils import *
 
 
@@ -299,22 +300,22 @@ class AreaList:
         # Validate and set physical attributes
         area_value = area_information.get('area', 0.0)
         if area_value <= 0:
-            raise ValueError(f"Area must be a positive number, got {area_value}")
+            warn(f"Area must be a positive number, got {area_value}")
         new_area.area = area_value
         
         impervious_ratio_value = area_information.get('impervious_ratio', 0)
         if not (0 <= impervious_ratio_value <= 100):
-            raise ValueError(f"Impervious ratio must be between 0 and 100, got {impervious_ratio_value}")
+            warn(f"Impervious ratio must be between 0 and 100, got {impervious_ratio_value}")
         new_area.impervious_ratio = impervious_ratio_value
         
         width_value = area_information.get('width', 0)
         if width_value <= 0:
-            raise ValueError(f"Width must be positive number, got {width_value}")
+            warn(f"Width must be positive number, got {width_value}")
         new_area.width = width_value
         
         slope_value = area_information.get('slope', 0)
         if slope_value <= 0:
-            raise ValueError(f"Slope must be positive number, got {slope_value}")
+            warn(f"Slope must be positive number, got {slope_value}")
         new_area.slope = slope_value
         
         # Set surface attributes
@@ -325,27 +326,27 @@ class AreaList:
         # Validate hydraulic parameters
         manning_impervious = area_information.get('manning_impervious', 0)
         if not (0.01 <= manning_impervious <= 0.5):
-            raise ValueError(f"Manning's n for impervious area must be between 0.01-0.5, got {manning_impervious}")
+            warn(f"Manning's n for impervious area must be between 0.01-0.5, got {manning_impervious}")
         new_area.manning_impervious = manning_impervious
         
         manning_pervious = area_information.get('manning_pervious', 0)
         if not (0.01 <= manning_pervious <= 0.8):
-            raise ValueError(f"Manning's n for pervious area must be between 0.01-0.8, got {manning_pervious}")
+            warn(f"Manning's n for pervious area must be between 0.01-0.8, got {manning_pervious}")
         new_area.manning_pervious = manning_pervious
         
         depression_impervious = area_information.get('depression_impervious', 0)
         if depression_impervious < 0:
-            raise ValueError(f"Depression storage for impervious area cannot be negative, got {depression_impervious}")
+            warn(f"Depression storage for impervious area cannot be negative, got {depression_impervious}")
         new_area.depression_impervious = depression_impervious
         
         depression_pervious = area_information.get('depression_pervious', 0)
         if depression_pervious < 0:
-            raise ValueError(f"Depression storage for pervious area cannot be negative, got {depression_pervious}")
+            warn(f"Depression storage for pervious area cannot be negative, got {depression_pervious}")
         new_area.depression_pervious = depression_pervious
         
         impervious_without_depression = area_information.get('impervious_without_depression', 0)
         if not (0 <= impervious_without_depression <= 100):
-            raise ValueError(f"Impervious without depression must be 0-100%, got {impervious_without_depression}")
+            warn(f"Impervious without depression must be 0-100%, got {impervious_without_depression}")
         new_area.impervious_without_depression = impervious_without_depression
         
         # Set routing attributes
