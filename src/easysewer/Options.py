@@ -42,7 +42,7 @@ class CalculationInformation:
     """
     def __init__(self):
         # general option
-        self.flow_unit = 'CFS'
+        self.flow_unit = 'CMS'
         self.infiltration_method = 'HORTON'
         self.flow_routing_method = 'KINWAVE'
         self.link_offsets_type = 'DEPTH'
