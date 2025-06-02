@@ -68,21 +68,27 @@ class Model(UrbanDrainageModel):
         unique_id = str(uuid.uuid4())
         # Define output directory
         output_dir = 'simulation_output'
-        # Check if directory exists, create it if not
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+
         # Combine datetime and UUID for a unique filename
         model_name = f"{date_string}_{unique_id}"
         # Set default file paths if not provided
         if inp_file is None:
             inp_file = os.path.join(output_dir, f"{model_name}.inp")
+            # Check if directory exists, create it if not
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            # Export model to desired path
+            self.to_inp(inp_file)
         if rpt_file is None:
             rpt_file = os.path.join(output_dir, f"{model_name}.rpt")
+            # Check if directory exists, create it if not
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
         if out_file is None:
             out_file = os.path.join(output_dir, f"{model_name}.out")
-
-        # Export model to desired path
-        self.to_inp(inp_file)
+            # Check if directory exists, create it if not
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
 
         # Initialize swmm solver
         solver = SWMMSolverAPI()
@@ -142,14 +148,14 @@ class Model(UrbanDrainageModel):
             if progress_int > last_progress_int:
                 # Calculate the number of characters to fill
                 filled_length = int(bar_length * progress / 100)
-                bar = '█' * filled_length + '-' * (bar_length - filled_length)
+                bar = '=' * filled_length + '+' * (bar_length - filled_length)
 
                 # Print the entire progress bar each time (overwriting previous one)
                 print(f"\r[{bar}] {progress_int}%", end='', flush=True)
                 last_progress_int = progress_int
 
         # Complete the progress bar when finished
-        print(f"\r[{'█' * bar_length}] 100%")
+        print(f"\r[{'=' * bar_length}] 100%")
 
         # End the simulation
         err = solver.end()
