@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "easysewer"
-version = "0.0.4"
+version = "0.0.5"
 authors = [
     {name = "Yiran Ji", email = "yiranji@zju.edu.cn"}
 ]
@@ -34,8 +34,8 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.package-data]
 easysewer = [
-    "libs/win/*.dll",
-    "libs/linux/*.so"
+    "libs/win/*.esdll",
+    "libs/linux/*.esso"
 ]
 
 [dependency-groups]

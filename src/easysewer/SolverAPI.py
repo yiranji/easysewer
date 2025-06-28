@@ -3,17 +3,51 @@ pass
 """
 import platform
 import os
+import sys
 from ctypes import CDLL, c_char_p, c_int, c_double, c_float, byref, POINTER, create_string_buffer
 
 
 class SWMMSolverAPI:
     def __init__(self):
         #
+        if getattr(sys, 'frozen', False):
+            if hasattr(sys, '_MEIPASS'):
+                base_path = sys._MEIPASS
+            else:
+                base_path = os.path.dirname(sys.executable)
+        else:
+            # Develop environment
+            base_path = os.path.dirname(os.path.abspath(__file__))
+
         system = platform.system()
         if system == 'Windows':
-            lib_path = os.path.join(os.path.dirname(__file__), 'libs', 'win', 'swmm5.dll')
+            possible_paths = [
+                os.path.join(base_path, 'libs', 'win', 'swmm5.dll.esdll'),
+                os.path.join(base_path, 'easysewer', 'libs', 'win', 'swmm5.dll.esdll'),
+                os.path.join(os.path.dirname(__file__), 'libs', 'win', 'swmm5.dll.esdll')
+            ]
+            lib_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    lib_path = path
+                    break
+            if lib_path is None:
+                raise FileNotFoundError(f"Could not find swmm-output.dll in any of these locations: {possible_paths}")
+
         elif system == 'Linux':
-            lib_path = os.path.join(os.path.dirname(__file__), 'libs', 'linux', 'libswmm5.so')
+            possible_paths = [
+                os.path.join(base_path, 'libs', 'linux', 'libswmm5.so.esso'),
+                os.path.join(base_path, 'easysewer', 'libs', 'linux', 'libswmm5.so.esso'),
+                os.path.join(os.path.dirname(__file__), 'libs', 'linux', 'libswmm5.so.esso')
+            ]
+            lib_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    lib_path = path
+                    break
+            if lib_path is None:
+                raise FileNotFoundError(f"Could not find swmm-output.so in any of these locations: {possible_paths}")
+
         else:
             raise OSError('Unsupported operating system')
 

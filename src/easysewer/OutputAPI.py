@@ -4,16 +4,50 @@ pass
 import ctypes
 import platform
 import os
+import sys
 
 
 class SWMMOutputAPI:
     def __init__(self):
         #
+        if getattr(sys, 'frozen', False):
+            if hasattr(sys, '_MEIPASS'):
+                base_path = sys._MEIPASS
+            else:
+                base_path = os.path.dirname(sys.executable)
+        else:
+            # Develop environment
+            base_path = os.path.dirname(os.path.abspath(__file__))
+
         system = platform.system()
         if system == 'Windows':
-            lib_path = os.path.join(os.path.dirname(__file__), 'libs', 'win', 'swmm-output.dll')
+            possible_paths = [
+                os.path.join(base_path, 'libs', 'win', 'swmm-output.dll.esdll'),
+                os.path.join(base_path, 'easysewer', 'libs', 'win', 'swmm-output.dll.esdll'),
+                os.path.join(os.path.dirname(__file__), 'libs', 'win', 'swmm-output.dll.esdll')  # 原始路径作为备选
+            ]
+            lib_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    lib_path = path
+                    break
+            if lib_path is None:
+                raise FileNotFoundError(f"Could not find swmm-output.dll in any of these locations: {possible_paths}")
+
         elif system == 'Linux':
-            lib_path = os.path.join(os.path.dirname(__file__), 'libs', 'linux', 'swmm-output.so')
+            possible_paths = [
+                os.path.join(base_path, 'libs', 'linux', 'swmm-output.so.esso'),
+                os.path.join(base_path, 'easysewer', 'libs', 'linux', 'swmm-output.so.esso'),
+                os.path.join(os.path.dirname(__file__), 'libs', 'linux', 'swmm-output.so.esso')
+            ]
+            lib_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    lib_path = path
+                    break
+            if lib_path is None:
+                raise FileNotFoundError(f"Could not find swmm-output.so in any of these locations: {possible_paths}")
+
         else:
             raise OSError('Unsupported operating system')
         #
