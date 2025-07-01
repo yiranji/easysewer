@@ -270,11 +270,12 @@ class AreaList:
         # Generate name with next number
         return f"{prefix}{existing_count + 1}"
 
-    def add_area(self, area_information):
+    def add_area(self, area_information, check=False):
         """
         Creates and adds a new Area object to the list based on provided information.
         
         Args:
+            check: if check
             area_information (dict): Dictionary containing area properties
             
         Returns:
@@ -283,16 +284,17 @@ class AreaList:
         Raises:
             ValueError: If an area with the same name already exists
         """
-        # Check if a name is provided and if it already exists in the collection
-        if 'name' in area_information:
-            requested_name = area_information['name']
-            if any(area.name == requested_name for area in self.data):
-                raise ValueError(f"Area with name '{requested_name}' already exists")
+        if check:
+            # Check if a name is provided and if it already exists in the collection
+            if 'name' in area_information:
+                requested_name = area_information['name']
+                if any(area.name == requested_name for area in self.data):
+                    raise ValueError(f"Area with name '{requested_name}' already exists")
                 
         new_area = Area()
         
         # Set identification attributes
-        new_area.name = area_information.get('name', self._generate_default_name())
+        new_area.name = area_information['name'] if 'name' in area_information else self._generate_default_name()
         new_area.rain_gage = area_information.get('rain_gage', '*')
         new_area.outlet = area_information.get('outlet', '*')
         

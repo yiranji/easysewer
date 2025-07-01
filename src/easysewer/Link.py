@@ -222,12 +222,13 @@ class LinkList:
         """
         return item in self.data
 
-    def add_link(self, link_type, link_information=None):
+    def add_link(self, link_type, link_information=None, check=False):
         """
         Add a new link to the data structure based on its type and information.
         Generates default values for missing essential attributes.
 
         Args:
+            check: if check
             link_type (str): Type of link to add (e.g., 'conduit_circle', 'conduit_filled_circle')
             link_information (dict, optional): Dictionary containing link attributes
                                               Defaults to empty dict if None
@@ -257,16 +258,20 @@ class LinkList:
         else:
             normalized_type = 'conduit' + normalized_type
 
-        # Check if a name is provided and if it already exists in the collection
-        if 'name' in link_information:
-            requested_name = link_information['name']
-            if any(link.name == requested_name for link in self.data):
-                raise ValueError(f"Link with name '{requested_name}' already exists")
+        if check:
+            # Check if a name is provided and if it already exists in the collection
+            if 'name' in link_information:
+                requested_name = link_information['name']
+                if any(link.name == requested_name for link in self.data):
+                    raise ValueError(f"Link with name '{requested_name}' already exists")
 
         # Define attribute hierarchy based on class inheritance
         # Level 1: Common attributes for all Link types with defaults
         link_base_attrs = {
-            'name': lambda link_type, info: info.get('name', self._generate_default_name(link_type))
+            'name': lambda link_type, info: (
+                info['name'] if 'name' in info
+                else self._generate_default_name(link_type)
+            )
         }
 
         # Level 2: Attributes for all Conduit types with defaults

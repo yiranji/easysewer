@@ -353,12 +353,13 @@ class NodeList:
         """
         return item in self.data
 
-    def add_node(self, node_type, node_information=None):
+    def add_node(self, node_type, node_information=None, check=False):
         """
         Add a new node to the data structure based on its type and information.
         Generates default values for missing essential attributes.
 
         Args:
+            check: if check
             node_type (str): Type of node to add (e.g., 'junction', 'outfall_free')
             node_information (dict, optional): Dictionary containing node attributes
                                               Defaults to empty dict if None
@@ -383,18 +384,28 @@ class NodeList:
         # Normalize node type: lowercase and remove underscores
         normalized_type = node_type.lower().replace('_', '')
 
-        # Check if a name is provided and if it already exists in the collection
-        if 'name' in node_information:
-            requested_name = node_information['name']
-            if any(node.name == requested_name for node in self.data):
-                raise ValueError(f"Node with name '{requested_name}' already exists")
+        if check:
+            # Check if a name is provided and if it already exists in the collection
+            if 'name' in node_information:
+                requested_name = node_information['name']
+                if any(node.name == requested_name for node in self.data):
+                    raise ValueError(f"Node with name '{requested_name}' already exists")
 
         # Define attribute hierarchy based on class inheritance
         # Level 1: Common attributes for all Node types with defaults
         node_base_attrs = {
-            'name': lambda node_type, info: info.get('name', self._generate_default_name(node_type)),
-            'coordinate': lambda _, info: info.get('coordinate', self._generate_default_coordinate()),
-            'elevation': lambda _, info: info.get('elevation', 0.0)
+            'name': lambda node_type, info: (
+                info['name'] if 'name' in info
+                else self._generate_default_name(node_type)
+            ),
+            'coordinate': lambda _, info: (
+                info['coordinate'] if 'coordinate' in info
+                else self._generate_default_coordinate()
+            ),
+            'elevation': lambda _, info: (
+                info['elevation'] if 'elevation' in info
+                else 0.0
+            )
         }
 
         # Level 2: Attributes by node category with defaults
