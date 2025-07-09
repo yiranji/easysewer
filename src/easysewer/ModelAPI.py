@@ -77,8 +77,6 @@ class Model(UrbanDrainageModel):
             # Check if directory exists, create it if not
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
-            # Export model to desired path
-            self.to_inp(inp_file)
         if rpt_file is None:
             rpt_file = os.path.join(output_dir, f"{model_name}.rpt")
             # Check if directory exists, create it if not
@@ -89,6 +87,9 @@ class Model(UrbanDrainageModel):
             # Check if directory exists, create it if not
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
+
+        # Export model to desired path
+        self.to_inp(inp_file)
 
         # Initialize swmm solver
         solver = SWMMSolverAPI()
