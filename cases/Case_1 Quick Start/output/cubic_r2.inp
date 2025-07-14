@@ -88,6 +88,10 @@ N13        299.920     0.910     0.000     0.000     0.000
 N14        297.180    FREE    NO        
 
 
+[STORAGE]
+;;Name           Elev.    MaxDepth   InitDepth  Shape      Curve/Params                  SurDepth  Fevap    Seepage
+
+
 [COORDINATES]
 ;;Name  X-Coord  Y-Coord
 N1         1232.04   2926.08
@@ -190,7 +194,7 @@ S8      72.0       2.0       3.5       0.0       0.0
 
 
 [Polygons]
-;;Subcatchment   X-Coord            Y-Coord
+;;Name          X-Coord            Y-Coord
 S1  1199.949  2104.723
 S1  1065.197  1905.802
 S1  83.418  1931.469
