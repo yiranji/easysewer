@@ -1,0 +1,809 @@
+[TITLE]
+;;Project Title/Notes
+
+[OPTIONS]
+;;Option             Value
+FLOW_UNITS           LPS
+INFILTRATION         HORTON
+FLOW_ROUTING         DYNWAVE
+LINK_OFFSETS         DEPTH
+MIN_SLOPE            0
+ALLOW_PONDING        NO
+SKIP_STEADY_STATE    NO
+
+IGNORE_QUALITY       YES
+START_DATE           01/01/1998
+START_TIME           00:00:00
+REPORT_START_DATE    01/01/1998
+REPORT_START_TIME    00:00:00
+END_DATE             01/01/1998
+END_TIME             15:00:00
+SWEEP_START          01/01
+SWEEP_END            01/01
+DRY_DAYS             5
+REPORT_STEP          00:05:00
+WET_STEP             00:01:00
+DRY_STEP             01:00:00
+ROUTING_STEP         0:00:30 
+RULE_STEP            00:00:00
+
+INERTIAL_DAMPING     PARTIAL
+NORMAL_FLOW_LIMITED  BOTH
+FORCE_MAIN_EQUATION  H-W
+VARIABLE_STEP        0.75
+LENGTHENING_STEP     0
+MIN_SURFAREA         1.16741960245228
+MAX_TRIALS           8
+HEAD_TOLERANCE       0.005
+SYS_FLOW_TOL         5
+LAT_FLOW_TOL         5
+MINIMUM_STEP         0.5
+THREADS              1
+
+[EVAPORATION]
+;;Data Source    Parameters
+;;-------------- ----------------
+CONSTANT         0
+DRY_ONLY         NO
+
+[RAINGAGES]
+;;Name           Format    Interval SCF      Source    
+;;-------------- --------- ------ ------ ----------
+28_RG1           INTENSITY 00:01:00 1.0      TIMESERIES RainSeries-1    
+
+[SUBCATCHMENTS]
+;;Name           Rain Gage        Outlet           Area     %Imperv  Width    %Slope   CurbLen  SnowPack        
+;;-------------- ---------------- ---------------- -------- -------- -------- -------- -------- ----------------
+S1               28_RG1           N1               4.047    50       70       8        0                        
+S2               28_RG1           N2               4.047    60       150      2        0                        
+S3               28_RG1           N3               2.023    70       180      5        0                        
+S4               28_RG1           N11              2.023    40       110      3        0                        
+S5               28_RG1           N5               6.070    20       150      3        0                        
+S6               28_RG1           N12              4.856    80       130      4        0                        
+S7               28_RG1           N8               1.619    20       90       2        0                        
+S8               28_RG1           N14              4.047    30       200      6        0                        
+
+[SUBAREAS]
+;;Subcatchment   N-Imperv   N-Perv     S-Imperv   S-Perv     PctZero    RouteTo    PctRouted 
+;;-------------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+S1               0.03       0.2        0.5        3          70         OUTLET    
+S2               0.03       0.6        1          5          20         OUTLET    
+S3               0.02       0.4        2          6          50         OUTLET    
+S4               0.03       0.5        3          9          80         OUTLET    
+S5               0.02       0.7        4          9          60         OUTLET    
+S6               0.03       0.3        1.5        8          30         OUTLET    
+S7               0.03       0.4        0.5        4          40         OUTLET    
+S8               0.02       0.3        0.7        7          20         OUTLET    
+
+[INFILTRATION]
+;;Subcatchment   Param1     Param2     Param3     Param4     Param5    
+;;-------------- ---------- ---------- ---------- ---------- ----------
+S1               28         5          2.8        0          0         
+S2               28         7          3          0          0         
+S3               30         6          4          0          0         
+S4               40         9          6          0          0         
+S5               60         8          5          0          0         
+S6               70         4          6          0          0         
+S7               50         3          4.5        0          0         
+S8               72         2          3.5        0          0         
+
+[JUNCTIONS]
+;;Name           Elevation  MaxDepth   InitDepth  SurDepth   Aponded   
+;;-------------- ---------- ---------- ---------- ---------- ----------
+N1               304.80     0.91       0          0          0         
+N2               303.27     0.91       0          0          0         
+N3               303.27     0.91       0          0          0         
+N4               301.75     0.91       0          0          0         
+N5               300.83     0.91       0          0          0         
+N6               300.22     0.91       0          0          0         
+N7               298.70     0.91       0          0          0         
+N8               307.84     0.91       0          0          0         
+N9               306.32     0.91       0          0          0         
+N10              301.75     1.42       0          0          0         
+N11              300.83     1.41       0          0          0         
+N12              301.75     0.91       0          0          0         
+N13              299.92     0.91       0          0          0         
+
+[OUTFALLS]
+;;Name           Elevation  Type       Stage Data       Gated    Route To        
+;;-------------- ---------- ---------- ---------------- -------- ----------------
+N14              297.18     FREE                        NO                       
+
+[CONDUITS]
+;;Name           From Node        To Node          Length     Roughness  InOffset   OutOffset  InitFlow   MaxFlow   
+;;-------------- ---------------- ---------------- ---------- ---------- ---------- ---------- ---------- ----------
+L1               N1               N2               221.92     0.015      0          0          0          0         
+L2               N8               N9               160.96     0.013      0          0          0          0         
+L3               N9               N10              160.96     0.020      0          0.498      0          0         
+L4               N2               N10              221.92     0.022      0          0.305      0          0         
+L5               N10              N11              191.44     0.025      0.305      0.305      0          0         
+L6               N11              N6               191.44     0.018      0          0          0          0         
+L7               N7               N14              221.92     0.016      0          0          0          0         
+L8               N3               N4               221.92     0.011      0          0          0          0         
+L9               N4               N5               221.92     0.023      0          0          0          0         
+L10              N5               N6               221.92     0.027      0          0          0          0         
+L11              N12              N13              221.92     0.029      0          0          0          0         
+L12              N6               N13              130.48     0.020      0          0          0          0         
+L13              N13              N7               221.92     0.015      0          0          0          0         
+
+[XSECTIONS]
+;;Link           Shape        Geom1            Geom2      Geom3      Geom4      Barrels    Culvert   
+;;-------------- ------------ ---------------- ---------- ---------- ---------- ---------- ----------
+L1               CIRCULAR     0.3572           0          0          0          1                    
+L2               CIRCULAR     0.2048           0          0          0          1                    
+L3               CIRCULAR     0.2048           0          0          0          1                    
+L4               CIRCULAR     0.3572           0          0          0          1                    
+L5               CIRCULAR     0.5096           0          0          0          1                    
+L6               CIRCULAR     0.5096           0          0          0          1                    
+L7               CIRCULAR     0.5096           0          0          0          1                    
+L8               CIRCULAR     0.3572           0          0          0          1                    
+L9               CIRCULAR     0.3572           0          0          0          1                    
+L10              CIRCULAR     0.3572           0          0          0          1                    
+L11              CIRCULAR     0.2048           0          0          0          1                    
+L12              CIRCULAR     0.5096           0          0          0          1                    
+L13              CIRCULAR     0.5096           0          0          0          1                    
+
+[POLLUTANTS]
+;;Name           Units  Crain      Cgw        Crdii      Kdecay     SnowOnly   Co-Pollutant     Co-Frac    Cdwf       Cinit     
+;;-------------- ------ ---------- ---------- ---------- ---------- ---------- ---------------- ---------- ---------- ----------
+TSS              MG/L   0          0          0          0          NO         *                0          0          0         
+Lead             UG/L   0          0          0          0          NO         TSS              0.2        0          0         
+
+[LANDUSES]
+;;               Sweeping   Fraction   Last      
+;;Name           Interval   Available  Swept     
+;;-------------- ---------- ---------- ----------
+Residential      0          0          0         
+Undeveloped      0          0          0         
+
+[COVERAGES]
+;;Subcatchment   Land Use         Percent   
+;;-------------- ---------------- ----------
+S1               Residential      100       
+S2               Residential      50        
+S2               Undeveloped      50        
+S3               Residential      100       
+S4               Residential      50        
+S4               Undeveloped      50        
+S5               Residential      100       
+S6               Undeveloped      100       
+S7               Undeveloped      100       
+S8               Undeveloped      100       
+
+[LOADINGS]
+;;Subcatchment   Pollutant        Buildup   
+;;-------------- ---------------- ----------
+
+[BUILDUP]
+;;Land Use       Pollutant        Function   Coeff1     Coeff2     Coeff3     Per Unit  
+;;-------------- ---------------- ---------- ---------- ---------- ---------- ----------
+Residential      TSS              SAT        50         0          2          AREA      
+Residential      Lead             NONE       0          0          0          AREA      
+Undeveloped      TSS              SAT        100        0          3          AREA      
+Undeveloped      Lead             NONE       0          0          0          AREA      
+
+[WASHOFF]
+;;Land Use       Pollutant        Function   Coeff1     Coeff2     SweepRmvl  BmpRmvl   
+;;-------------- ---------------- ---------- ---------- ---------- ---------- ----------
+Residential      TSS              EXP        0.1        1          0          0         
+Residential      Lead             EMC        0          0          0          0         
+Undeveloped      TSS              EXP        0.1        0.7        0          0         
+Undeveloped      Lead             EMC        0          0          0          0         
+
+[TIMESERIES]
+;;Name           Date       Time       Value     
+;;-------------- ---------- ---------- ----------
+RainSeries-1                0:00       0.00      
+RainSeries-1                0:01       12.00     
+RainSeries-1                0:02       0.24      
+RainSeries-1                0:03       0.24      
+RainSeries-1                0:04       0.24      
+RainSeries-1                0:05       0.24      
+RainSeries-1                0:06       0.24      
+RainSeries-1                0:07       0.24      
+RainSeries-1                0:08       0.24      
+RainSeries-1                0:09       0.24      
+RainSeries-1                0:10       0.24      
+RainSeries-1                0:11       0.24      
+RainSeries-1                0:12       0.24      
+RainSeries-1                0:13       0.24      
+RainSeries-1                0:14       0.24      
+RainSeries-1                0:15       0.24      
+RainSeries-1                0:16       0.24      
+RainSeries-1                0:17       0.24      
+RainSeries-1                0:18       0.24      
+RainSeries-1                0:19       0.24      
+RainSeries-1                0:20       0.24      
+RainSeries-1                0:21       0.24      
+RainSeries-1                0:22       0.24      
+RainSeries-1                0:23       0.24      
+RainSeries-1                0:24       0.24      
+RainSeries-1                0:25       0.24      
+RainSeries-1                0:26       0.24      
+RainSeries-1                0:27       0.24      
+RainSeries-1                0:28       0.24      
+RainSeries-1                0:29       0.24      
+RainSeries-1                0:30       0.24      
+RainSeries-1                0:31       0.24      
+RainSeries-1                0:32       0.24      
+RainSeries-1                0:33       0.24      
+RainSeries-1                0:34       0.24      
+RainSeries-1                0:35       0.24      
+RainSeries-1                0:36       0.24      
+RainSeries-1                0:37       0.2412    
+RainSeries-1                0:38       0.2412    
+RainSeries-1                0:39       0.2412    
+RainSeries-1                0:40       0.2412    
+RainSeries-1                0:41       0.2412    
+RainSeries-1                0:42       0.2412    
+RainSeries-1                0:43       0.2412    
+RainSeries-1                0:44       0.2412    
+RainSeries-1                0:45       0.2412    
+RainSeries-1                0:46       0.2412    
+RainSeries-1                0:47       0.2412    
+RainSeries-1                0:48       0.2412    
+RainSeries-1                0:49       0.2412    
+RainSeries-1                0:50       0.2412    
+RainSeries-1                0:51       0.2412    
+RainSeries-1                0:52       0.6012    
+RainSeries-1                0:53       0.6012    
+RainSeries-1                0:54       0.6012    
+RainSeries-1                0:55       0.6012    
+RainSeries-1                0:56       0.6012    
+RainSeries-1                0:57       0.6012    
+RainSeries-1                0:58       0.6012    
+RainSeries-1                0:59       0.6012    
+RainSeries-1                1:00       0.6012    
+RainSeries-1                1:01       0.6012    
+RainSeries-1                1:02       0.6012    
+RainSeries-1                1:03       0.6012    
+RainSeries-1                1:04       0.6012    
+RainSeries-1                1:05       0.6012    
+RainSeries-1                1:06       0.6012    
+RainSeries-1                1:07       0.6012    
+RainSeries-1                1:08       0.6012    
+RainSeries-1                1:09       0.6012    
+RainSeries-1                1:10       0.6012    
+RainSeries-1                1:11       12.6      
+RainSeries-1                1:12       24.0012   
+RainSeries-1                1:13       11.9988   
+RainSeries-1                1:14       36        
+RainSeries-1                1:15       1.5012    
+RainSeries-1                1:16       1.5012    
+RainSeries-1                1:17       1.5012    
+RainSeries-1                1:18       1.5012    
+RainSeries-1                1:19       1.5012    
+RainSeries-1                1:20       1.5012    
+RainSeries-1                1:21       1.5012    
+RainSeries-1                1:22       1.5012    
+RainSeries-1                1:23       36        
+RainSeries-1                1:24       47.9988   
+RainSeries-1                1:25       11.9988   
+RainSeries-1                1:26       11.9988   
+RainSeries-1                1:27       2.9988    
+RainSeries-1                1:28       2.9988    
+RainSeries-1                1:29       2.9988    
+RainSeries-1                1:30       2.9988    
+RainSeries-1                1:31       1.7136    
+RainSeries-1                1:32       1.7136    
+RainSeries-1                1:33       1.7136    
+RainSeries-1                1:34       1.7136    
+RainSeries-1                1:35       1.7136    
+RainSeries-1                1:36       1.7136    
+RainSeries-1                1:37       1.7136    
+RainSeries-1                1:38       6.0012    
+RainSeries-1                1:39       6.0012    
+RainSeries-1                1:40       6.0012    
+RainSeries-1                1:41       29.9988   
+RainSeries-1                1:42       83.9988   
+RainSeries-1                1:43       108       
+RainSeries-1                1:44       108       
+RainSeries-1                1:45       96.0012   
+RainSeries-1                1:46       60.0012   
+RainSeries-1                1:47       24.0012   
+RainSeries-1                1:48       11.9988   
+RainSeries-1                1:49       11.9988   
+RainSeries-1                1:50       3.9996    
+RainSeries-1                1:51       3.9996    
+RainSeries-1                1:52       3.9996    
+RainSeries-1                1:53       3.9996    
+RainSeries-1                1:54       3.9996    
+RainSeries-1                1:55       3.9996    
+RainSeries-1                1:56       2.4012    
+RainSeries-1                1:57       2.4012    
+RainSeries-1                1:58       2.4012    
+RainSeries-1                1:59       2.4012    
+RainSeries-1                2:00       2.4012    
+RainSeries-1                2:01       0.7056    
+RainSeries-1                2:02       0.7056    
+RainSeries-1                2:03       0.7056    
+RainSeries-1                2:04       0.7056    
+RainSeries-1                2:05       0.7056    
+RainSeries-1                2:06       0.7056    
+RainSeries-1                2:07       0.7056    
+RainSeries-1                2:08       0.7056    
+RainSeries-1                2:09       0.7056    
+RainSeries-1                2:10       0.7056    
+RainSeries-1                2:11       0.7056    
+RainSeries-1                2:12       0.7056    
+RainSeries-1                2:13       0.7056    
+RainSeries-1                2:14       0.7056    
+RainSeries-1                2:15       0.7056    
+RainSeries-1                2:16       0.7056    
+RainSeries-1                2:17       0.7056    
+RainSeries-1                2:18       3.9996    
+RainSeries-1                2:19       3.9996    
+RainSeries-1                2:20       15.9984   
+RainSeries-1                2:21       72        
+RainSeries-1                2:22       24.0012   
+RainSeries-1                2:23       11.9988   
+RainSeries-1                2:24       11.9988   
+RainSeries-1                2:25       6.0012    
+RainSeries-1                2:26       6.0012    
+RainSeries-1                2:27       2.9988    
+RainSeries-1                2:28       2.9988    
+RainSeries-1                2:29       2.9988    
+RainSeries-1                2:30       2.9988    
+RainSeries-1                2:31       0.4428    
+RainSeries-1                2:32       0.4428    
+RainSeries-1                2:33       0.4428    
+RainSeries-1                2:34       0.4428    
+RainSeries-1                2:35       0.4428    
+RainSeries-1                2:36       0.4428    
+RainSeries-1                2:37       0.4428    
+RainSeries-1                2:38       0.4428    
+RainSeries-1                2:39       0.4428    
+RainSeries-1                2:40       0.4428    
+RainSeries-1                2:41       0.4428    
+RainSeries-1                2:42       0.4428    
+RainSeries-1                2:43       0.4428    
+RainSeries-1                2:44       0.4428    
+RainSeries-1                2:45       0.4428    
+RainSeries-1                2:46       0.4428    
+RainSeries-1                2:47       0.4428    
+RainSeries-1                2:48       0.4428    
+RainSeries-1                2:49       0.4428    
+RainSeries-1                2:50       0.4428    
+RainSeries-1                2:51       0.4428    
+RainSeries-1                2:52       0.4428    
+RainSeries-1                2:53       0.4428    
+RainSeries-1                2:54       0.4428    
+RainSeries-1                2:55       0.4428    
+RainSeries-1                2:56       0.4428    
+RainSeries-1                2:57       0.4428    
+RainSeries-1                2:58       1.332     
+RainSeries-1                2:59       1.332     
+RainSeries-1                3:00       1.332     
+RainSeries-1                3:01       1.332     
+RainSeries-1                3:02       1.332     
+RainSeries-1                3:03       1.332     
+RainSeries-1                3:04       1.332     
+RainSeries-1                3:05       1.332     
+RainSeries-1                3:06       1.332     
+RainSeries-1                3:07       11.9988   
+RainSeries-1                3:08       6.0012    
+RainSeries-1                3:09       6.0012    
+RainSeries-1                3:10       6.0012    
+RainSeries-1                3:11       6.0012    
+RainSeries-1                3:12       3.9996    
+RainSeries-1                3:13       3.9996    
+RainSeries-1                3:14       3.9996    
+RainSeries-1                3:15       1.0008    
+RainSeries-1                3:16       1.0008    
+RainSeries-1                3:17       1.0008    
+RainSeries-1                3:18       1.0008    
+RainSeries-1                3:19       1.0008    
+RainSeries-1                3:20       1.0008    
+RainSeries-1                3:21       1.0008    
+RainSeries-1                3:22       1.0008    
+RainSeries-1                3:23       1.0008    
+RainSeries-1                3:24       1.0008    
+RainSeries-1                3:25       1.0008    
+RainSeries-1                3:26       12.9996   
+RainSeries-1                3:27       24.0012   
+RainSeries-1                3:28       3.9996    
+RainSeries-1                3:29       3.9996    
+RainSeries-1                3:30       3.9996    
+;
+RainSeries-2                0:00       0         
+RainSeries-2                0:01       11.9988   
+RainSeries-2                0:02       6.0012    
+RainSeries-2                0:03       6.0012    
+RainSeries-2                0:04       6.0012    
+RainSeries-2                0:05       6.0012    
+RainSeries-2                0:06       3.9996    
+RainSeries-2                0:07       3.9996    
+RainSeries-2                0:08       3.9996    
+RainSeries-2                0:09       2.4012    
+RainSeries-2                0:10       2.4012    
+RainSeries-2                0:11       2.4012    
+RainSeries-2                0:12       2.4012    
+RainSeries-2                0:13       2.4012    
+RainSeries-2                0:14       36        
+RainSeries-2                0:15       11.9988   
+RainSeries-2                0:16       6.0012    
+RainSeries-2                0:17       6.0012    
+RainSeries-2                0:18       2.4012    
+RainSeries-2                0:19       2.4012    
+RainSeries-2                0:20       2.4012    
+RainSeries-2                0:21       2.4012    
+RainSeries-2                0:22       2.4012    
+RainSeries-2                0:23       11.9988   
+RainSeries-2                0:24       24.0012   
+RainSeries-2                0:25       24.0012   
+RainSeries-2                0:26       24.0012   
+RainSeries-2                0:27       24.0012   
+RainSeries-2                0:28       11.9988   
+RainSeries-2                0:29       24.0012   
+RainSeries-2                0:30       24.0012   
+RainSeries-2                0:31       11.9988   
+RainSeries-2                0:32       11.9988   
+RainSeries-2                0:33       6.0012    
+RainSeries-2                0:34       6.0012    
+RainSeries-2                0:35       3.9996    
+RainSeries-2                0:36       3.9996    
+RainSeries-2                0:37       3.9996    
+RainSeries-2                0:38       3.9996    
+RainSeries-2                0:39       3.9996    
+RainSeries-2                0:40       3.9996    
+RainSeries-2                0:41       6.0012    
+RainSeries-2                0:42       6.0012    
+RainSeries-2                0:43       1.5012    
+RainSeries-2                0:44       1.5012    
+RainSeries-2                0:45       1.5012    
+RainSeries-2                0:46       1.5012    
+RainSeries-2                0:47       1.5012    
+RainSeries-2                0:48       1.5012    
+RainSeries-2                0:49       1.5012    
+RainSeries-2                0:50       1.5012    
+;
+RainSeries-3                0:00       0         
+RainSeries-3                0:01       11.9988   
+RainSeries-3                0:02       1.0008    
+RainSeries-3                0:03       1.0008    
+RainSeries-3                0:04       1.0008    
+RainSeries-3                0:05       1.0008    
+RainSeries-3                0:06       1.0008    
+RainSeries-3                0:07       1.0008    
+RainSeries-3                0:08       1.0008    
+RainSeries-3                0:09       1.0008    
+RainSeries-3                0:10       1.0008    
+RainSeries-3                0:11       1.0008    
+RainSeries-3                0:12       1.0008    
+RainSeries-3                0:13       1.0008    
+RainSeries-3                1:17       0         
+RainSeries-3                1:18       11.9988   
+RainSeries-3                1:19       0.9216    
+RainSeries-3                1:20       0.9216    
+RainSeries-3                1:21       0.9216    
+RainSeries-3                1:22       0.9216    
+RainSeries-3                1:23       0.9216    
+RainSeries-3                1:24       0.9216    
+RainSeries-3                1:25       0.9216    
+RainSeries-3                1:26       0.9216    
+RainSeries-3                1:27       0.9216    
+RainSeries-3                1:28       0.9216    
+RainSeries-3                1:29       0.9216    
+RainSeries-3                1:30       0.9216    
+RainSeries-3                1:31       0.9216    
+RainSeries-3                1:32       3.9996    
+RainSeries-3                1:33       3.9996    
+RainSeries-3                1:34       3.9996    
+RainSeries-3                1:35       1.0008    
+RainSeries-3                1:36       1.0008    
+RainSeries-3                1:37       1.0008    
+RainSeries-3                1:38       1.0008    
+RainSeries-3                1:39       1.0008    
+RainSeries-3                1:40       1.0008    
+RainSeries-3                1:41       1.0008    
+RainSeries-3                1:42       1.0008    
+RainSeries-3                1:43       1.0008    
+RainSeries-3                1:44       1.0008    
+RainSeries-3                1:45       1.0008    
+RainSeries-3                1:46       1.0008    
+RainSeries-3                1:47       2.0016    
+RainSeries-3                1:48       2.0016    
+RainSeries-3                1:49       2.0016    
+RainSeries-3                1:50       2.0016    
+RainSeries-3                1:51       2.0016    
+RainSeries-3                1:52       2.0016    
+RainSeries-3                1:53       6.0012    
+RainSeries-3                1:54       6.0012    
+RainSeries-3                1:55       6.0012    
+RainSeries-3                1:56       29.9988   
+RainSeries-3                1:57       36        
+RainSeries-3                1:58       11.9988   
+RainSeries-3                1:59       11.9988   
+;
+RainSeries-4                0:00       0.00      
+RainSeries-4                0:01       12.00     
+RainSeries-4                0:02       0.92      
+RainSeries-4                0:03       0.92      
+RainSeries-4                0:04       0.92      
+RainSeries-4                0:05       0.92      
+RainSeries-4                0:06       0.92      
+RainSeries-4                0:07       0.92      
+RainSeries-4                0:08       0.92      
+RainSeries-4                0:09       0.92      
+RainSeries-4                0:10       0.92      
+RainSeries-4                0:11       0.92      
+RainSeries-4                0:12       0.92      
+RainSeries-4                0:13       0.92      
+RainSeries-4                0:14       0.92      
+RainSeries-4                0:15       0.31      
+RainSeries-4                0:16       0.31      
+RainSeries-4                0:17       0.31      
+RainSeries-4                0:18       0.31      
+RainSeries-4                0:19       0.31      
+RainSeries-4                0:20       0.31      
+RainSeries-4                0:21       0.31      
+RainSeries-4                0:22       0.31      
+RainSeries-4                0:23       0.31      
+RainSeries-4                0:24       0.31      
+RainSeries-4                0:25       0.31      
+RainSeries-4                0:26       0.31      
+RainSeries-4                0:27       0.31      
+RainSeries-4                0:28       0.31      
+RainSeries-4                0:29       0.31      
+RainSeries-4                0:30       0.31      
+RainSeries-4                0:31       0.31      
+RainSeries-4                0:32       0.31      
+RainSeries-4                0:33       0.31      
+RainSeries-4                0:34       0.31      
+RainSeries-4                0:35       0.31      
+RainSeries-4                0:36       0.31      
+RainSeries-4                0:37       0.306     
+RainSeries-4                0:38       0.306     
+RainSeries-4                0:39       0.306     
+RainSeries-4                0:40       0.306     
+RainSeries-4                0:41       0.306     
+RainSeries-4                0:42       0.306     
+RainSeries-4                0:43       0.306     
+RainSeries-4                0:44       0.306     
+RainSeries-4                0:45       0.306     
+RainSeries-4                0:46       0.306     
+RainSeries-4                0:47       0.306     
+RainSeries-4                0:48       0.306     
+RainSeries-4                0:49       0.306     
+RainSeries-4                0:50       0.306     
+RainSeries-4                0:51       0.306     
+RainSeries-4                0:52       0.306     
+RainSeries-4                0:53       0.306     
+RainSeries-4                0:54       6.0012    
+RainSeries-4                0:55       6.0012    
+RainSeries-4                0:56       11.9988   
+RainSeries-4                0:57       11.9988   
+RainSeries-4                0:58       11.9988   
+RainSeries-4                0:59       11.9988   
+RainSeries-4                1:00       11.9988   
+RainSeries-4                1:01       11.9988   
+RainSeries-4                1:02       11.9988   
+RainSeries-4                1:03       2.9988    
+RainSeries-4                1:04       2.9988    
+RainSeries-4                1:05       2.9988    
+RainSeries-4                1:06       2.9988    
+RainSeries-4                1:07       2.9988    
+RainSeries-4                1:08       2.9988    
+RainSeries-4                1:09       2.9988    
+RainSeries-4                1:10       2.9988    
+RainSeries-4                1:11       11.9988   
+RainSeries-4                1:12       24.0012   
+RainSeries-4                1:13       24.0012   
+RainSeries-4                1:14       11.9988   
+RainSeries-4                1:15       11.9988   
+RainSeries-4                1:16       11.9988   
+;
+RainSeries-5                0:00       0.00      
+RainSeries-5                0:01       12.00     
+RainSeries-5                0:02       11.9988   
+RainSeries-5                0:03       24.0012   
+RainSeries-5                0:04       24.0012   
+RainSeries-5                0:05       36        
+RainSeries-5                0:06       60.0012   
+RainSeries-5                0:07       36        
+RainSeries-5                0:08       11.9988   
+RainSeries-5                0:09       36        
+RainSeries-5                0:10       36        
+RainSeries-5                0:11       11.9988   
+RainSeries-5                0:12       11.9988   
+RainSeries-5                0:13       3.9996    
+RainSeries-5                0:14       3.9996    
+RainSeries-5                0:15       3.9996    
+RainSeries-5                0:16       3.9996    
+RainSeries-5                0:17       3.9996    
+RainSeries-5                0:18       3.9996    
+RainSeries-5                0:19       24.0012   
+RainSeries-5                0:20       60.0012   
+RainSeries-5                0:21       24.0012   
+RainSeries-5                0:22       24.0012   
+RainSeries-5                0:23       24.0012   
+RainSeries-5                0:24       11.9988   
+RainSeries-5                0:25       11.9988   
+RainSeries-5                0:26       24.0012   
+RainSeries-5                0:27       11.9988   
+RainSeries-5                0:28       11.9988   
+RainSeries-5                0:29       11.9988   
+RainSeries-5                0:30       11.9988   
+RainSeries-5                0:31       36        
+RainSeries-5                0:32       36        
+RainSeries-5                0:33       47.9988   
+RainSeries-5                0:34       60.0012   
+RainSeries-5                0:35       60.0012   
+RainSeries-5                0:36       47.9988   
+RainSeries-5                0:37       24.0012   
+RainSeries-5                0:38       24.0012   
+RainSeries-5                0:39       36        
+RainSeries-5                0:40       47.9988   
+RainSeries-5                0:41       36        
+RainSeries-5                0:42       6.0012    
+RainSeries-5                0:43       6.0012    
+RainSeries-5                0:44       11.9988   
+RainSeries-5                0:45       6.0012    
+RainSeries-5                0:46       18        
+RainSeries-5                0:47       24.0012   
+RainSeries-5                0:48       24.0012   
+RainSeries-5                0:49       11.9988   
+RainSeries-5                0:50       11.9988   
+RainSeries-5                0:51       6.0012    
+RainSeries-5                0:52       6.0012    
+RainSeries-5                0:53       6.0012    
+RainSeries-5                0:54       6.0012    
+RainSeries-5                0:55       6.0012    
+RainSeries-5                0:56       6.0012    
+RainSeries-5                0:57       3.9996    
+RainSeries-5                0:58       3.9996    
+RainSeries-5                0:59       3.9996    
+RainSeries-5                1:00       6.0012    
+RainSeries-5                1:01       6.0012    
+RainSeries-5                1:02       11.9988   
+RainSeries-5                1:03       11.9988   
+RainSeries-5                1:04       11.9988   
+RainSeries-5                1:05       6.0012    
+RainSeries-5                1:06       6.0012    
+RainSeries-5                1:07       6.0012    
+RainSeries-5                1:08       6.0012    
+RainSeries-5                1:09       2.9988    
+RainSeries-5                1:10       2.9988    
+RainSeries-5                1:11       2.9988    
+RainSeries-5                1:12       2.9988    
+RainSeries-5                1:13       2.4012    
+RainSeries-5                1:14       2.4012    
+RainSeries-5                1:15       2.4012    
+RainSeries-5                1:16       2.4012    
+RainSeries-5                1:17       2.4012    
+RainSeries-5                1:18       1.7136    
+RainSeries-5                1:19       1.7136    
+RainSeries-5                1:20       1.7136    
+RainSeries-5                1:21       1.7136    
+RainSeries-5                1:22       1.7136    
+RainSeries-5                1:23       1.7136    
+RainSeries-5                1:24       1.7136    
+
+[REPORT]
+;;Reporting Options
+SUBCATCHMENTS ALL
+NODES ALL
+LINKS ALL
+
+[TAGS]
+
+[MAP]
+DIMENSIONS -57.431 -47.164 2900.091 3107.999
+Units      None
+
+[COORDINATES]
+;;Node           X-Coord            Y-Coord           
+;;-------------- ------------------ ------------------
+N1               1232.035           2926.080          
+N2               1251.283           2117.558          
+N3               712.269            1328.285          
+N4               962.525            1309.037          
+N5               981.776            988.195           
+N6               1469.456           1013.862          
+N7               1905.802           654.518           
+N8               2367.814           2053.389          
+N9               1815.965           2008.470          
+N10              1501.542           1860.883          
+N11              1347.536           1437.373          
+N12              1976.387           1212.784          
+N13              1642.710           924.026           
+N14              2021.306           154.003           
+
+[VERTICES]
+;;Link           X-Coord            Y-Coord           
+;;-------------- ------------------ ------------------
+L7               2034.138           417.094           
+
+[Polygons]
+;;Subcatchment   X-Coord            Y-Coord           
+;;-------------- ------------------ ------------------
+S1               1199.949           2104.723          
+S1               1065.197           1905.802          
+S1               83.418             1931.469          
+S1               77.002             2598.822          
+S1               141.171            2804.160          
+S1               352.925            2964.582          
+S1               1219.200           2958.163          
+S1               1199.949           2104.723          
+S2               2316.480           2945.331          
+S2               2348.563           2053.389          
+S2               1803.133           2040.557          
+S2               1501.542           1918.637          
+S2               1276.950           2194.560          
+S2               1257.702           2932.496          
+S2               2316.480           2945.331          
+S3               718.685            1835.216          
+S3               731.520            1321.869          
+S3               924.026            1296.202          
+S3               911.190            1033.110          
+S3               96.253             1039.530          
+S3               89.837             1828.800          
+S3               718.685            1835.216          
+S4               1262.417           2042.725          
+S4               1266.958           2042.034          
+S4               1270.534           2040.557          
+S4               1360.371           1969.971          
+S4               1469.456           1848.051          
+S4               1341.120           1604.211          
+S4               1328.285           1353.955          
+S4               1386.038           1129.363          
+S4               1219.200           1045.946          
+S4               1013.862           1026.694          
+S4               988.195            1078.029          
+S4               956.109            1572.125          
+S4               789.270            1578.544          
+S4               789.270            1848.051          
+S4               1001.027           1848.051          
+S4               1129.363           1899.386          
+S4               1257.702           2046.973          
+S4               1262.417           2042.725          
+S5               782.854            975.360           
+S5               1495.123           956.109           
+S5               1591.376           866.275           
+S5               1751.798           737.936           
+S5               1969.971           481.264           
+S5               2014.890           295.174           
+S5               2008.470           154.003           
+S5               397.843            147.587           
+S5               295.174            102.669           
+S5               96.253             237.424           
+S5               96.253             949.693           
+S5               782.854            975.360           
+S6               2759.242           1264.118          
+S6               2406.317           1276.950          
+S6               1963.555           1251.283          
+S6               1803.133           1110.115          
+S6               1623.462           981.776           
+S6               1411.706           1289.786          
+S6               1392.454           1527.210          
+S6               1488.707           1758.214          
+S6               1636.294           1918.637          
+S6               1841.635           2002.054          
+S6               2733.574           1989.222          
+S6               2759.242           1264.118          
+S7               2662.989           2938.915          
+S7               2746.410           2861.910          
+S7               2746.410           2630.906          
+S7               2759.242           2066.224          
+S7               2374.230           2072.640          
+S7               2354.982           2938.915          
+S7               2662.989           2938.915          
+S8               2765.658           628.851           
+S8               2759.242           237.424           
+S8               2592.403           102.669           
+S8               2265.146           96.253            
+S8               2258.730           147.587           
+S8               2085.475           154.003           
+S8               2085.475           179.670           
+S8               2079.056           359.344           
+S8               1995.638           558.266           
+S8               1873.718           725.104           
+S8               1706.880           936.858           
+S8               2008.470           1187.117          
+S8               2701.491           1212.784          
+S8               2765.658           628.851           
+
+[SYMBOLS]
+;;Gage           X-Coord            Y-Coord           
+;;-------------- ------------------ ------------------
+
