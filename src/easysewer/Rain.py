@@ -1,9 +1,10 @@
-"""
-Rainfall Data Management Module
+"""Rainfall Data Management Module
 
 This module handles rainfall data input and processing, including rain gages,
 time series data, and rainfall patterns for the drainage model.
 """
+from typing import List, Optional, Union
+from datetime import datetime
 from warnings import warn
 from .utils import *
 
@@ -15,16 +16,16 @@ class NamedList:
     by their name attribute.
     
     Attributes:
-        data (list): The underlying list of items
+        data (List): The underlying list of items
     """
     
-    def __init__(self, data=None):
-        self.data = data if data is not None else []
+    def __init__(self, data: Optional[List] = None) -> None:
+        self.data: List = data if data is not None else []
     
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)
     
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[int, str]):
         if isinstance(key, int):
             return self.data[key]
         elif isinstance(key, str):
@@ -38,10 +39,10 @@ class NamedList:
     def __iter__(self):
         return iter(self.data)
     
-    def __contains__(self, item):
+    def __contains__(self, item) -> bool:
         return item in self.data
     
-    def append(self, item):
+    def append(self, item) -> None:
         """Add an item to the collection.
         
         Args:
@@ -68,7 +69,7 @@ class RainGageList(NamedList):
     pass
 
 
-def parse_swmm_datetime(date_str=None, time_str=None):
+def parse_swmm_datetime(date_str: Optional[str] = None, time_str: Optional[str] = None) -> int:
     """Convert SWMM date and time strings to minutes since start of day
 
     Args:
@@ -90,14 +91,24 @@ def parse_swmm_datetime(date_str=None, time_str=None):
 
 
 class TimeSeries:
-    def __init__(self):
-        self.name = ''
-        self.time = []  # in minutes
-        self.value = []  # in mm
-        self.has_date = False  # whether the timeseries includes date information
-        self.start_date = None  # store the start date if available
+    """Time series data container for rainfall measurements
+    
+    Attributes:
+        name (str): Identifier for the time series
+        time (List[int]): Time values in minutes
+        value (List[float]): Rainfall values in mm
+        has_date (bool): Whether the timeseries includes date information
+        start_datetime (Optional[datetime]): Store the start datetime if available
+    """
+    
+    def __init__(self) -> None:
+        self.name: str = ''
+        self.time: List[int] = []  # in minutes
+        self.value: List[float] = []  # in mm
+        self.has_date: bool = False  # whether the timeseries includes date information
+        self.start_datetime: Optional[datetime] = None  # store the start datetime if available
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if len(self.time) == 0:
             return 'None'
         else:
@@ -117,21 +128,25 @@ class RainGage:
     Attributes:
         name (str): Unique identifier for the rain gage
         form (str): Format of the rainfall data (INTENSITY/VOLUME/CUMULATIVE)
-        interval (float): Recording time interval
+        interval (Union[str, float]): Recording time interval
+        SCF (Union[int, float]): Snow catch deficiency correction factor
+        source (str): Timeseries name or file name
         source_type (str): Source type (TIMESERIES or FILE)
-        unit (str): Unit for FILE source (e.g., mm)
+        station_id (Optional[str]): Station ID for FILE source
+        unit (Optional[str]): Unit for FILE source (e.g., mm)
     """
-    def __init__(self):
-        self.name = ''
-        self.form = ''  # INTENSIFY: mm/h
-        self.interval = ''
-        self.SCF = 1  # snow catch deficiency correction factor (use 1.0 for no adjustment)
-        self.source = ''  # timeseries name or file name
-        self.source_type = 'TIMESERIES'  # TIMESERIES or FILE
-        self.station_id = None  # Only for FILE source
-        self.unit = None  # Only for FILE source
+    
+    def __init__(self) -> None:
+        self.name: str = ''
+        self.form: str = ''  # INTENSIFY: mm/h
+        self.interval: Union[str, float] = ''
+        self.SCF: Union[int, float] = 1  # snow catch deficiency correction factor (use 1.0 for no adjustment)
+        self.source: str = ''  # timeseries name or file name
+        self.source_type: str = 'TIMESERIES'  # TIMESERIES or FILE
+        self.station_id: Optional[str] = None  # Only for FILE source
+        self.unit: Optional[str] = None  # Only for FILE source
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'RainGage<{self.name}>: {self.source} ({self.source_type})'
 
 
@@ -143,14 +158,15 @@ class Rain:
     for the drainage model.
 
     Attributes:
-        gage_list (list): Collection of RainGage objects
-        ts_list (list): Collection of time series data
+        ts_list (TimeSeriesList): Collection of TimeSeries objects
+        gage_list (RainGageList): Collection of RainGage objects
     """
-    def __init__(self):
-        self.ts_list = TimeSeriesList()
-        self.gage_list = RainGageList()
+    
+    def __init__(self) -> None:
+        self.ts_list: TimeSeriesList = TimeSeriesList()
+        self.gage_list: RainGageList = RainGageList()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if len(self.gage_list) == 0:
             return 'None'
         elif len(self.gage_list) == 1:
@@ -158,13 +174,31 @@ class Rain:
         else:
             return 'Gages'
 
-    def add_ts(self, new_ts):
+    def add_ts(self, new_ts: TimeSeries) -> None:
+        """Add a TimeSeries object to the collection
+        
+        Args:
+            new_ts: TimeSeries object to add
+        """
         self.ts_list.append(new_ts)
 
-    def add_gage(self, new_gage):
+    def add_gage(self, new_gage: RainGage) -> None:
+        """Add a RainGage object to the collection
+        
+        Args:
+            new_gage: RainGage object to add
+        """
         self.gage_list.append(new_gage)
 
-    def read_from_swmm_inp(self, filename):
+    def read_from_swmm_inp(self, filename: str) -> int:
+        """Read rainfall data from SWMM input file
+        
+        Args:
+            filename: Path to the SWMM input file
+            
+        Returns:
+            0 on success
+        """
         from datetime import datetime
 
         content = get_swmm_inp_content(filename, '[TIMESERIES]')
@@ -183,7 +217,7 @@ class Rain:
 
             if has_date:
                 name, date, time, value = parts
-                minutes = parse_swmm_datetime(date_str=date, time_str=time)
+                current_datetime = datetime.strptime(f"{date} {time}", "%m/%d/%Y %H:%M")
             else:
                 name, time, value = parts
                 minutes = parse_swmm_datetime(time_str=time)
@@ -195,7 +229,7 @@ class Rain:
                 this_timeseries.name = name
                 this_timeseries.has_date = has_date
                 if has_date:
-                    this_timeseries.start_date = datetime.strptime(date, "%m/%d/%Y").date()
+                    this_timeseries.start_datetime = current_datetime
 
             # If we encounter a new timeseries name
             if this_timeseries.name != name:
@@ -207,9 +241,13 @@ class Rain:
                 this_timeseries.name = name
                 this_timeseries.has_date = has_date
                 if has_date:
-                    this_timeseries.start_date = datetime.strptime(date, "%m/%d/%Y").date()
+                    this_timeseries.start_datetime = current_datetime
 
             # Add the data point
+            if has_date:
+                # Calculate minutes from start_datetime
+                time_diff = current_datetime - this_timeseries.start_datetime
+                minutes = int(time_diff.total_seconds() / 60)
             this_timeseries.time.append(minutes)
             this_timeseries.value.append(value)
 
@@ -250,7 +288,15 @@ class Rain:
             self.add_gage(this_gage)
         return 0
 
-    def write_to_swmm_inp(self, filename):
+    def write_to_swmm_inp(self, filename: str) -> int:
+        """Write rainfall data to SWMM input file
+        
+        Args:
+            filename: Path to the output SWMM input file
+            
+        Returns:
+            0 on success
+        """
         from datetime import datetime, timedelta
 
         def time_minute2text(minutes):
@@ -259,11 +305,10 @@ class Rain:
             text = f'{hours}:{left:02}'
             return text
 
-        def get_date_for_minutes(start_date, minutes):
-            """Convert minutes to date string, handling day rollovers"""
-            days, remaining_minutes = divmod(minutes, 24 * 60)
-            date = start_date + timedelta(days=days)
-            return date.strftime("%m/%d/%Y")
+        def get_datetime_for_minutes(start_datetime, minutes):
+            """Convert minutes to datetime, handling day rollovers"""
+            target_datetime = start_datetime + timedelta(minutes=minutes)
+            return target_datetime
 
         with open(filename, 'a', encoding='utf-8') as f:
             f.write('\n\n[TIMESERIES]\n')
@@ -277,8 +322,9 @@ class Rain:
             for ts in self.ts_list:
                 for time, value in zip(ts.time, ts.value):
                     if ts.has_date:
-                        date_str = get_date_for_minutes(ts.start_date, time)
-                        time_str = time_minute2text(time % (24 * 60))  # Get time within the day
+                        target_datetime = get_datetime_for_minutes(ts.start_datetime, time)
+                        date_str = target_datetime.strftime("%m/%d/%Y")
+                        time_str = target_datetime.strftime("%H:%M")
                         f.write(f'{ts.name:<14} {date_str}  {time_str}  {value:>.2f}\n')
                     else:
                         f.write(f'{ts.name}  {time_minute2text(time)}  {value:>.2f}\n')
