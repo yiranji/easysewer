@@ -1,6 +1,6 @@
 {
   "rain": {
-    "csv_file": "./r8-10.csv",
+    "csv_file": "./rain_event_1_with_date.csv",
     "original_name": "r8",
     "return_period": 10,
     "form": "INTENSITY",
@@ -15,7 +15,7 @@
       "year": 2025,
       "month": 1,
       "day": 1,
-      "hour": 0,
+      "hour": 23,
       "minute": 0
     },
     "report_step": {
@@ -28,7 +28,7 @@
     "simulation_end": {
       "year": 2025,
       "month": 1,
-      "day": 1,
+      "day": 2,
       "hour": 4,
       "minute": 0
     },
@@ -36,7 +36,7 @@
       "year": 2025,
       "month": 1,
       "day": 1,
-      "hour": 0,
+      "hour": 23,
       "minute": 0
     },
     "threads": 4
