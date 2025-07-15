@@ -1,0 +1,44 @@
+{
+  "rain": {
+    "csv_file": "./rain_event_1_with_date.csv",
+    "original_name": "r8",
+    "return_period": 10,
+    "form": "INTENSITY",
+    "simulation_duration_hour": 5
+  },
+  "calc": {
+    "flow_routing_method": "DYNWAVE",
+    "flow_unit": "CMS",
+    "force_main_equation": "H-W",
+    "head_tolerance": 0.0015,
+    "report_start": {
+      "year": 2025,
+      "month": 1,
+      "day": 1,
+      "hour": 23,
+      "minute": 0
+    },
+    "report_step": {
+      "hour": 0,
+      "minute": 1,
+      "second": 0
+    },
+    "report_subcatchments": "NONE",
+    "routing_step": 5,
+    "simulation_end": {
+      "year": 2025,
+      "month": 1,
+      "day": 2,
+      "hour": 4,
+      "minute": 0
+    },
+    "simulation_start": {
+      "year": 2025,
+      "month": 1,
+      "day": 1,
+      "hour": 23,
+      "minute": 0
+    },
+    "threads": 4
+  }
+}
