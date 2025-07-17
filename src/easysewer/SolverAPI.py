@@ -243,6 +243,116 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
         self.ponding_nodes_depth = None
         self.model_prepare()
 
+    def _set_prototypes(self):
+        self.swmm.swmm_run.argtypes = [c_char_p, c_char_p, c_char_p]
+        self.swmm.swmm_run.restype = c_int
+
+        self.swmm.swmm_open.argtypes = [c_char_p, c_char_p, c_char_p]
+        self.swmm.swmm_open.restype = c_int
+
+        self.swmm.swmm_start.argtypes = [c_int]
+        self.swmm.swmm_start.restype = c_int
+
+        self.swmm.swmm_step.argtypes = [POINTER(c_double)]
+        self.swmm.swmm_step.restype = c_int
+
+        self.swmm.swmm_end.argtypes = []
+        self.swmm.swmm_end.restype = c_int
+
+        self.swmm.swmm_report.argtypes = []
+        self.swmm.swmm_report.restype = c_int
+
+        self.swmm.swmm_close.argtypes = []
+        self.swmm.swmm_close.restype = c_int
+
+        self.swmm.swmm_getMassBalErr.argtypes = [POINTER(c_float), POINTER(c_float), POINTER(c_float)]
+        self.swmm.swmm_getMassBalErr.restype = c_int
+
+        self.swmm.swmm_getVersion.argtypes = []
+        self.swmm.swmm_getVersion.restype = c_int
+
+        self.swmm.swmm_getError.argtypes = [c_char_p, c_int]
+        self.swmm.swmm_getError.restype = c_int
+
+        self.swmm.swmm_getWarnings.argtypes = []
+        self.swmm.swmm_getWarnings.restype = c_int
+
+        self.swmm.swmm_getCount.argtypes = [c_int]
+        self.swmm.swmm_getCount.restype = c_int
+
+        self.swmm.swmm_getName.argtypes = [c_int, c_int, c_char_p, c_int]
+        self.swmm.swmm_getName.restype = None
+
+        self.swmm.swmm_getIndex.argtypes = [c_int, c_char_p]
+        self.swmm.swmm_getIndex.restype = c_int
+
+        self.swmm.swmm_getValue.argtypes = [c_int, c_int]
+        self.swmm.swmm_getValue.restype = c_double
+
+        self.swmm.swmm_setValue.argtypes = [c_int, c_int, c_double]
+        self.swmm.swmm_setValue.restype = None
+
+        self.swmm.swmm_getSavedValue.argtypes = [c_int, c_int, c_int]
+        self.swmm.swmm_getSavedValue.restype = c_double
+
+        self.swmm.swmm_writeLine.argtypes = [c_char_p]
+        self.swmm.swmm_writeLine.restype = None
+
+        self.swmm.swmm_decodeDate.argtypes = [c_double, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int),
+                                              POINTER(c_int), POINTER(c_int), POINTER(c_int)]
+        self.swmm.swmm_decodeDate.restype = None
+
+        # New API functions for exposing internal functions
+        self.swmm.swmm_execRouting.argtypes = []
+        self.swmm.swmm_execRouting.restype = c_int
+
+        self.swmm.swmm_saveResults.argtypes = []
+        self.swmm.swmm_saveResults.restype = c_int
+
+        self.swmm.swmm_getCurrentTime.argtypes = []
+        self.swmm.swmm_getCurrentTime.restype = c_double
+
+        self.swmm.swmm_getRoutingDuration.argtypes = []
+        self.swmm.swmm_getRoutingDuration.restype = c_double
+
+    def exec_routing(self):
+        """
+        Routes flow & WQ through drainage system over a single time step.
+        This method exposes the internal execRouting function as an API.
+
+        Returns:
+            int: Error code (0 for success)
+        """
+        return self.swmm.swmm_execRouting()
+
+    def save_results(self):
+        """
+        Saves current results to binary output file.
+        This method exposes the internal saveResults function as an API.
+
+        Returns:
+            int: Error code (0 for success)
+        """
+        return self.swmm.swmm_saveResults()
+
+    def get_current_time(self):
+        """
+        Retrieves the current elapsed simulation time.
+
+        Returns:
+            float: Current simulation time in decimal days
+        """
+        return self.swmm.swmm_getCurrentTime()
+
+    def get_routing_duration(self):
+        """
+        Retrieves the total routing duration of the simulation.
+
+        Returns:
+            float: Total routing duration in milliseconds
+        """
+        return self.swmm.swmm_getRoutingDuration()
+
     def model_prepare(self):
         # Check allow ponding
         if self.model.calc.allow_ponding is not True:
@@ -280,19 +390,27 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
         Note:
             The property code 310 is used to get/set the ponding depth value in the SWMM engine.
         """
-        # First call the standard SWMM step function to advance the simulation by one time step
-        elapsed_time = c_double()
-        result = self.swmm.swmm_step(byref(elapsed_time))
+        current_routing_time = self.get_current_time() * 86400.0 * 1000.0  # Change to millisecond
+        routing_duration = self.get_routing_duration()
+        if current_routing_time >= routing_duration:
+            return 0, 0.0
+
+        # Routing
+        error_code = self.exec_routing()
 
         # Process each node that has ponding enabled
         for i, (node_index, ponding_area, last_ponding_depth) in enumerate(zip(self.ponding_nodes_index, self.ponding_nodes_area, self.ponding_nodes_depth)):
+
             # Get the current ponding depth calculated by the SWMM engine
             current_ponding_depth = self.get_value(310, node_index)
-            if current_ponding_depth < 0.01:
+            current_overflow = self.get_value(308, node_index)
+            if current_ponding_depth < 0.001:
                 continue
 
             # Apply custom ponding depth logic
-            updated_ponding_depth = self.update_ponding_depth(ponding_area, last_ponding_depth, current_ponding_depth)
+            time_step = self.get_value(3, 0)
+            updated_ponding_depth, updated_overflow = (
+                self.update_ponding_status(time_step, ponding_area, last_ponding_depth, current_ponding_depth, current_overflow))
 
             # Store the updated ponding depth for use in the next time step
             # Use the correct index in the ponding_nodes_depth list, not the node_index from the model
@@ -300,14 +418,22 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
 
             # Update the SWMM engine with the modified ponding depth
             self.set_value(310, node_index, updated_ponding_depth)
+            self.set_value(308, node_index, updated_overflow)
 
-        return result, elapsed_time.value
+        # Save results
+        if error_code == 0:
+            error_code = self.save_results()
+        elapsed_time = self.get_current_time()
 
-    def update_ponding_depth(self, ponding_area, last_ponding_depth, current_ponding_depth):
-        # with more sophisticated ponding depth calculations based on specific requirements
-        updated_ponding_depth = current_ponding_depth
+        return error_code, elapsed_time
 
-        return updated_ponding_depth
+    def update_ponding_status(self, time_step, ponding_area, last_ponding_depth, current_ponding_depth, current_overflow):
+
+        # TODO： updated_overflow is not correct.
+        updated_overflow = (current_ponding_depth - last_ponding_depth) * ponding_area / time_step
+        updated_ponding_depth = 0
+
+        return updated_ponding_depth, updated_overflow
 
     # Explicitly not inheriting the run method by overriding it to raise NotImplementedError
     def run(self, input_file, report_file, output_file):
