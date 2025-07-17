@@ -63,35 +63,6 @@ class TestModelFunctionality(unittest.TestCase):
         model = Model()
         self.assertIsNotNone(model)
     
-    def test_simulation_fast_mode(self):
-        """
-        Test fast simulation mode
-        """
-        model = Model(str(self.test_inp_file))
-
-        # Specify output file paths
-        inp_file = str(self.temp_output_dir / "test_normal.inp")
-        rpt_file = str(self.temp_output_dir / "test_normal.rpt")
-        out_file = str(self.temp_output_dir / "test_normal.out")
-        
-        # Execute fast simulation
-        inp_file, rpt_file, out_file = model.simulation(
-            inp_file=inp_file,
-            rpt_file=rpt_file,
-            out_file=out_file,
-            mode="fast"
-        )
-        
-        # Verify output files are generated
-        self.assertTrue(os.path.exists(inp_file), f"inp file not generated: {inp_file}")
-        self.assertTrue(os.path.exists(rpt_file), f"rpt file not generated: {rpt_file}")
-        self.assertTrue(os.path.exists(out_file), f"out file not generated: {out_file}")
-        
-        # Clean up generated files
-        for file_path in [inp_file, rpt_file, out_file]:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-    
     def test_simulation_normal_mode(self):
         """
         Test normal simulation mode (with progress bar)
@@ -135,7 +106,6 @@ class TestModelFunctionality(unittest.TestCase):
         inp_file, rpt_file, out_file = model.simulation_with_json(
             json_file=str(self.test_json_file),
             out_folder=str(self.temp_output_dir),
-            mode="fast"
         )
         
         # Verify output files are generated
@@ -161,7 +131,6 @@ class TestModelFunctionality(unittest.TestCase):
             json_file=str(self.test_json_file),
             out_folder=str(self.temp_output_dir),
             file_name="output",
-            mode="fast"
         )
 
         # Verify output files are generated
@@ -229,7 +198,6 @@ class TestModelFunctionality(unittest.TestCase):
             inp_file=inp_file,
             rpt_file=rpt_file,
             out_file=out_file,
-            mode="fast"
         )
         
         # Verify directory was created
@@ -254,7 +222,6 @@ class TestModelFunctionality(unittest.TestCase):
         inp_file, rpt_file, out_file = model.simulation_with_json(
             json_file=str(self.test_json_with_date_file),
             out_folder=str(self.temp_output_dir),
-            mode="fast"
         )
         
         # Verify output files are generated
@@ -299,8 +266,7 @@ class TestModelFunctionality(unittest.TestCase):
                     # Execute simulation with different JSON configs
                     inp_file, rpt_file, out_file = model.simulation_with_json(
                         json_file=str(json_file),
-                        out_folder=str(self.temp_output_dir / json_file.stem),
-                        mode="fast"
+                        out_folder=str(self.temp_output_dir / json_file.stem)
                     )
                     
                     # Verify output files are generated
@@ -358,7 +324,6 @@ class TestModelFunctionality(unittest.TestCase):
         inp_file, rpt_file, out_file = model.simulation_with_json(
             json_file=template_file,
             out_folder=output_folder,
-            mode="fast"
         )
         
         # Verify simulation output files are generated
