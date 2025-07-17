@@ -343,6 +343,7 @@ class TestModelFunctionality(unittest.TestCase):
         Test simulation using FlexiblePondingSolverAPI solver instance
         """
         model = Model(str(self.test_inp_file))
+        model.calc.allow_ponding = True
         
         # Specify output file paths
         inp_file = str(self.temp_output_dir / "test_flexible_ponding.inp")
@@ -378,6 +379,7 @@ class TestModelFunctionality(unittest.TestCase):
             self.skipTest(f"JSON configuration file does not exist: {self.test_json_file}")
         
         model = Model(str(self.test_inp_file))
+        model.calc.allow_ponding = True
         
         # Execute simulation using JSON configuration and FlexiblePondingSolverAPI
         # Create a FlexiblePondingSolverAPI instance with the model
@@ -405,6 +407,7 @@ class TestModelFunctionality(unittest.TestCase):
             self.skipTest(f"JSON configuration file with date does not exist: {self.test_json_with_date_file}")
         
         model = Model(str(self.test_inp_file))
+        model.calc.allow_ponding = True
         
         # Execute simulation using JSON configuration with date and FlexiblePondingSolverAPI
         # Create a FlexiblePondingSolverAPI instance with the model
@@ -451,6 +454,7 @@ class TestModelFunctionality(unittest.TestCase):
             self.skipTest(f"JSON configuration file does not exist: {self.test_json_file}")
 
         model = Model(str(self.test_inp_file))
+        model.calc.allow_ponding = True
 
         # Execute simulation using JSON configuration, custom file name and FlexiblePondingSolverAPI
         # Create a FlexiblePondingSolverAPI instance with the model
