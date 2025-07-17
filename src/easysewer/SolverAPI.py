@@ -186,3 +186,135 @@ class SWMMSolverAPI:
         day_of_week = c_int()
         self.swmm.swmm_decodeDate(date, byref(year), byref(month), byref(day), byref(hour), byref(minute), byref(second), byref(day_of_week))
         return (year.value, month.value, day.value, hour.value, minute.value, second.value, day_of_week.value)
+
+
+class FlexiblePondingSolverAPI(SWMMSolverAPI):
+    """
+    A flexible ponding solver API that extends the SWMM solver API with additional functionality.
+    This class inherits from SWMMSolverAPI but overrides certain methods to provide custom behavior.
+    """
+
+    def __init__(self, model):
+        """
+        Initialize the FlexiblePondingSolverAPI with a model.
+        
+        Args:
+            model: The model to be used with this solver
+        """
+        # Store the model reference
+        self.model = model
+
+        # Set up the library path for flexible ponding solver DLL
+        system = platform.system()
+        if getattr(sys, 'frozen', False):
+            if hasattr(sys, '_MEIPASS'):
+                base_path = sys._MEIPASS
+            else:
+                base_path = os.path.dirname(sys.executable)
+        else:
+            # Develop environment
+            base_path = os.path.dirname(os.path.abspath(__file__))
+
+        if system == 'Windows':
+            possible_paths = [
+                os.path.join(base_path, 'libs', 'win', 'flexible_ponding.dll.esdll'),
+                os.path.join(base_path, 'easysewer', 'libs', 'win', 'flexible_ponding.dll.esdll'),
+                os.path.join(os.path.dirname(__file__), 'libs', 'win', 'flexible_ponding.dll.esdll')
+            ]
+            lib_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    lib_path = path
+                    break
+            if lib_path is None:
+                raise FileNotFoundError(
+                    f"Could not find flexibleponding.dll in any of these locations: {possible_paths}")
+
+        else:
+            raise OSError('Unsupported operating system')
+
+        # Load the flexible ponding solver library
+        self.swmm = CDLL(lib_path)
+        self._set_prototypes()
+
+        # Prepare
+        self.ponding_nodes_index = None
+        self.ponding_nodes_area = None
+        self.ponding_nodes_depth = None
+        self.model_prepare()
+
+    def model_prepare(self):
+        # Check allow ponding
+        if self.model.calc.allow_ponding is not True:
+            raise Exception("FlexiblePondingSolverAPI only apply to model allowing ponding.")
+
+        # Prepare ponding nodes
+        self.ponding_nodes_index, self.ponding_nodes_area = self.get_ponding_junctions()
+        self.ponding_nodes_depth = [0] * len(self.ponding_nodes_index)  # Create a list to store ponding depth
+
+    def get_ponding_junctions(self):
+        junctions_index_list = []
+        junctions_ponding_area_list = []
+        for index, node in enumerate(self.model.node):
+            if hasattr(node, "surface_ponding_area"):
+                if node.surface_ponding_area > 0:  # Nodes with 0 pondedArea are considered to not allow ponding in SWMM
+                    junctions_index_list.append(index)
+                    junctions_ponding_area_list.append(node.surface_ponding_area)
+        return tuple(junctions_index_list), tuple(junctions_ponding_area_list)
+
+    def step(self):
+        """
+        Override the step method to provide custom behavior for flexible ponding solver.
+        
+        This method extends the standard SWMM step function by adding custom ponding depth
+        calculations for nodes that have ponding areas defined. For each simulation time step,
+        it retrieves the current ponding depth from the SWMM engine, applies custom ponding
+        logic through the update_ponding_depth method, and then updates the SWMM model with
+        the modified ponding depth values.
+        
+        Returns:
+            tuple: A tuple containing the result code and elapsed time value
+                  - result (int): The status code returned by the SWMM engine
+                  - elapsed_time.value (float): The elapsed simulation time in decimal days
+        
+        Note:
+            The property code 310 is used to get/set the ponding depth value in the SWMM engine.
+        """
+        # First call the standard SWMM step function to advance the simulation by one time step
+        elapsed_time = c_double()
+        result = self.swmm.swmm_step(byref(elapsed_time))
+
+        # Process each node that has ponding enabled
+        for i, (node_index, ponding_area, last_ponding_depth) in enumerate(zip(self.ponding_nodes_index, self.ponding_nodes_area, self.ponding_nodes_depth)):
+            # Get the current ponding depth calculated by the SWMM engine
+            current_ponding_depth = self.get_value(310, node_index)
+            if current_ponding_depth < 0.01:
+                continue
+
+            # Apply custom ponding depth logic
+            updated_ponding_depth = self.update_ponding_depth(ponding_area, last_ponding_depth, current_ponding_depth)
+
+            # Store the updated ponding depth for use in the next time step
+            # Use the correct index in the ponding_nodes_depth list, not the node_index from the model
+            self.ponding_nodes_depth[i] = updated_ponding_depth
+
+            # Update the SWMM engine with the modified ponding depth
+            self.set_value(310, node_index, updated_ponding_depth)
+
+        return result, elapsed_time.value
+
+    def update_ponding_depth(self, ponding_area, last_ponding_depth, current_ponding_depth):
+        # with more sophisticated ponding depth calculations based on specific requirements
+        updated_ponding_depth = current_ponding_depth
+
+        return updated_ponding_depth
+
+    # Explicitly not inheriting the run method by overriding it to raise NotImplementedError
+    def run(self, input_file, report_file, output_file):
+        """
+        This method is intentionally not implemented as per requirements.
+        
+        Raises:
+            NotImplementedError: This method is not supported in FlexiblePondingSolverAPI
+        """
+        raise NotImplementedError("The run method is not supported in FlexiblePondingSolverAPI")
