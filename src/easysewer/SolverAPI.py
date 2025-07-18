@@ -1,10 +1,10 @@
 """
-pass
+SolverAPI module for easysewer package.
+This module provides interfaces to the SWMM solver libraries and implements
+custom solvers for specific simulation scenarios.
 """
-import platform
-import os
-import sys
 from ctypes import CDLL, c_char_p, c_int, c_double, c_float, byref, POINTER, create_string_buffer
+from .utils import find_library_path
 
 
 class SWMMSolverAPI:
@@ -20,48 +20,10 @@ class SWMMSolverAPI:
     swmm_NODE_RPTFLAG = 309
 
     def __init__(self):
-        #
-        if getattr(sys, 'frozen', False):
-            if hasattr(sys, '_MEIPASS'):
-                base_path = sys._MEIPASS
-            else:
-                base_path = os.path.dirname(sys.executable)
-        else:
-            # Develop environment
-            base_path = os.path.dirname(os.path.abspath(__file__))
+        # Find the library path
+        lib_path = find_library_path('swmm5')
 
-        system = platform.system()
-        if system == 'Windows':
-            possible_paths = [
-                os.path.join(base_path, 'libs', 'win', 'swmm5.dll.esdll'),
-                os.path.join(base_path, 'easysewer', 'libs', 'win', 'swmm5.dll.esdll'),
-                os.path.join(os.path.dirname(__file__), 'libs', 'win', 'swmm5.dll.esdll')
-            ]
-            lib_path = None
-            for path in possible_paths:
-                if os.path.exists(path):
-                    lib_path = path
-                    break
-            if lib_path is None:
-                raise FileNotFoundError(f"Could not find swmm-output.dll in any of these locations: {possible_paths}")
-
-        elif system == 'Linux':
-            possible_paths = [
-                os.path.join(base_path, 'libs', 'linux', 'libswmm5.so.esso'),
-                os.path.join(base_path, 'easysewer', 'libs', 'linux', 'libswmm5.so.esso'),
-                os.path.join(os.path.dirname(__file__), 'libs', 'linux', 'libswmm5.so.esso')
-            ]
-            lib_path = None
-            for path in possible_paths:
-                if os.path.exists(path):
-                    lib_path = path
-                    break
-            if lib_path is None:
-                raise FileNotFoundError(f"Could not find swmm-output.so in any of these locations: {possible_paths}")
-
-        else:
-            raise OSError('Unsupported operating system')
-
+        # Load the library
         self.swmm = CDLL(lib_path)
         self._set_prototypes()
 
@@ -196,7 +158,7 @@ class SWMMSolverAPI:
         second = c_int()
         day_of_week = c_int()
         self.swmm.swmm_decodeDate(date, byref(year), byref(month), byref(day), byref(hour), byref(minute), byref(second), byref(day_of_week))
-        return (year.value, month.value, day.value, hour.value, minute.value, second.value, day_of_week.value)
+        return year.value, month.value, day.value, hour.value, minute.value, second.value, day_of_week.value
 
 
 class FlexiblePondingSolverAPI(SWMMSolverAPI):
@@ -217,34 +179,8 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
         # Store the model reference
         self.model = model
 
-        # Set up the library path for flexible ponding solver DLL
-        system = platform.system()
-        if getattr(sys, 'frozen', False):
-            if hasattr(sys, '_MEIPASS'):
-                base_path = sys._MEIPASS
-            else:
-                base_path = os.path.dirname(sys.executable)
-        else:
-            # Develop environment
-            base_path = os.path.dirname(os.path.abspath(__file__))
-
-        if system == 'Windows':
-            possible_paths = [
-                os.path.join(base_path, 'libs', 'win', 'flexible_ponding.dll.esdll'),
-                os.path.join(base_path, 'easysewer', 'libs', 'win', 'flexible_ponding.dll.esdll'),
-                os.path.join(os.path.dirname(__file__), 'libs', 'win', 'flexible_ponding.dll.esdll')
-            ]
-            lib_path = None
-            for path in possible_paths:
-                if os.path.exists(path):
-                    lib_path = path
-                    break
-            if lib_path is None:
-                raise FileNotFoundError(
-                    f"Could not find flexibleponding.dll in any of these locations: {possible_paths}")
-
-        else:
-            raise OSError('Unsupported operating system')
+        # Find the library path
+        lib_path = find_library_path('flexible_ponding')
 
         # Load the flexible ponding solver library
         self.swmm = CDLL(lib_path)
@@ -471,7 +407,6 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
 
         return updated_ponding_depth, updated_overflow, updated_volume
 
-    # Explicitly not inheriting the run method by overriding it to raise NotImplementedError
     def run(self, input_file, report_file, output_file):
         """
         This method is intentionally not implemented as per requirements.
