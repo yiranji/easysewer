@@ -344,6 +344,7 @@ class TestModelFunctionality(unittest.TestCase):
         """
         model = Model(str(self.test_inp_file))
         model.calc.allow_ponding = True
+        model.calc.flow_routing_method = "DYNWAVE"
         
         # Specify output file paths
         inp_file = str(self.temp_output_dir / "test_flexible_ponding.inp")
@@ -380,6 +381,7 @@ class TestModelFunctionality(unittest.TestCase):
         
         model = Model(str(self.test_inp_file))
         model.calc.allow_ponding = True
+        model.calc.flow_routing_method = "DYNWAVE"
         
         # Execute simulation using JSON configuration and FlexiblePondingSolverAPI
         # Create a FlexiblePondingSolverAPI instance with the model
@@ -408,6 +410,7 @@ class TestModelFunctionality(unittest.TestCase):
         
         model = Model(str(self.test_inp_file))
         model.calc.allow_ponding = True
+        model.calc.flow_routing_method = "DYNWAVE"
         
         # Execute simulation using JSON configuration with date and FlexiblePondingSolverAPI
         # Create a FlexiblePondingSolverAPI instance with the model
@@ -455,6 +458,7 @@ class TestModelFunctionality(unittest.TestCase):
 
         model = Model(str(self.test_inp_file))
         model.calc.allow_ponding = True
+        model.calc.flow_routing_method = "DYNWAVE"
 
         # Execute simulation using JSON configuration, custom file name and FlexiblePondingSolverAPI
         # Create a FlexiblePondingSolverAPI instance with the model
