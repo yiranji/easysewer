@@ -8,6 +8,17 @@ from ctypes import CDLL, c_char_p, c_int, c_double, c_float, byref, POINTER, cre
 
 
 class SWMMSolverAPI:
+    swmm_NODE_TYPE = 300
+    swmm_NODE_ELEV = 301
+    swmm_NODE_MAXDEPTH = 302
+    swmm_NODE_DEPTH = 303
+    swmm_NODE_HEAD = 304
+    swmm_NODE_VOLUME = 305
+    swmm_NODE_LATFLOW = 306
+    swmm_NODE_INFLOW = 307
+    swmm_NODE_OVERFLOW = 308
+    swmm_NODE_RPTFLAG = 309
+
     def __init__(self):
         #
         if getattr(sys, 'frozen', False):
@@ -194,6 +205,8 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
     This class inherits from SWMMSolverAPI but overrides certain methods to provide custom behavior.
     """
 
+    swmm_NODE_PONDDEPTH = 310
+
     def __init__(self, model):
         """
         Initialize the FlexiblePondingSolverAPI with a model.
@@ -239,8 +252,8 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
 
         # Prepare
         self.ponding_nodes_index = None
-        self.ponding_nodes_area = None
         self.ponding_nodes_depth = None
+        self.ponding_nodes_volume = None
         self.model_prepare()
 
     def _set_prototypes(self):
@@ -357,20 +370,22 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
         # Check allow ponding
         if self.model.calc.allow_ponding is not True:
             raise Exception("FlexiblePondingSolverAPI only apply to model allowing ponding.")
+        # Check Solver
+        if self.model.calc.flow_routing_method != "DYNWAVE":
+            raise Exception("FlexiblePondingSolverAPI only apply to 'DYNWAVE' solver.")
 
         # Prepare ponding nodes
-        self.ponding_nodes_index, self.ponding_nodes_area = self.get_ponding_junctions()
+        self.ponding_nodes_index = self.get_ponding_junctions()
         self.ponding_nodes_depth = [0] * len(self.ponding_nodes_index)  # Create a list to store ponding depth
+        self.ponding_nodes_volume = [0] * len(self.ponding_nodes_index)
 
     def get_ponding_junctions(self):
         junctions_index_list = []
-        junctions_ponding_area_list = []
         for index, node in enumerate(self.model.node):
             if hasattr(node, "surface_ponding_area"):
                 if node.surface_ponding_area > 0:  # Nodes with 0 pondedArea are considered to not allow ponding in SWMM
                     junctions_index_list.append(index)
-                    junctions_ponding_area_list.append(node.surface_ponding_area)
-        return tuple(junctions_index_list), tuple(junctions_ponding_area_list)
+        return tuple(junctions_index_list)
 
     def step(self):
         """
@@ -399,26 +414,36 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
         error_code = self.exec_routing()
 
         # Process each node that has ponding enabled
-        for i, (node_index, ponding_area, last_ponding_depth) in enumerate(zip(self.ponding_nodes_index, self.ponding_nodes_area, self.ponding_nodes_depth)):
+        for i, (node_index, last_ponding_depth, last_node_volume) in enumerate(
+                zip(self.ponding_nodes_index, self.ponding_nodes_depth, self.ponding_nodes_volume)):
 
             # Get the current ponding depth calculated by the SWMM engine
-            current_ponding_depth = self.get_value(310, node_index)
-            current_overflow = self.get_value(308, node_index)
+            current_ponding_depth = self.get_value(self.swmm_NODE_PONDDEPTH, node_index)
+            current_overflow = self.get_value(self.swmm_NODE_OVERFLOW, node_index)
+            current_volume = self.get_value(self.swmm_NODE_VOLUME, node_index)
+
             if current_ponding_depth < 0.001:
+                continue
+            if current_overflow < 0.001:
+                continue
+            if current_ponding_depth < last_ponding_depth:
                 continue
 
             # Apply custom ponding depth logic
-            time_step = self.get_value(3, 0)
-            updated_ponding_depth, updated_overflow = (
-                self.update_ponding_status(time_step, ponding_area, last_ponding_depth, current_ponding_depth, current_overflow))
+            updated_ponding_depth, updated_overflow, updated_volume = (
+                self.update_ponding_status(
+                    last_ponding_depth, last_node_volume,
+                    current_ponding_depth, current_overflow, current_volume))
 
             # Store the updated ponding depth for use in the next time step
-            # Use the correct index in the ponding_nodes_depth list, not the node_index from the model
             self.ponding_nodes_depth[i] = updated_ponding_depth
+            self.ponding_nodes_volume[i] = updated_volume
 
             # Update the SWMM engine with the modified ponding depth
-            self.set_value(310, node_index, updated_ponding_depth)
-            self.set_value(308, node_index, updated_overflow)
+            # DynamicWave first uses depth to update volume
+            self.set_value(self.swmm_NODE_PONDDEPTH, node_index, updated_ponding_depth)
+            self.set_value(self.swmm_NODE_OVERFLOW, node_index, updated_overflow)
+            self.set_value(self.swmm_NODE_VOLUME, node_index, updated_volume)
 
         # Save results
         if error_code == 0:
@@ -427,13 +452,24 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
 
         return error_code, elapsed_time
 
-    def update_ponding_status(self, time_step, ponding_area, last_ponding_depth, current_ponding_depth, current_overflow):
+    def update_ponding_status(self,
+                              last_ponding_depth, last_node_volume,
+                              current_ponding_depth, current_overflow, current_volume):
 
-        # TODO： updated_overflow is not correct.
-        updated_overflow = (current_ponding_depth - last_ponding_depth) * ponding_area / time_step
-        updated_ponding_depth = 0
+        delta_time = (current_volume - last_node_volume) / current_overflow
+        delta_depth = current_ponding_depth - last_ponding_depth
+        node_surface_area = (current_volume - last_node_volume) / delta_depth
 
-        return updated_ponding_depth, updated_overflow
+        # Let 50% ponding water to disappear
+        updated_ponding_depth = current_ponding_depth - delta_depth / 2
+
+        if updated_ponding_depth > current_ponding_depth:
+            print(delta_depth)
+            raise Exception("updated_ponding_depth should be lower than current_ponding_depth")
+        updated_overflow = (current_ponding_depth - updated_ponding_depth) * node_surface_area / delta_time
+        updated_volume = current_volume - (current_ponding_depth - updated_ponding_depth) * node_surface_area
+
+        return updated_ponding_depth, updated_overflow, updated_volume
 
     # Explicitly not inheriting the run method by overriding it to raise NotImplementedError
     def run(self, input_file, report_file, output_file):
