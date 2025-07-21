@@ -82,7 +82,8 @@ class SWMMSolverAPI:
         self.swmm.swmm_writeLine.argtypes = [c_char_p]
         self.swmm.swmm_writeLine.restype = None
 
-        self.swmm.swmm_decodeDate.argtypes = [c_double, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)]
+        self.swmm.swmm_decodeDate.argtypes = [c_double, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int),
+                                              POINTER(c_int), POINTER(c_int), POINTER(c_int)]
         self.swmm.swmm_decodeDate.restype = None
 
     def run(self, input_file, report_file, output_file):
@@ -157,7 +158,8 @@ class SWMMSolverAPI:
         minute = c_int()
         second = c_int()
         day_of_week = c_int()
-        self.swmm.swmm_decodeDate(date, byref(year), byref(month), byref(day), byref(hour), byref(minute), byref(second), byref(day_of_week))
+        self.swmm.swmm_decodeDate(date, byref(year), byref(month), byref(day), byref(hour), byref(minute),
+                                  byref(second), byref(day_of_week))
         return year.value, month.value, day.value, hour.value, minute.value, second.value, day_of_week.value
 
 
@@ -168,8 +170,9 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
     """
 
     swmm_NODE_PONDDEPTH = 310
+    swmm_NODE_EXFLOODING = 311
 
-    def __init__(self, model):
+    def __init__(self, model, external_flooding_raito=0.5):
         """
         Initialize the FlexiblePondingSolverAPI with a model.
         
@@ -190,7 +193,14 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
         self.ponding_nodes_index = None
         self.ponding_nodes_depth = None
         self.ponding_nodes_volume = None
+        self.last_routing_time = 0.0
         self.model_prepare()
+
+        if 0 < external_flooding_raito < 1:
+            self.external_flooding_raito = external_flooding_raito
+        else:
+            self.external_flooding_raito = 0.5
+            Warning(f"Invalid external_flooding_raito={external_flooding_raito}, use 0.5 instead.")
 
     def _set_prototypes(self):
         self.swmm.swmm_run.argtypes = [c_char_p, c_char_p, c_char_p]
@@ -341,13 +351,17 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
         Note:
             The property code 310 is used to get/set the ponding depth value in the SWMM engine.
         """
-        current_routing_time = self.get_current_time() * 86400.0 * 1000.0  # Change to millisecond
+        current_routing_time_millisecond = self.get_current_time() * 86400.0 * 1000.0  # Change to millisecond
         routing_duration = self.get_routing_duration()
-        if current_routing_time >= routing_duration:
+        if current_routing_time_millisecond >= routing_duration:
             return 0, 0.0
 
         # Routing
         error_code = self.exec_routing()
+        # Get current time step
+        current_routing_time_second = self.get_current_time() * 86400.0
+        delta_time = current_routing_time_second - self.last_routing_time
+        self.last_routing_time = current_routing_time_second
 
         # Process each node that has ponding enabled
         for i, (node_index, last_ponding_depth, last_node_volume) in enumerate(
@@ -358,28 +372,24 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
             current_overflow = self.get_value(self.swmm_NODE_OVERFLOW, node_index)
             current_volume = self.get_value(self.swmm_NODE_VOLUME, node_index)
 
-            if current_ponding_depth < 0.001:
-                continue
-            if current_overflow < 0.001:
-                continue
-            if current_ponding_depth < last_ponding_depth:
-                continue
+            if current_ponding_depth > 0.3 and current_overflow > 0.1 and current_ponding_depth > last_ponding_depth:
+                # Apply custom ponding depth logic
+                updated_ponding_depth, updated_overflow, updated_exflooding, updated_volume = (
+                    self.update_ponding_status(delta_time,
+                                               last_ponding_depth, last_node_volume,
+                                               current_ponding_depth, current_overflow, current_volume))
 
-            # Apply custom ponding depth logic
-            updated_ponding_depth, updated_overflow, updated_volume = (
-                self.update_ponding_status(
-                    last_ponding_depth, last_node_volume,
-                    current_ponding_depth, current_overflow, current_volume))
+                # Store the updated ponding depth for use in the next time step
+                self.ponding_nodes_depth[i] = updated_ponding_depth
+                self.ponding_nodes_volume[i] = updated_volume
 
-            # Store the updated ponding depth for use in the next time step
-            self.ponding_nodes_depth[i] = updated_ponding_depth
-            self.ponding_nodes_volume[i] = updated_volume
-
-            # Update the SWMM engine with the modified ponding depth
-            # DynamicWave first uses depth to update volume
-            self.set_value(self.swmm_NODE_PONDDEPTH, node_index, updated_ponding_depth)
-            self.set_value(self.swmm_NODE_OVERFLOW, node_index, updated_overflow)
-            self.set_value(self.swmm_NODE_VOLUME, node_index, updated_volume)
+                # Update the SWMM engine with the modified ponding depth
+                self.set_value(self.swmm_NODE_PONDDEPTH, node_index, updated_ponding_depth)
+                self.set_value(self.swmm_NODE_EXFLOODING, node_index, updated_exflooding)
+                self.set_value(self.swmm_NODE_OVERFLOW, node_index, updated_overflow)
+                self.set_value(self.swmm_NODE_VOLUME, node_index, updated_volume)
+            else:
+                self.set_value(self.swmm_NODE_EXFLOODING, node_index, 0)
 
         # Save results
         if error_code == 0:
@@ -388,24 +398,28 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
 
         return error_code, elapsed_time
 
-    def update_ponding_status(self,
+    def update_ponding_status(self, delta_time,
                               last_ponding_depth, last_node_volume,
                               current_ponding_depth, current_overflow, current_volume):
 
-        delta_time = (current_volume - last_node_volume) / current_overflow
         delta_depth = current_ponding_depth - last_ponding_depth
-        node_surface_area = (current_volume - last_node_volume) / delta_depth
+        delta_volume = current_volume - last_node_volume
+        node_surface_area = delta_volume / delta_depth
 
-        # Let 50% ponding water to disappear
-        updated_ponding_depth = current_ponding_depth - delta_depth / 2
+        # Let (default 50%) increasing ponding water to disappear
+        updated_volume = current_volume - delta_volume * self.external_flooding_raito
+        updated_exflooding = (current_volume - updated_volume) / delta_time
+
+        updated_delta_volume = updated_volume - last_node_volume
+
+        updated_ponding_depth = updated_delta_volume / node_surface_area + last_ponding_depth
+        updated_overflow = current_overflow - updated_exflooding
 
         if updated_ponding_depth > current_ponding_depth:
             print(delta_depth)
             raise Exception("updated_ponding_depth should be lower than current_ponding_depth")
-        updated_overflow = (current_ponding_depth - updated_ponding_depth) * node_surface_area / delta_time
-        updated_volume = current_volume - (current_ponding_depth - updated_ponding_depth) * node_surface_area
 
-        return updated_ponding_depth, updated_overflow, updated_volume
+        return updated_ponding_depth, updated_overflow, updated_exflooding, updated_volume
 
     def run(self, input_file, report_file, output_file):
         """
