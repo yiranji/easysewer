@@ -12,7 +12,7 @@ import uuid
 import os
 import copy
 from .UDM import UrbanDrainageModel
-from .SolverAPI import SWMMSolverAPI
+from .SolverAPI import SWMMSolverAPI, FlexiblePondingSolverAPI
 from .JsonHandler import JsonHandler
 
 
@@ -44,16 +44,17 @@ class Model(UrbanDrainageModel):
             inp_file: str | None = None,
             rpt_file: str | None = None,
             out_file: str | None = None,
-            mode: str = "normal"
+            solver: SWMMSolverAPI | FlexiblePondingSolverAPI = SWMMSolverAPI(),
+            **kwargs
     ) -> tuple[str, str, str]:
         """
         Execute SWMM simulation with progress tracking and error checking.
 
         Args:
+            solver:
             inp_file: Path for inp .inp file. Auto-generated if None.
             rpt_file: Path for rpt .rpt file. Auto-generated if None.
             out_file: Path for output .out file. Auto-generated if None.
-            mode: Execution mode ("fast" for quick run, "normal" for progress tracking)
 
         Returns:
             tuple: Paths to generated (inp_file, rpt_file, out_file)
@@ -92,15 +93,6 @@ class Model(UrbanDrainageModel):
 
         # Export model to desired path
         self.to_inp(inp_file)
-
-        # Initialize swmm solver
-        solver = SWMMSolverAPI()
-
-        # If using fast mode, then use run() method to execute the simulation
-        if mode == "fast":
-            solver.run(inp_file, rpt_file, out_file)
-            solver.close()
-            return inp_file, rpt_file, out_file
 
         # Open the model
         err = solver.open(inp_file, rpt_file, out_file)
@@ -207,13 +199,14 @@ class Model(UrbanDrainageModel):
             json_file: str,
             out_folder: str,
             file_name: str | None = None,
-            mode: str = "normal"
+            solver: SWMMSolverAPI | FlexiblePondingSolverAPI = SWMMSolverAPI(),
+            **kwargs
     ) -> tuple[str, str, str]:
         """
         Create a configured model copy using JSON configuration file and run simulation.
         
         Args:
-            mode:
+            solver:
             json_file: JSON configuration file path
             out_folder: Output folder for simulation files
             file_name: File name for simulation files
@@ -249,7 +242,7 @@ class Model(UrbanDrainageModel):
         rpt_file = os.path.join(out_folder, f"{file_name}.rpt")
         out_file = os.path.join(out_folder, f"{file_name}.out")
 
-        model_copy.simulation(inp_file, rpt_file, out_file, mode)
+        model_copy.simulation(inp_file, rpt_file, out_file, solver)
 
         return inp_file, rpt_file, out_file
 

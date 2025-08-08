@@ -4,6 +4,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from easysewer.ModelAPI import Model
+from easysewer.SolverAPI import FlexiblePondingSolverAPI
 
 
 class TestModelFunctionality(unittest.TestCase):
@@ -22,8 +23,8 @@ class TestModelFunctionality(unittest.TestCase):
         
         # Set test file paths
         cls.test_inp_file = cls.test_data_dir / "Model" / "cubic.inp"
-        cls.test_json_file = cls.test_data_dir / "Model" / "r8-10.json"
-        cls.test_json_with_date_file = cls.test_data_dir / "Model" / "r8-10-with-date.json"
+        cls.test_json_file = cls.test_data_dir / "Model" / "rain_event_1.json"
+        cls.test_json_with_date_file = cls.test_data_dir / "Model" / "rain_event_1_with_date.json"
         
         # Create temporary output directory
         cls.temp_output_dir = Path(tempfile.mkdtemp())
@@ -62,35 +63,6 @@ class TestModelFunctionality(unittest.TestCase):
         """
         model = Model()
         self.assertIsNotNone(model)
-    
-    def test_simulation_fast_mode(self):
-        """
-        Test fast simulation mode
-        """
-        model = Model(str(self.test_inp_file))
-
-        # Specify output file paths
-        inp_file = str(self.temp_output_dir / "test_normal.inp")
-        rpt_file = str(self.temp_output_dir / "test_normal.rpt")
-        out_file = str(self.temp_output_dir / "test_normal.out")
-        
-        # Execute fast simulation
-        inp_file, rpt_file, out_file = model.simulation(
-            inp_file=inp_file,
-            rpt_file=rpt_file,
-            out_file=out_file,
-            mode="fast"
-        )
-        
-        # Verify output files are generated
-        self.assertTrue(os.path.exists(inp_file), f"inp file not generated: {inp_file}")
-        self.assertTrue(os.path.exists(rpt_file), f"rpt file not generated: {rpt_file}")
-        self.assertTrue(os.path.exists(out_file), f"out file not generated: {out_file}")
-        
-        # Clean up generated files
-        for file_path in [inp_file, rpt_file, out_file]:
-            if os.path.exists(file_path):
-                os.remove(file_path)
     
     def test_simulation_normal_mode(self):
         """
@@ -135,7 +107,6 @@ class TestModelFunctionality(unittest.TestCase):
         inp_file, rpt_file, out_file = model.simulation_with_json(
             json_file=str(self.test_json_file),
             out_folder=str(self.temp_output_dir),
-            mode="fast"
         )
         
         # Verify output files are generated
@@ -161,7 +132,6 @@ class TestModelFunctionality(unittest.TestCase):
             json_file=str(self.test_json_file),
             out_folder=str(self.temp_output_dir),
             file_name="output",
-            mode="fast"
         )
 
         # Verify output files are generated
@@ -229,7 +199,6 @@ class TestModelFunctionality(unittest.TestCase):
             inp_file=inp_file,
             rpt_file=rpt_file,
             out_file=out_file,
-            mode="fast"
         )
         
         # Verify directory was created
@@ -254,7 +223,6 @@ class TestModelFunctionality(unittest.TestCase):
         inp_file, rpt_file, out_file = model.simulation_with_json(
             json_file=str(self.test_json_with_date_file),
             out_folder=str(self.temp_output_dir),
-            mode="fast"
         )
         
         # Verify output files are generated
@@ -299,8 +267,7 @@ class TestModelFunctionality(unittest.TestCase):
                     # Execute simulation with different JSON configs
                     inp_file, rpt_file, out_file = model.simulation_with_json(
                         json_file=str(json_file),
-                        out_folder=str(self.temp_output_dir / json_file.stem),
-                        mode="fast"
+                        out_folder=str(self.temp_output_dir / json_file.stem)
                     )
                     
                     # Verify output files are generated
@@ -358,7 +325,6 @@ class TestModelFunctionality(unittest.TestCase):
         inp_file, rpt_file, out_file = model.simulation_with_json(
             json_file=template_file,
             out_folder=output_folder,
-            mode="fast"
         )
         
         # Verify simulation output files are generated
@@ -371,6 +337,153 @@ class TestModelFunctionality(unittest.TestCase):
         self.assertTrue(output_folder in rpt_file, "rpt file should be in specified output folder")
         self.assertTrue(output_folder in out_file, "out file should be in specified output folder")
         
+
+    def test_simulation_with_flexible_ponding_solver(self):
+        """
+        Test simulation using FlexiblePondingSolverAPI solver instance
+        """
+        model = Model(str(self.test_inp_file))
+        model.calc.allow_ponding = True
+        model.calc.flow_routing_method = "DYNWAVE"
+        
+        # Specify output file paths
+        inp_file = str(self.temp_output_dir / "test_flexible_ponding.inp")
+        rpt_file = str(self.temp_output_dir / "test_flexible_ponding.rpt")
+        out_file = str(self.temp_output_dir / "test_flexible_ponding.out")
+        
+        # Execute simulation using FlexiblePondingSolverAPI
+        # Create a FlexiblePondingSolverAPI instance with the model
+        solver_instance = FlexiblePondingSolverAPI(model)
+        result_inp, result_rpt, result_out = model.simulation(
+            inp_file=inp_file,
+            rpt_file=rpt_file,
+            out_file=out_file,
+            solver=solver_instance
+        )
+        
+        # Verify returned file paths
+        self.assertEqual(result_inp, inp_file)
+        self.assertEqual(result_rpt, rpt_file)
+        self.assertEqual(result_out, out_file)
+        
+        # Verify output files are generated
+        self.assertTrue(os.path.exists(inp_file))
+        self.assertTrue(os.path.exists(rpt_file))
+        self.assertTrue(os.path.exists(out_file))
+    
+    def test_simulation_with_json_and_flexible_ponding_solver(self):
+        """
+        Test simulation using JSON configuration file and FlexiblePondingSolverAPI solver instance
+        """
+        # Skip test if JSON configuration file does not exist
+        if not self.test_json_file.exists():
+            self.skipTest(f"JSON configuration file does not exist: {self.test_json_file}")
+        
+        model = Model(str(self.test_inp_file))
+        model.calc.allow_ponding = True
+        model.calc.flow_routing_method = "DYNWAVE"
+        
+        # Execute simulation using JSON configuration and FlexiblePondingSolverAPI
+        # Create a FlexiblePondingSolverAPI instance with the model
+        solver_instance = FlexiblePondingSolverAPI(model)
+        inp_file, rpt_file, out_file = model.simulation_with_json(
+            json_file=str(self.test_json_file),
+            out_folder=str(self.temp_output_dir / "flexible_ponding"),
+            solver=solver_instance
+        )
+        
+        # Verify output files are generated
+        self.assertTrue(os.path.exists(inp_file))
+        self.assertTrue(os.path.exists(rpt_file))
+        self.assertTrue(os.path.exists(out_file))
+        
+        # Verify files are in the specified output directory
+        self.assertTrue(str(self.temp_output_dir) in inp_file)
+    
+    def test_simulation_with_json_date_and_flexible_ponding_solver(self):
+        """
+        Test simulation using JSON configuration file with date and FlexiblePondingSolverAPI solver instance
+        """
+        # Skip test if JSON configuration file with date does not exist
+        if not self.test_json_with_date_file.exists():
+            self.skipTest(f"JSON configuration file with date does not exist: {self.test_json_with_date_file}")
+        
+        model = Model(str(self.test_inp_file))
+        model.calc.allow_ponding = True
+        model.calc.flow_routing_method = "DYNWAVE"
+        
+        # Execute simulation using JSON configuration with date and FlexiblePondingSolverAPI
+        # Create a FlexiblePondingSolverAPI instance with the model
+        solver_instance = FlexiblePondingSolverAPI(model)
+        inp_file, rpt_file, out_file = model.simulation_with_json(
+            json_file=str(self.test_json_with_date_file),
+            out_folder=str(self.temp_output_dir / "flexible_ponding_with_date"),
+            solver=solver_instance
+        )
+        
+        # Verify output files are generated
+        self.assertTrue(os.path.exists(inp_file))
+        self.assertTrue(os.path.exists(rpt_file))
+        self.assertTrue(os.path.exists(out_file))
+        
+        # Verify files are in the specified output directory
+        self.assertTrue(str(self.temp_output_dir) in inp_file)
+        
+        # Load the generated inp file and verify rain configuration
+        generated_model = Model(inp_file)
+
+        # Verify rain time series configuration
+        self.assertGreater(len(generated_model.rain.ts_list), 0, "Rain time series list should not be empty")
+
+        first_ts = generated_model.rain.ts_list[0]
+        self.assertTrue(hasattr(first_ts, 'has_date'), "Rain time series should have has_date attribute")
+        self.assertTrue(hasattr(first_ts, 'start_datetime'), "Rain time series should have start_datetime attribute")
+
+        # Verify has_date is True for date configuration
+        self.assertTrue(first_ts.has_date, "Rain time series should have has_date=True for date configuration")
+
+        # Verify specific start_datetime value
+        from datetime import datetime
+        expected_datetime = datetime(2025, 1, 1, 23, 0)
+        self.assertEqual(first_ts.start_datetime, expected_datetime,
+                         "Rain time series start_datetime should be 2025-01-01 23:00")
+
+    def test_simulation_with_json_and_custom_file_name_flexible_ponding(self):
+        """
+        Test simulation using JSON configuration file, custom file name and FlexiblePondingSolverAPI solver instance
+        """
+        # Skip test if JSON configuration file does not exist
+        if not self.test_json_file.exists():
+            self.skipTest(f"JSON configuration file does not exist: {self.test_json_file}")
+
+        model = Model(str(self.test_inp_file))
+        model.calc.allow_ponding = True
+        model.calc.flow_routing_method = "DYNWAVE"
+
+        # Execute simulation using JSON configuration, custom file name and FlexiblePondingSolverAPI
+        # Create a FlexiblePondingSolverAPI instance with the model
+        solver_instance = FlexiblePondingSolverAPI(model)
+        inp_file, rpt_file, out_file = model.simulation_with_json(
+            json_file=str(self.test_json_file),
+            out_folder=str(self.temp_output_dir / "flexible_ponding_custom"),
+            file_name="flexible_ponding_output",
+            solver=solver_instance
+        )
+
+        # Verify output files are generated
+        self.assertTrue(os.path.exists(inp_file))
+        self.assertTrue(os.path.exists(rpt_file))
+        self.assertTrue(os.path.exists(out_file))
+
+        # Verify files are in the specified output directory
+        self.assertTrue(str(self.temp_output_dir) in inp_file)
+        
+        # Verify output file names contain specified 'flexible_ponding_output'
+        from pathlib import Path
+        self.assertIn("flexible_ponding_output", Path(inp_file).stem, "inp file name should contain 'flexible_ponding_output'")
+        self.assertIn("flexible_ponding_output", Path(rpt_file).stem, "rpt file name should contain 'flexible_ponding_output'")
+        self.assertIn("flexible_ponding_output", Path(out_file).stem, "out file name should contain 'flexible_ponding_output'")
+
 
 if __name__ == '__main__':
     unittest.main()
