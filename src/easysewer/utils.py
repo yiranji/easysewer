@@ -28,9 +28,11 @@ def find_library_path(lib_name: str) -> str:
     # Determine base path based on execution environment
     if getattr(sys, 'frozen', False):
         if hasattr(sys, '_MEIPASS'):
-            base_path = sys._MEIPASS
+            # Use realpath to resolve short file names (8.3 format) to full paths
+            base_path = os.path.realpath(sys._MEIPASS)
         else:
-            base_path = os.path.dirname(sys.executable)
+            # Use realpath to resolve short file names (8.3 format) to full paths
+            base_path = os.path.realpath(os.path.dirname(sys.executable))
     else:
         # Development environment
         base_path = os.path.dirname(os.path.abspath(__file__))
@@ -61,11 +63,14 @@ def find_library_path(lib_name: str) -> str:
     lib_path = None
     for path in possible_paths:
         if os.path.exists(path):
-            lib_path = path
+            # Use realpath to resolve short file names to full paths
+            lib_path = os.path.realpath(path)
             break
             
     if lib_path is None:
-        raise FileNotFoundError(f"Could not find {lib_name}{lib_ext} in any of these locations: {possible_paths}")
+        # Also resolve paths in error message for better debugging
+        resolved_paths = [os.path.realpath(path) for path in possible_paths]
+        raise FileNotFoundError(f"Could not find {lib_name}{lib_ext} in any of these locations: {resolved_paths}")
         
     return lib_path
 
