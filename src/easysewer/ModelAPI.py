@@ -14,6 +14,7 @@ import copy
 from .UDM import UrbanDrainageModel
 from .SolverAPI import SWMMSolverAPI, FlexiblePondingSolverAPI
 from .JsonHandler import JsonHandler
+from .Node import Divider
 
 
 class Model(UrbanDrainageModel):
@@ -90,6 +91,9 @@ class Model(UrbanDrainageModel):
             # Check if directory exists, create it if not
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
+
+        # Pre-export checks
+        self._pre_export_checks()
 
         # Export model to desired path
         self.to_inp(inp_file)
@@ -416,3 +420,10 @@ class Model(UrbanDrainageModel):
             print("  No calc configuration")
 
         print("=" * 50)
+
+    def _pre_export_checks(self) -> None:
+
+        # Divider
+        has_divider = any(isinstance(n, Divider) for n in self.node)
+        if has_divider and str(self.calc.flow_routing_method).upper() == 'DYNWAVE':
+            print("WARNING: Divider nodes are inactive under DYNWAVE and behave as junction nodes.")

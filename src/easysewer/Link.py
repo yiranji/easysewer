@@ -146,6 +146,31 @@ class ConduitCustom(Conduit):
         self.curve = ''
 
 
+class Pump(Link):
+    """
+    Pump link type.
+    
+    Represents a pump that lifts water from an inlet node to an outlet node,
+    using a pump curve or an ideal transfer (curve name '*').
+    
+    Attributes:
+        upstream_node (str): Name of inlet node
+        downstream_node (str): Name of outlet node
+        curve (str): Pump curve name, or '*' for ideal pump
+        status (str): Initial status, 'ON' or 'OFF'
+        startup_depth (float): Startup water depth at inlet node
+        shutoff_depth (float): Shutoff water depth at inlet node
+    """
+    def __init__(self):
+        Link.__init__(self)
+        self.upstream_node = ''
+        self.downstream_node = ''
+        self.curve = ''
+        self.status = 'ON'
+        self.startup_depth = 0.0
+        self.shutoff_depth = 0.0
+
+
 class LinkList:
     """
     A collection class for managing links in a drainage network.
@@ -253,7 +278,8 @@ class LinkList:
 
         # Normalize link type: lowercase and handle both formats
         normalized_type = link_type.lower().replace('_', '')
-        if normalized_type.startswith('conduit'):
+        # Keep recognized prefixes; default unknown types to conduit*
+        if normalized_type.startswith('conduit') or normalized_type.startswith('pump'):
             normalized_type = normalized_type
         else:
             normalized_type = 'conduit' + normalized_type
@@ -284,6 +310,16 @@ class LinkList:
             'downstream_offset': lambda _, info: info.get('downstream_offset', 0.0),
             'initial_flow': lambda _, info: info.get('initial_flow', 0.0),
             'maximum_flow': lambda _, info: info.get('maximum_flow', 0.0)
+        }
+
+        # Level 2: Attributes for Pump with defaults
+        pump_base_attrs = {
+            'upstream_node': lambda _, info: info.get('upstream_node', ''),
+            'downstream_node': lambda _, info: info.get('downstream_node', ''),
+            'curve': lambda _, info: info.get('curve', ''),
+            'status': lambda _, info: info.get('status', 'ON'),
+            'startup_depth': lambda _, info: info.get('startup_depth', 0.0),
+            'shutoff_depth': lambda _, info: info.get('shutoff_depth', 0.0),
         }
 
         # Level 3: Specific attributes for conduit subtypes with defaults
@@ -326,6 +362,10 @@ class LinkList:
             'conduitcustom': {
                 'class': ConduitCustom,
                 'attrs': {**link_base_attrs, **conduit_base_attrs, **conduit_specific_attrs['conduitcustom']}
+            },
+            'pump': {
+                'class': Pump,
+                'attrs': {**link_base_attrs, **pump_base_attrs}
             }
         }
 
@@ -368,11 +408,16 @@ class LinkList:
             str: Generated name in format 'TYPE##' where TYPE is first 3 letters of link type
                  and ## is sequential number
         """
-        # Extract the specific type after 'conduit_'
-        if '_' in link_type:
-            specific_type = link_type.split('_')[1]
+        # Determine specific type for prefix
+        if link_type.startswith('conduit'):
+            if '_' in link_type:
+                specific_type = link_type.split('_')[1]
+            else:
+                specific_type = link_type.replace('conduit', '')
+        elif link_type.startswith('pump'):
+            specific_type = 'pump'
         else:
-            specific_type = link_type.replace('conduit', '')
+            specific_type = link_type
             
         # Get first 3 letters of the specific type
         prefix = specific_type[:3].upper()  # First 3 letters of link type
@@ -409,12 +454,15 @@ class LinkList:
             conduit_contents = get_swmm_inp_content(filename, '[CONDUITS]')
             x_section_contents = get_swmm_inp_content(filename, '[XSECTIONS]')
             vertices_contents = get_swmm_inp_content(filename, '[VERTICES]')
+            pump_contents = get_swmm_inp_content(filename, '[PUMPS]')
             
             # Process conduits and cross-sections
             self._process_conduits_and_xsections(conduit_contents, x_section_contents)
             
             # Process vertices
             self._process_vertices(vertices_contents)
+            # Process pumps
+            self._process_pumps(pump_contents)
             
             return 0
         except Exception as e:
@@ -524,6 +572,34 @@ class LinkList:
                 # Log error but continue processing other vertices
                 print(f"Warning: Error processing vertex in line '{line}': {str(e)}")
 
+    def _process_pumps(self, pump_contents):
+        """
+        Process pump data from SWMM input file.
+        
+        Args:
+            pump_contents (list): Lines from the [PUMPS] section
+        """
+        for line in pump_contents:
+            try:
+                parts = line.split()
+                if len(parts) < 5:
+                    continue
+                dic = {
+                    'name': parts[0],
+                    'upstream_node': parts[1],
+                    'downstream_node': parts[2],
+                    'curve': parts[3],
+                    'status': parts[4]
+                }
+                # Optional startup and shutoff depths
+                if len(parts) > 5:
+                    dic['startup_depth'] = float(parts[5])
+                if len(parts) > 6:
+                    dic['shutoff_depth'] = float(parts[6])
+                self.add_link('pump', dic)
+            except (ValueError, IndexError) as e:
+                print(f"Warning: Error processing pump in line '{line}': {str(e)}")
+
     def write_to_swmm_inp(self, filename):
         """
         Write link data to a SWMM input file.
@@ -549,8 +625,9 @@ class LinkList:
                 f.write(
                     ';;Name                          Upstream  Downstream  Length  Roughness  Up-offset Down-offset  Init_flow Max_flow\n')
                 for link in self.data:
-                    f.write(
-                        f'{link.name:30}  {link.upstream_node:8}  {link.downstream_node:8}  {link.length:8.2f}  {link.roughness:8.3f}  {link.upstream_offset:8.3f}  {link.downstream_offset:8.3f}  {link.initial_flow:8.2f}  {link.maximum_flow:8.2f}\n')
+                    if isinstance(link, Conduit):
+                        f.write(
+                            f'{link.name:30}  {link.upstream_node:8}  {link.downstream_node:8}  {link.length:8.2f}  {link.roughness:8.3f}  {link.upstream_offset:8.3f}  {link.downstream_offset:8.3f}  {link.initial_flow:8.2f}  {link.maximum_flow:8.2f}\n')
                 
                 # Write XSECTIONS section
                 f.write('\n\n[XSECTIONS]\n')
@@ -570,6 +647,17 @@ class LinkList:
                     elif isinstance(link, ConduitCustom):
                         f.write(
                             f'{link.name:30}  CUSTOM    {link.height:8.2f}  {link.curve:8}  0  0  {link.barrels_number:8}\n')
+                
+                # Write PUMPS section
+                f.write('\n\n[PUMPS]\n')
+                f.write(';;\t\t Inlet           \t Outlet          \t Pump           \t Init. \t Startup \t Shutoff\n')
+                f.write(';;Name          \t Node            \t Node            \t Curve          \t Status \t Depth   \t Depth   \n')
+                f.write(';;-------------- \t ---------------- \t ---------------- \t ---------------- \t ------ \t -------- \t --------\n')
+                for link in self.data:
+                    if isinstance(link, Pump):
+                        f.write(
+                            f'{link.name:16}\t {link.upstream_node:16}\t {link.downstream_node:16}\t {link.curve:16}\t {link.status:6}\t {link.startup_depth:8.3f}\t {link.shutoff_depth:8.3f}\n'
+                        )
                 
                 # Write VERTICES section
                 f.write('\n\n[VERTICES]\n')

@@ -264,6 +264,92 @@ class StorageTabular(Storage):
         self.storage_curve_name = ''
 
 
+class Divider(Node):
+    """
+    Base class for divider nodes in the drainage network.
+    
+    Divider nodes split inflow among outgoing links according to the specified type.
+    
+    Attributes:
+        diverted_link (str): The name of the link receiving diverted flow
+        maximum_depth (float): Ymax - Maximum water depth at the divider node
+        initial_depth (float): Y0 - Initial water depth at start of simulation
+        overload_depth (float): Ysur - Surcharge depth allowed above maximum level
+        surface_ponding_area (float): Apond - Area available for surface ponding
+    """
+
+    def __init__(self):
+        Node.__init__(self)
+        # Diverted link name
+        self.diverted_link = ''
+        # Optional depth/ponding parameters (Ymax, Y0, Ysur, Apond)
+        self.maximum_depth = 0.0
+        self.initial_depth = 0.0
+        self.overload_depth = 0.0
+        self.surface_ponding_area = 0.0
+
+
+class DividerOverflow(Divider):
+    """
+    OVERFLOW divider type.
+    
+    Sends all inflow to the diverted link whenever the node becomes surcharged.
+    No additional parameters beyond optional Ymax/Y0/Ysur/Apond.
+    """
+
+    def __init__(self):
+        Divider.__init__(self)
+
+
+class DividerCutoff(Divider):
+    """
+    CUTOFF divider type.
+    
+    Diverts flow to a link only when inflow exceeds a minimum threshold.
+    
+    Attributes:
+        qmin (float): Minimum flow rate required before diversion occurs
+    """
+
+    def __init__(self):
+        Divider.__init__(self)
+        self.qmin = 0.0
+
+
+class DividerTabular(Divider):
+    """
+    TABULAR divider type.
+    
+    Uses a tabular diversion curve relating inflow to diverted flow.
+    
+    Attributes:
+        diversion_curve_name (str): Name of the diversion curve (Dcurve)
+    """
+
+    def __init__(self):
+        Divider.__init__(self)
+        self.diversion_curve_name = ''
+
+
+class DividerWeir(Divider):
+    """
+    WEIR divider type.
+    
+    Uses a weir equation to compute diverted flow.
+    
+    Attributes:
+        qmin (float): Minimum flow before weir formula applies
+        height (float): Weir crest height
+        coefficient (float): Discharge coefficient (Cd)
+    """
+
+    def __init__(self):
+        Divider.__init__(self)
+        self.qmin = 0.0
+        self.height = 0.0
+        self.coefficient = 0.0
+
+
 class NodeList:
     """
     A collection class for managing nodes in a drainage network.
@@ -438,6 +524,31 @@ class NodeList:
             'outfallnormal': {}
         }
 
+        # Level 2: Attributes for divider nodes with defaults
+        divider_attrs = {
+            'diverted_link': lambda _, info: info.get('diverted_link', ''),
+            'maximum_depth': lambda _, info: info.get('maximum_depth', 0.0),
+            'initial_depth': lambda _, info: info.get('initial_depth', 0.0),
+            'overload_depth': lambda _, info: info.get('overload_depth', 0.0),
+            'surface_ponding_area': lambda _, info: info.get('surface_ponding_area', 0.0),
+        }
+
+        # Level 3: Specific attributes for divider subtypes with defaults
+        divider_specific_attrs = {
+            'divideroverflow': {},
+            'dividercutoff': {
+                'qmin': lambda _, info: info.get('qmin', 0.0)
+            },
+            'dividertabular': {
+                'diversion_curve_name': lambda _, info: info.get('diversion_curve_name', '')
+            },
+            'dividerweir': {
+                'qmin': lambda _, info: info.get('qmin', 0.0),
+                'height': lambda _, info: info.get('height', 0.0),
+                'coefficient': lambda _, info: info.get('coefficient', 0.0)
+            }
+        }
+
         # Level 2: Attributes for storage nodes with defaults
         storage_attrs = {
             'maximum_depth': lambda _, info: info.get('maximum_depth', 10.0),
@@ -490,6 +601,22 @@ class NodeList:
             'outfalltimeseries': {
                 'class': OutfallTimeseries,
                 'attrs': {**node_base_attrs, **outfall_base_attrs, **outfall_specific_attrs['outfalltimeseries']}
+            },
+            'divideroverflow': {
+                'class': DividerOverflow,
+                'attrs': {**node_base_attrs, **divider_attrs, **divider_specific_attrs['divideroverflow']}
+            },
+            'dividercutoff': {
+                'class': DividerCutoff,
+                'attrs': {**node_base_attrs, **divider_attrs, **divider_specific_attrs['dividercutoff']}
+            },
+            'dividertabular': {
+                'class': DividerTabular,
+                'attrs': {**node_base_attrs, **divider_attrs, **divider_specific_attrs['dividertabular']}
+            },
+            'dividerweir': {
+                'class': DividerWeir,
+                'attrs': {**node_base_attrs, **divider_attrs, **divider_specific_attrs['dividerweir']}
             },
             'storagefunctional': {
                 'class': StorageFunctional,
@@ -640,6 +767,7 @@ class NodeList:
             dwf_contents = get_swmm_inp_content(filename, '[DWF]')
             inflow_contents = get_swmm_inp_content(filename, '[INFLOWS]')
             polygon_contents = get_swmm_inp_content(filename, '[Polygons]')
+            divider_contents = get_swmm_inp_content(filename, '[DIVIDERS]')
 
             # Process coordinates (needed by all node types)
             coordinates_dic = self._process_coordinates(coordinates)
@@ -647,6 +775,7 @@ class NodeList:
             # Process each node type
             self._process_junctions(junction_contents, coordinates_dic)
             self._process_outfalls(outfall_contents, coordinates_dic)
+            self._process_dividers(divider_contents, coordinates_dic)
             self._process_storage(storage_contents, coordinates_dic)
             self._process_dry_weather_flows(dwf_contents)
             self._process_inflows(inflow_contents)
@@ -935,6 +1064,9 @@ class NodeList:
                 # Write outfalls section
                 self._write_outfalls_section(f)
 
+                # Write dividers section
+                self._write_dividers_section(f)
+
                 # Write storage section
                 self._write_storage_section(f)
 
@@ -1051,6 +1183,108 @@ class NodeList:
 
                 # Write the complete line
                 file.write(f'{base_params}{shape_params}{required_params}{seepage_params}\n')
+
+    def _process_dividers(self, divider_contents, coordinates_dic):
+        """Process divider data from SWMM input file."""
+        for line in divider_contents:
+            parts = line.split()
+            if len(parts) < 4:
+                continue
+            try:
+                dic = {
+                    'name': parts[0],
+                    'coordinate': coordinates_dic.get(parts[0], [0.0, 0.0]),
+                    'elevation': float(parts[1]),
+                    'diverted_link': parts[2]
+                }
+                divider_type = parts[3]
+                idx = 4
+
+                # Optional depth/ponding parameters may appear after type-specific params
+                def read_optional_depths(start_index):
+                    opt = {}
+                    if len(parts) > start_index:
+                        try:
+                            opt['maximum_depth'] = float(parts[start_index])
+                        except ValueError:
+                            opt['maximum_depth'] = 0.0
+                    if len(parts) > start_index + 1:
+                        try:
+                            opt['initial_depth'] = float(parts[start_index + 1])
+                        except ValueError:
+                            opt['initial_depth'] = 0.0
+                    if len(parts) > start_index + 2:
+                        try:
+                            opt['overload_depth'] = float(parts[start_index + 2])
+                        except ValueError:
+                            opt['overload_depth'] = 0.0
+                    if len(parts) > start_index + 3:
+                        try:
+                            opt['surface_ponding_area'] = float(parts[start_index + 3])
+                        except ValueError:
+                            opt['surface_ponding_area'] = 0.0
+                    return opt
+
+                if divider_type == 'OVERFLOW':
+                    # No type-specific params
+                    dic.update(read_optional_depths(idx))
+                    self.add_node('divider_overflow', dic)
+
+                elif divider_type == 'CUTOFF':
+                    if len(parts) > idx:
+                        dic['qmin'] = float(parts[idx])
+                        idx += 1
+                    dic.update(read_optional_depths(idx))
+                    self.add_node('divider_cutoff', dic)
+
+                elif divider_type == 'TABULAR':
+                    if len(parts) > idx:
+                        dic['diversion_curve_name'] = parts[idx]
+                        idx += 1
+                    dic.update(read_optional_depths(idx))
+                    self.add_node('divider_tabular', dic)
+
+                elif divider_type == 'WEIR':
+                    if len(parts) > idx:
+                        dic['qmin'] = float(parts[idx]); idx += 1
+                    if len(parts) > idx:
+                        dic['height'] = float(parts[idx]); idx += 1
+                    if len(parts) > idx:
+                        dic['coefficient'] = float(parts[idx]); idx += 1
+                    dic.update(read_optional_depths(idx))
+                    self.add_node('divider_weir', dic)
+            except (ValueError, KeyError) as e:
+                print(f"Warning: Error processing divider '{parts[0]}': {str(e)}")
+
+    def _write_dividers_section(self, file):
+        """Write dividers section to the SWMM input file."""
+        file.write('\n\n[DIVIDERS]\n')
+        file.write(';;Name           Elevation  Diverted Link    Type       Parameters\n')
+        file.write(';;-------------- ---------- ---------------- ---------- ----------\n')
+
+        for node in self.data:
+            # Only process Divider types
+            if isinstance(node, Divider):
+                base = f'{node.name:14} {node.elevation:10.3f} {node.diverted_link:16} '
+                # Type and specific params
+                if isinstance(node, DividerOverflow):
+                    type_params = 'OVERFLOW'
+                    specific = ''
+                elif isinstance(node, DividerCutoff):
+                    type_params = 'CUTOFF'
+                    specific = f'{node.qmin:10.3f}'
+                elif isinstance(node, DividerTabular):
+                    type_params = 'TABULAR'
+                    specific = f'{node.diversion_curve_name:16}'
+                elif isinstance(node, DividerWeir):
+                    type_params = 'WEIR'
+                    specific = f'{node.qmin:10.3f} {node.height:10.3f} {node.coefficient:10.3f}'
+                else:
+                    continue
+
+                # Optional depth/ponding parameters appended
+                optional = f' {node.maximum_depth:10.3f} {node.initial_depth:10.3f} {node.overload_depth:10.3f} {node.surface_ponding_area:10.3f}'
+                file.write(f'{base}{type_params:<10} {specific}{optional}\n')
 
     def _write_inflows_section(self, file):
         """Write inflows section to the SWMM input file."""
