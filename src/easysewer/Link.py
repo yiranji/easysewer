@@ -6,6 +6,9 @@ in the drainage network. Supports different cross-section types and hydraulic
 characteristics.
 """
 from .utils import *
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Vertices:
@@ -542,7 +545,7 @@ class LinkList:
                     self.add_link('conduit_custom', conduit_data)
             except (ValueError, IndexError) as e:
                 # Log error but continue processing other conduits
-                print(f"Warning: Error processing conduit in line '{line}': {str(e)}")
+                logger.warning(f"Error processing conduit in line '{line}': {str(e)}")
                 
     def _process_vertices(self, vertices_contents):
         """
@@ -570,7 +573,7 @@ class LinkList:
                         break
             except (ValueError, IndexError) as e:
                 # Log error but continue processing other vertices
-                print(f"Warning: Error processing vertex in line '{line}': {str(e)}")
+                logger.warning(f"Error processing vertex in line '{line}': {str(e)}")
 
     def _process_pumps(self, pump_contents):
         """
@@ -598,7 +601,7 @@ class LinkList:
                     dic['shutoff_depth'] = float(parts[6])
                 self.add_link('pump', dic)
             except (ValueError, IndexError) as e:
-                print(f"Warning: Error processing pump in line '{line}': {str(e)}")
+                logger.warning(f"Error processing pump in line '{line}': {str(e)}")
 
     def write_to_swmm_inp(self, filename):
         """

@@ -4,7 +4,10 @@ This module provides interfaces to the SWMM solver libraries and implements
 custom solvers for specific simulation scenarios.
 """
 from ctypes import CDLL, c_char_p, c_int, c_double, c_float, byref, POINTER, create_string_buffer
+import logging
 from .utils import find_library_path
+
+logger = logging.getLogger(__name__)
 
 
 class SWMMSolverAPI:
@@ -416,7 +419,7 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
         updated_overflow = current_overflow - updated_exflooding
 
         if updated_ponding_depth > current_ponding_depth:
-            print(delta_depth)
+            logger.error(f"Delta depth: {delta_depth}")
             raise Exception("updated_ponding_depth should be lower than current_ponding_depth")
 
         return updated_ponding_depth, updated_overflow, updated_exflooding, updated_volume

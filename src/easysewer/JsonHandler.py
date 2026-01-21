@@ -6,10 +6,13 @@ including rain data processing, model configuration, and simulation setup.
 
 import os
 import json
+import logging
 from typing import Optional, Dict, Any, List
 import datetime
 import csv
 from .Rain import RainGage, TimeSeries
+
+logger = logging.getLogger(__name__)
 
 
 class JsonHandler:
@@ -164,7 +167,7 @@ class JsonHandler:
                     hours, minutes = map(int, time_str.split(':'))
                     return hours * 60 + minutes
             except Exception as e:
-                print(f"Error parsing time: {e}")
+                logger.warning(f"Error parsing time: {e}")
                 return 0
 
         # Extract time values based on whether Date column exists
@@ -194,7 +197,7 @@ class JsonHandler:
                 first_datetime = JsonHandler._parse_datetime_string(first_date_str, data['Time'][0])
                 new_ts.start_datetime = first_datetime
             except Exception as e:
-                print(f"Warning: Unable to parse start datetime '{first_date_str}': {e}")
+                logger.warning(f"Unable to parse start datetime '{first_date_str}': {e}")
                 new_ts.start_datetime = None
         else:
             new_ts.start_datetime = None
@@ -267,9 +270,9 @@ class JsonHandler:
                 try:
                     setattr(model.calc, attr_name, attr_value)
                 except Exception as e:
-                    print(f"Warning: Unable to set calc.{attr_name} = {attr_value}, error: {e}")
+                    logger.warning(f"Unable to set calc.{attr_name} = {attr_value}, error: {e}")
             else:
-                print(f"Warning: calc object does not have attribute '{attr_name}'")
+                logger.warning(f"calc object does not have attribute '{attr_name}'")
     
     @staticmethod
     def _apply_rain_config(model, rain_config: Dict[str, Any]) -> None:
@@ -378,4 +381,4 @@ class JsonHandler:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(clean_template, f, indent=2, ensure_ascii=False)
         
-        print(f"JSON template file generated: {output_path}")
+        logger.info(f"JSON template file generated: {output_path}")

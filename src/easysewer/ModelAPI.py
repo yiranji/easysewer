@@ -11,10 +11,28 @@ import datetime
 import uuid
 import os
 import copy
+import logging
+from typing import Callable, Optional
 from .UDM import UrbanDrainageModel
 from .SolverAPI import SWMMSolverAPI, FlexiblePondingSolverAPI
 from .JsonHandler import JsonHandler
 from .Node import Divider
+
+logger = logging.getLogger(__name__)
+
+
+def default_progress_callback(current: float, total: float, percent: float) -> None:
+    """
+    Default progress callback that prints a progress bar to stdout.
+    """
+    bar_length = 50
+    filled_length = int(bar_length * percent / 100)
+    bar = '=' * filled_length + '+' * (bar_length - filled_length)
+    
+    if percent >= 100:
+        print(f"\r[{'=' * bar_length}] 100%")
+    else:
+        print(f"\r[{bar}] {int(percent)}%", end='', flush=True)
 
 
 class Model(UrbanDrainageModel):
@@ -46,6 +64,7 @@ class Model(UrbanDrainageModel):
             rpt_file: str | None = None,
             out_file: str | None = None,
             solver: SWMMSolverAPI | FlexiblePondingSolverAPI = SWMMSolverAPI(),
+            progress_callback: Optional[Callable[[float, float, float], None]] = None,
             **kwargs
     ) -> tuple[str, str, str]:
         """
@@ -56,13 +75,14 @@ class Model(UrbanDrainageModel):
             inp_file: Path for inp .inp file. Auto-generated if None.
             rpt_file: Path for rpt .rpt file. Auto-generated if None.
             out_file: Path for output .out file. Auto-generated if None.
+            progress_callback: Optional callback for progress updates.
+                               Signature: (current_seconds, total_seconds, percent)
 
         Returns:
             tuple: Paths to generated (inp_file, rpt_file, out_file)
 
         Raises:
-            SystemExit: If fatal errors occur during simulation setup/execution
-
+            RuntimeError: If fatal errors occur during simulation setup/execution
         """
 
         # Get current datetime as a filename-safe string
@@ -101,19 +121,22 @@ class Model(UrbanDrainageModel):
         # Open the model
         err = solver.open(inp_file, rpt_file, out_file)
         if err:
-            print(f"Error opening SWMM project: {err}")
-            print(solver.get_error())
-            exit(1)
+            logger.error(f"Error opening SWMM project: {err}")
+            logger.error(solver.get_error())
+            raise RuntimeError(f"Error opening SWMM project: {err}")
 
         # Start simulation
         err = solver.start(1)
         if err:
-            print(f"Error starting SWMM simulation: {err}")
-            print(solver.get_error())
-            exit(1)
+            logger.error(f"Error starting SWMM simulation: {err}")
+            logger.error(solver.get_error())
+            raise RuntimeError(f"Error starting SWMM simulation: {err}")
 
         # Prepare for simulation progress
-        print("Simulation progress:")
+        if progress_callback is None:
+            print("Simulation progress:")
+            progress_callback = default_progress_callback
+
         bar_length = 50  # Length of progress bar
         last_progress_int = -1
         start_time = datetime.datetime(
@@ -140,27 +163,23 @@ class Model(UrbanDrainageModel):
 
             # Progress bar - Convert elapsed time to percentage of total simulation time
             # Multiply by 24*60*60 to convert days to seconds (SWMM uses days as time unit)
-            progress = (elapsed_time * 24 * 60 * 60 / total_seconds) * 100
+            current_seconds = elapsed_time * 24 * 60 * 60
+            progress = (current_seconds / total_seconds) * 100
             progress_int = int(progress)
 
             # Only update progress when it changes by at least 1%
             if progress_int > last_progress_int:
-                # Calculate the number of characters to fill
-                filled_length = int(bar_length * progress / 100)
-                bar = '=' * filled_length + '+' * (bar_length - filled_length)
-
-                # Print the entire progress bar each time (overwriting previous one)
-                print(f"\r[{bar}] {progress_int}%", end='', flush=True)
+                progress_callback(current_seconds, total_seconds, progress)
                 last_progress_int = progress_int
 
         # Complete the progress bar when finished
-        print(f"\r[{'=' * bar_length}] 100%")
+        progress_callback(total_seconds, total_seconds, 100.0)
 
         # End the simulation
         err = solver.end()
         if err:
-            print(f"Error ending SWMM simulation: {err}")
-            print(solver.get_error())
+            logger.error(f"Error ending SWMM simulation: {err}")
+            logger.error(solver.get_error())
 
         # Check simulation mass balance errors (continuity errors)
         # These errors indicate the accuracy of the simulation results
@@ -179,12 +198,12 @@ class Model(UrbanDrainageModel):
                 error_percent: Calculated percentage error (positive/negative)
 
             Note:
-                Prints warning message to stderr when exceeding 5% threshold
+                Logs warning message when exceeding 5% threshold
                 Does not interrupt simulation execution
             """
             ERROR_THRESHOLD = 5
             if abs(error_percent) > ERROR_THRESHOLD:
-                print(f"WARNING: {error_type} error percentage ({error_percent:.2f}%) exceeds {ERROR_THRESHOLD}%")
+                logger.warning(f"{error_type} error percentage ({error_percent:.2f}%) exceeds {ERROR_THRESHOLD}%")
 
         # Check for errors over 5%
         _check_error("Runoff", runoff_error_percent)
@@ -194,8 +213,8 @@ class Model(UrbanDrainageModel):
         # Close the solver
         err = solver.close()
         if err:
-            print(f"Error closing SWMM project: {err}")
-            print(solver.get_error())
+            logger.error(f"Error closing SWMM project: {err}")
+            logger.error(solver.get_error())
         return inp_file, rpt_file, out_file
 
     def simulation_with_json(
@@ -204,6 +223,7 @@ class Model(UrbanDrainageModel):
             out_folder: str,
             file_name: str | None = None,
             solver: SWMMSolverAPI | FlexiblePondingSolverAPI = SWMMSolverAPI(),
+            progress_callback: Optional[Callable[[float, float, float], None]] = None,
             **kwargs
     ) -> tuple[str, str, str]:
         """
@@ -214,6 +234,7 @@ class Model(UrbanDrainageModel):
             json_file: JSON configuration file path
             out_folder: Output folder for simulation files
             file_name: File name for simulation files
+            progress_callback: Optional callback for progress updates.
         Returns:
             tuple: Paths to generated (inp_file, rpt_file, out_file)
         """
@@ -246,7 +267,7 @@ class Model(UrbanDrainageModel):
         rpt_file = os.path.join(out_folder, f"{file_name}.rpt")
         out_file = os.path.join(out_folder, f"{file_name}.out")
 
-        model_copy.simulation(inp_file, rpt_file, out_file, solver)
+        model_copy.simulation(inp_file, rpt_file, out_file, solver, progress_callback=progress_callback)
 
         return inp_file, rpt_file, out_file
 
@@ -268,9 +289,9 @@ class Model(UrbanDrainageModel):
         2. Print rainfall duration and total rainfall of gages used by current model
         3. Print simulation start time, simulation duration, and report step
         """
-        print("=" * 50)
-        print("Model Configuration Summary")
-        print("=" * 50)
+        logger.info("=" * 50)
+        logger.info("Model Configuration Summary")
+        logger.info("=" * 50)
 
         # 1. Count the number of gages used
         used_gages = set()
@@ -279,16 +300,16 @@ class Model(UrbanDrainageModel):
                 if hasattr(area, 'rain_gage') and area.rain_gage:
                     used_gages.add(area.rain_gage)
 
-        print(f"Number of subcatchments: {len(self.area) if hasattr(self, 'area') else 0}")
-        print(f"Number of rain gages used: {len(used_gages)}")
-        print(f"Rain gages used: {', '.join(used_gages) if used_gages else 'None'}")
+        logger.info(f"Number of subcatchments: {len(self.area) if hasattr(self, 'area') else 0}")
+        logger.info(f"Number of rain gages used: {len(used_gages)}")
+        logger.info(f"Rain gages used: {', '.join(used_gages) if used_gages else 'None'}")
 
         # 2. Print rainfall information
-        print("\nRainfall Information:")
+        logger.info("Rainfall Information:")
         if hasattr(self, 'rain') and hasattr(self.rain, 'gage_list'):
             for i, gage in enumerate(self.rain.gage_list, 1):
-                print(f"  Rain gage {i}: {gage.name}")
-                print(f"    Form: {getattr(gage, 'form', 'Unknown')}")
+                logger.info(f"  Rain gage {i}: {gage.name}")
+                logger.info(f"    Form: {getattr(gage, 'form', 'Unknown')}")
 
                 # Calculate rainfall duration and total amount
                 # Find corresponding time_series through gage.source
@@ -326,11 +347,11 @@ class Model(UrbanDrainageModel):
                                 # If it's cumulative amount, take maximum value
                                 total_rainfall = max(value_list)
 
-                            print(f"    Rainfall duration: {duration_hours:.2f} hours")
-                            print(f"    Time interval: {time_interval_minutes:.0f} minutes")
-                            print(f"    Total rainfall: {total_rainfall:.2f} mm")
+                            logger.info(f"    Rainfall duration: {duration_hours:.2f} hours")
+                            logger.info(f"    Time interval: {time_interval_minutes:.0f} minutes")
+                            logger.info(f"    Total rainfall: {total_rainfall:.2f} mm")
                         else:
-                            print(f"    Rainfall data: Time or value list is empty")
+                            logger.info(f"    Rainfall data: Time or value list is empty")
                     elif hasattr(time_series, 'data_list') and time_series.data_list:
                         # Compatible with old data_list format
                         data_list = time_series.data_list
@@ -357,31 +378,31 @@ class Model(UrbanDrainageModel):
                                     # If it's cumulative amount, take maximum value
                                     total_rainfall = max(row[1] for row in data_list if len(row) > 1)
 
-                            print(f"    Rainfall duration: {duration_hours:.2f} hours")
-                            print(f"    Time interval: {time_interval_seconds / 60:.0f} minutes")
-                            print(f"    Total rainfall: {total_rainfall:.2f} mm")
+                            logger.info(f"    Rainfall duration: {duration_hours:.2f} hours")
+                            logger.info(f"    Time interval: {time_interval_seconds / 60:.0f} minutes")
+                            logger.info(f"    Total rainfall: {total_rainfall:.2f} mm")
                         else:
-                            print(f"    Rainfall data: No data")
+                            logger.info(f"    Rainfall data: No data")
                     else:
-                        print(f"    Rainfall data: No time series data")
+                        logger.info(f"    Rainfall data: No time series data")
                 else:
-                    print(f"    Rainfall data: No time series")
+                    logger.info(f"    Rainfall data: No time series")
         else:
-            print("  No rain gage data")
+            logger.info("  No rain gage data")
 
         # 3. Print simulation configuration
-        print("\nSimulation Configuration:")
+        logger.info("Simulation Configuration:")
         if hasattr(self, 'calc'):
             # Simulation start time
             if hasattr(self.calc, 'simulation_start'):
                 start = self.calc.simulation_start
                 if isinstance(start, dict):
-                    print(
+                    logger.info(
                         f"  Simulation start time: {start.get('year', '?')}-{start.get('month', '?'):02d}-{start.get('day', '?'):02d} {start.get('hour', '?'):02d}:{start.get('minute', 0):02d}")
                 else:
-                    print(f"  Simulation start time: {start}")
+                    logger.info(f"  Simulation start time: {start}")
             else:
-                print(f"  Simulation start time: Not set")
+                logger.info(f"  Simulation start time: Not set")
 
             # Simulation duration
             if hasattr(self.calc, 'simulation_start') and hasattr(self.calc, 'simulation_end'):
@@ -395,13 +416,13 @@ class Model(UrbanDrainageModel):
                         end_dt = datetime.datetime(end.get('year', 2000), end.get('month', 1), end.get('day', 1),
                                                    end.get('hour', 0), end.get('minute', 0))
                         duration = end_dt - start_dt
-                        print(f"  Simulation duration: {duration.total_seconds() / 3600:.2f} hours")
+                        logger.info(f"  Simulation duration: {duration.total_seconds() / 3600:.2f} hours")
                     except:
-                        print(f"  Simulation duration: Unable to calculate")
+                        logger.info(f"  Simulation duration: Unable to calculate")
                 else:
-                    print(f"  Simulation duration: Unable to calculate")
+                    logger.info(f"  Simulation duration: Unable to calculate")
             else:
-                print(f"  Simulation duration: End time not set")
+                logger.info(f"  Simulation duration: End time not set")
 
             # Report step
             if hasattr(self.calc, 'report_step'):
@@ -411,19 +432,19 @@ class Model(UrbanDrainageModel):
                     minutes = step.get('minute', 0)
                     seconds = step.get('second', 0)
                     total_minutes = hours * 60 + minutes + seconds / 60
-                    print(f"  Report step: {hours:02d}:{minutes:02d}:{seconds:02d} ({total_minutes:.1f} minutes)")
+                    logger.info(f"  Report step: {hours:02d}:{minutes:02d}:{seconds:02d} ({total_minutes:.1f} minutes)")
                 else:
-                    print(f"  Report step: {step}")
+                    logger.info(f"  Report step: {step}")
             else:
-                print(f"  Report step: Not set")
+                logger.info(f"  Report step: Not set")
         else:
-            print("  No calc configuration")
+            logger.info("  No calc configuration")
 
-        print("=" * 50)
+        logger.info("=" * 50)
 
     def _pre_export_checks(self) -> None:
 
         # Divider
         has_divider = any(isinstance(n, Divider) for n in self.node)
         if has_divider and str(self.calc.flow_routing_method).upper() == 'DYNWAVE':
-            print("WARNING: Divider nodes are inactive under DYNWAVE and behave as junction nodes.")
+            logger.warning("Divider nodes are inactive under DYNWAVE and behave as junction nodes.")

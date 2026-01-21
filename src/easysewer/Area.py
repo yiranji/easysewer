@@ -4,8 +4,10 @@ Subcatchment Area Management Module
 This module handles subcatchment areas in the drainage network, including their
 physical characteristics, infiltration parameters, and routing behavior.
 """
-from warnings import warn
+import logging
 from .utils import *
+
+logger = logging.getLogger(__name__)
 
 
 class InfiltrationHorton:
@@ -302,22 +304,22 @@ class AreaList:
         # Validate and set physical attributes
         area_value = area_information.get('area', 0.0)
         if area_value <= 0:
-            warn(f"Area must be a positive number, got {area_value}")
+            logger.warning(f"Area must be a positive number, got {area_value}")
         new_area.area = area_value
         
         impervious_ratio_value = area_information.get('impervious_ratio', 0)
         if not (0 <= impervious_ratio_value <= 100):
-            warn(f"Impervious ratio must be between 0 and 100, got {impervious_ratio_value}")
+            logger.warning(f"Impervious ratio must be between 0 and 100, got {impervious_ratio_value}")
         new_area.impervious_ratio = impervious_ratio_value
         
         width_value = area_information.get('width', 0)
         if width_value <= 0:
-            warn(f"Width must be positive number, got {width_value}")
+            logger.warning(f"Width must be positive number, got {width_value}")
         new_area.width = width_value
         
         slope_value = area_information.get('slope', 0)
         if slope_value <= 0:
-            warn(f"Slope must be positive number, got {slope_value}")
+            logger.warning(f"Slope must be positive number, got {slope_value}")
         new_area.slope = slope_value
         
         # Set surface attributes
@@ -328,27 +330,27 @@ class AreaList:
         # Validate hydraulic parameters
         manning_impervious = area_information.get('manning_impervious', 0)
         if not (0.01 <= manning_impervious <= 0.5):
-            warn(f"Manning's n for impervious area must be between 0.01-0.5, got {manning_impervious}")
+            logger.warning(f"Manning's n for impervious area must be between 0.01-0.5, got {manning_impervious}")
         new_area.manning_impervious = manning_impervious
         
         manning_pervious = area_information.get('manning_pervious', 0)
         if not (0.01 <= manning_pervious <= 0.8):
-            warn(f"Manning's n for pervious area must be between 0.01-0.8, got {manning_pervious}")
+            logger.warning(f"Manning's n for pervious area must be between 0.01-0.8, got {manning_pervious}")
         new_area.manning_pervious = manning_pervious
         
         depression_impervious = area_information.get('depression_impervious', 0)
         if depression_impervious < 0:
-            warn(f"Depression storage for impervious area cannot be negative, got {depression_impervious}")
+            logger.warning(f"Depression storage for impervious area cannot be negative, got {depression_impervious}")
         new_area.depression_impervious = depression_impervious
         
         depression_pervious = area_information.get('depression_pervious', 0)
         if depression_pervious < 0:
-            warn(f"Depression storage for pervious area cannot be negative, got {depression_pervious}")
+            logger.warning(f"Depression storage for pervious area cannot be negative, got {depression_pervious}")
         new_area.depression_pervious = depression_pervious
         
         impervious_without_depression = area_information.get('impervious_without_depression', 0)
         if not (0 <= impervious_without_depression <= 100):
-            warn(f"Impervious without depression must be 0-100%, got {impervious_without_depression}")
+            logger.warning(f"Impervious without depression must be 0-100%, got {impervious_without_depression}")
         new_area.impervious_without_depression = impervious_without_depression
         
         # Set routing attributes
@@ -489,7 +491,7 @@ class AreaList:
                         area.polygon.area_name = area_name
             except (IndexError, ValueError) as e:
                 # Log warning but continue processing other polygons
-                print(f"Warning: Error processing polygon data: {str(e)}")
+                logger.warning(f"Error processing polygon data: {str(e)}")
     
     def read_from_swmm_inp(self, filename):
         """
@@ -740,8 +742,8 @@ class AreaList:
                             break
                 except Exception as e:
                     # If there's an error reading the file, use default infiltration type
-                    print(f"Warning: Could not read infiltration type from file: {str(e)}")
-                    print(f"Using default infiltration type: {infiltration_type}")
+                    logger.warning(f"Could not read infiltration type from file: {str(e)}")
+                    logger.warning(f"Using default infiltration type: {infiltration_type}")
             
             with open(filename, 'a', encoding='utf-8') as f:
                 self._write_subcatchments_section(f)

@@ -7,6 +7,9 @@ This module implements various types of nodes used in urban drainage networks in
 - Support for node properties like elevation, coordinates, and flow characteristics
 """
 from .utils import *
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Node:
@@ -816,7 +819,7 @@ class NodeList:
                 self.add_node('junction', dic)
             except (ValueError, KeyError) as e:
                 # Log error but continue processing other junctions
-                print(f"Warning: Error processing junction '{parts[0]}': {str(e)}")
+                logger.warning(f"Error processing junction '{parts[0]}': {str(e)}")
 
     def _process_outfalls(self, outfall_contents, coordinates_dic):
         """Process outfall data from SWMM input file."""
@@ -859,7 +862,7 @@ class NodeList:
                     self.add_node('outfall_time_series', dic)
             except (ValueError, KeyError) as e:
                 # Log error but continue processing other outfalls
-                print(f"Warning: Error processing outfall '{parts[0]}': {str(e)}")
+                logger.warning(f"Error processing outfall '{parts[0]}': {str(e)}")
 
     def _process_storage(self, storage_contents, coordinates_dic):
         """Process storage data from SWMM input file."""
@@ -966,7 +969,7 @@ class NodeList:
 
             except (ValueError, KeyError) as e:
                 # Log error but continue processing other storage nodes
-                print(f"Warning: Error processing storage '{parts[0]}': {str(e)}")
+                logger.warning(f"Error processing storage '{parts[0]}': {str(e)}")
 
     def _process_dry_weather_flows(self, dwf_contents):
         """Process dry weather flow data from SWMM input file."""
@@ -1029,7 +1032,7 @@ class NodeList:
                         node.polygon.node_name = node_name
             except (IndexError, ValueError) as e:
                 # Log warning but continue processing other polygons
-                print(f"Warning: Error processing polygon data: {str(e)}")
+                logger.warning(f"Error processing polygon data: {str(e)}")
 
     def write_to_swmm_inp(self, filename):
         """
@@ -1254,7 +1257,7 @@ class NodeList:
                     dic.update(read_optional_depths(idx))
                     self.add_node('divider_weir', dic)
             except (ValueError, KeyError) as e:
-                print(f"Warning: Error processing divider '{parts[0]}': {str(e)}")
+                logger.warning(f"Error processing divider '{parts[0]}': {str(e)}")
 
     def _write_dividers_section(self, file):
         """Write dividers section to the SWMM input file."""
