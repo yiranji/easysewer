@@ -174,6 +174,80 @@ class Pump(Link):
         self.shutoff_depth = 0.0
 
 
+class Orifice(Link):
+    """
+    Orifice link type.
+    
+    Represents an orifice structure that controls flow between two nodes.
+    
+    Attributes:
+        upstream_node (str): Name of inlet node
+        downstream_node (str): Name of outlet node
+        type (str): Type of orifice ('SIDE' or 'BOTTOM')
+        offset (float): Height above inlet node invert
+        discharge_coefficient (float): Discharge coefficient
+        flap_gate (str): 'YES' or 'NO'
+        open_close_time (float): Time to open/close (hours)
+        shape (str): Cross-section shape ('CIRCULAR' or 'RECT_CLOSED')
+        height (float): Height of opening
+        width (float): Width of opening (for RECT_CLOSED)
+    """
+    def __init__(self):
+        Link.__init__(self)
+        self.upstream_node = ''
+        self.downstream_node = ''
+        self.type = 'SIDE'
+        self.offset = 0.0
+        self.discharge_coefficient = 0.65
+        self.flap_gate = 'NO'
+        self.open_close_time = 0.0
+        self.shape = 'CIRCULAR'
+        self.height = 0.0
+        self.width = 0.0
+
+
+class Weir(Link):
+    """
+    Weir link type.
+    
+    Represents a weir structure that controls flow between two nodes.
+    
+    Attributes:
+        upstream_node (str): Name of inlet node
+        downstream_node (str): Name of outlet node
+        type (str): Type of weir ('TRANSVERSE', 'SIDEFLOW', 'V-NOTCH', 'TRAPEZOIDAL', 'ROADWAY')
+        offset (float): Height above inlet node invert
+        discharge_coefficient (float): Discharge coefficient
+        flap_gate (str): 'YES' or 'NO'
+        end_coefficient (float): Discharge coefficient for ends (Trapezoidal)
+        end_contractions (int): Number of end contractions
+        can_surcharge (str): 'YES' or 'NO'
+        road_width (float): Width of roadway (for ROADWAY type)
+        road_surface (str): Surface material of roadway
+        shape (str): Cross-section shape (e.g., 'RECT_OPEN', 'TRAPEZOIDAL')
+        height (float): Vertical height of opening
+        length (float): Horizontal length of opening
+        side_slope (float): Slope of side walls (for V-NOTCH/TRAPEZOIDAL)
+    """
+    def __init__(self):
+        Link.__init__(self)
+        self.upstream_node = ''
+        self.downstream_node = ''
+        self.type = 'TRANSVERSE'
+        self.offset = 0.0
+        self.discharge_coefficient = 3.33
+        self.flap_gate = 'NO'
+        self.end_coefficient = 0.0
+        self.end_contractions = 0
+        self.can_surcharge = 'YES'
+        self.road_width = 0.0
+        self.road_surface = ''
+        self.shape = 'RECT_OPEN'
+        self.height = 0.0
+        self.length = 0.0
+        self.side_slope = 0.0
+
+
 class LinkList:
     """
     A collection class for managing links in a drainage network.
@@ -282,7 +356,7 @@ class LinkList:
         # Normalize link type: lowercase and handle both formats
         normalized_type = link_type.lower().replace('_', '')
         # Keep recognized prefixes; default unknown types to conduit*
-        if normalized_type.startswith('conduit') or normalized_type.startswith('pump'):
+        if any(normalized_type.startswith(p) for p in ['conduit', 'pump', 'orifice', 'weir']):
             normalized_type = normalized_type
         else:
             normalized_type = 'conduit' + normalized_type
@@ -323,6 +397,39 @@ class LinkList:
             'status': lambda _, info: info.get('status', 'ON'),
             'startup_depth': lambda _, info: info.get('startup_depth', 0.0),
             'shutoff_depth': lambda _, info: info.get('shutoff_depth', 0.0),
+        }
+
+        # Level 2: Attributes for Orifice with defaults
+        orifice_base_attrs = {
+            'upstream_node': lambda _, info: info.get('upstream_node', ''),
+            'downstream_node': lambda _, info: info.get('downstream_node', ''),
+            'type': lambda _, info: info.get('type', 'SIDE'),
+            'offset': lambda _, info: info.get('offset', 0.0),
+            'discharge_coefficient': lambda _, info: info.get('discharge_coefficient', 0.65),
+            'flap_gate': lambda _, info: info.get('flap_gate', 'NO'),
+            'open_close_time': lambda _, info: info.get('open_close_time', 0.0),
+            'shape': lambda _, info: info.get('shape', 'CIRCULAR'),
+            'height': lambda _, info: info.get('height', 1.0),
+            'width': lambda _, info: info.get('width', 0.0)
+        }
+
+        # Level 2: Attributes for Weir with defaults
+        weir_base_attrs = {
+            'upstream_node': lambda _, info: info.get('upstream_node', ''),
+            'downstream_node': lambda _, info: info.get('downstream_node', ''),
+            'type': lambda _, info: info.get('type', 'TRANSVERSE'),
+            'offset': lambda _, info: info.get('offset', 0.0),
+            'discharge_coefficient': lambda _, info: info.get('discharge_coefficient', 3.33),
+            'flap_gate': lambda _, info: info.get('flap_gate', 'NO'),
+            'end_coefficient': lambda _, info: info.get('end_coefficient', 0.0),
+            'end_contractions': lambda _, info: info.get('end_contractions', 0),
+            'can_surcharge': lambda _, info: info.get('can_surcharge', 'YES'),
+            'road_width': lambda _, info: info.get('road_width', 0.0),
+            'road_surface': lambda _, info: info.get('road_surface', ''),
+            'shape': lambda _, info: info.get('shape', 'RECT_OPEN'),
+            'height': lambda _, info: info.get('height', 1.0),
+            'length': lambda _, info: info.get('length', 1.0),
+            'side_slope': lambda _, info: info.get('side_slope', 0.0)
         }
 
         # Level 3: Specific attributes for conduit subtypes with defaults
@@ -369,6 +476,14 @@ class LinkList:
             'pump': {
                 'class': Pump,
                 'attrs': {**link_base_attrs, **pump_base_attrs}
+            },
+            'orifice': {
+                'class': Orifice,
+                'attrs': {**link_base_attrs, **orifice_base_attrs}
+            },
+            'weir': {
+                'class': Weir,
+                'attrs': {**link_base_attrs, **weir_base_attrs}
             }
         }
 
@@ -419,6 +534,10 @@ class LinkList:
                 specific_type = link_type.replace('conduit', '')
         elif link_type.startswith('pump'):
             specific_type = 'pump'
+        elif link_type.startswith('orifice'):
+            specific_type = 'orifice'
+        elif link_type.startswith('weir'):
+            specific_type = 'weir'
         else:
             specific_type = link_type
             
@@ -438,8 +557,11 @@ class LinkList:
         
         Processes the following sections from SWMM input file:
         - [CONDUITS]
+        - [ORIFICES]
+        - [WEIRS]
         - [XSECTIONS]
         - [VERTICES]
+        - [PUMPS]
         
         Args:
             filename (str): Path to the SWMM input file
@@ -455,12 +577,14 @@ class LinkList:
         try:
             # Read all required sections
             conduit_contents = get_swmm_inp_content(filename, '[CONDUITS]')
+            orifice_contents = get_swmm_inp_content(filename, '[ORIFICES]')
+            weir_contents = get_swmm_inp_content(filename, '[WEIRS]')
             x_section_contents = get_swmm_inp_content(filename, '[XSECTIONS]')
             vertices_contents = get_swmm_inp_content(filename, '[VERTICES]')
             pump_contents = get_swmm_inp_content(filename, '[PUMPS]')
             
-            # Process conduits and cross-sections
-            self._process_conduits_and_xsections(conduit_contents, x_section_contents)
+            # Process links (conduits, orifices, weirs) and cross-sections
+            self._process_links(conduit_contents, orifice_contents, weir_contents, x_section_contents)
             
             # Process vertices
             self._process_vertices(vertices_contents)
@@ -472,80 +596,142 @@ class LinkList:
             # Re-raise with more context
             raise type(e)(f"Error reading SWMM input file: {str(e)}")
             
-    def _process_conduits_and_xsections(self, conduit_contents, x_section_contents):
+    def _process_links(self, conduit_contents, orifice_contents, weir_contents, x_section_contents):
         """
-        Process conduit and cross-section data from SWMM input file.
+        Process conduit, orifice, weir and cross-section data from SWMM input file.
         
         Args:
             conduit_contents (list): Lines from the [CONDUITS] section
+            orifice_contents (list): Lines from the [ORIFICES] section
+            weir_contents (list): Lines from the [WEIRS] section
             x_section_contents (list): Lines from the [XSECTIONS] section
         """
-        # Fill in default values for conduit contents
+        # Parse XSections into a dictionary for faster lookup
+        xsections_dict = {}
+        for line in x_section_contents:
+            parts = line.split()
+            if len(parts) > 0:
+                xsections_dict[parts[0]] = parts[1:]
+
+        # Process Conduits
         for index, line in enumerate(conduit_contents):
             parts = line.split()
+            if not parts: continue
+            
+            # Add defaults if missing
             if len(parts) == 7:
-                conduit_contents[index] += '  0  0'  # Add default initial_flow and maximum_flow
-            elif len(parts) == 8:
-                conduit_contents[index] += '  0'  # Add default maximum_flow
-        
-        # Combine conduit and cross-section data
-        combined_content = combine_swmm_inp_contents(conduit_contents, x_section_contents)
-        
-        # Process each combined line
-        for line in combined_content:
-            try:
+                line += '  0  0'
                 parts = line.split()
-                if len(parts) < 10:  # Need at least basic conduit info + shape
-                    continue
-                    
-                # Create basic conduit dictionary
-                conduit_data = {
-                    'name': parts[0],
-                    'upstream_node': parts[1],
-                    'downstream_node': parts[2],
-                    'length': float(parts[3]),
-                    'roughness': float(parts[4]),
-                    'upstream_offset': float(parts[5]),
-                    'downstream_offset': float(parts[6]),
-                    'initial_flow': float(parts[7]),
-                    'maximum_flow': float(parts[8])
-                }
+            elif len(parts) == 8:
+                line += '  0'
+                parts = line.split()
+            
+            # Basic conduit data
+            conduit_data = {
+                'name': parts[0],
+                'upstream_node': parts[1],
+                'downstream_node': parts[2],
+                'length': float(parts[3]),
+                'roughness': float(parts[4]),
+                'upstream_offset': float(parts[5]),
+                'downstream_offset': float(parts[6]),
+                'initial_flow': float(parts[7]),
+                'maximum_flow': float(parts[8])
+            }
+            
+            # Match with XSection
+            if parts[0] in xsections_dict:
+                xs_parts = xsections_dict[parts[0]]
+                shape = xs_parts[0]
                 
-                # Process based on cross-section shape
-                shape = parts[9]
                 if shape == 'CIRCULAR':
-                    if len(parts) > 10:
-                        conduit_data['height'] = float(parts[10])
-                    if len(parts) >= 15:
-                        conduit_data['barrels_number'] = int(parts[14])
+                    if len(xs_parts) > 1:
+                        conduit_data['height'] = float(xs_parts[1])
+                    if len(xs_parts) >= 6:
+                        conduit_data['barrels_number'] = int(xs_parts[5])
                     self.add_link('conduit_circle', conduit_data)
                     
                 elif shape == 'FILLED_CIRCULAR':
-                    if len(parts) > 11:
-                        conduit_data['height'] = float(parts[10])
-                        conduit_data['filled'] = float(parts[11])
-                    if len(parts) >= 15:
-                        conduit_data['barrels_number'] = int(parts[14])
+                    if len(xs_parts) > 1:
+                        conduit_data['height'] = float(xs_parts[1])
+                    if len(xs_parts) > 2:
+                        conduit_data['filled'] = float(xs_parts[2])
+                    if len(xs_parts) >= 6:
+                        conduit_data['barrels_number'] = int(xs_parts[5])
                     self.add_link('conduit_filled_circle', conduit_data)
                     
                 elif shape == 'RECT_OPEN':
-                    if len(parts) > 11:
-                        conduit_data['height'] = float(parts[10])
-                        conduit_data['width'] = float(parts[11])
-                    if len(parts) >= 15:
-                        conduit_data['barrels_number'] = int(parts[14])
+                    if len(xs_parts) > 1:
+                        conduit_data['height'] = float(xs_parts[1])
+                    if len(xs_parts) > 2:
+                        conduit_data['width'] = float(xs_parts[2])
+                    if len(xs_parts) >= 6:
+                        conduit_data['barrels_number'] = int(xs_parts[5])
                     self.add_link('conduit_rectangle_open', conduit_data)
                     
                 elif shape == 'CUSTOM':
-                    if len(parts) > 11:
-                        conduit_data['height'] = float(parts[10])
-                        conduit_data['curve'] = parts[11]
-                    if len(parts) >= 13:
-                        conduit_data['barrels_number'] = int(parts[-1])
+                    if len(xs_parts) > 1:
+                        conduit_data['height'] = float(xs_parts[1])
+                    if len(xs_parts) > 2:
+                        conduit_data['curve'] = xs_parts[2]
+                    if len(xs_parts) >= 6:
+                        conduit_data['barrels_number'] = int(xs_parts[5])
                     self.add_link('conduit_custom', conduit_data)
-            except (ValueError, IndexError) as e:
-                # Log error but continue processing other conduits
-                logger.warning(f"Error processing conduit in line '{line}': {str(e)}")
+            else:
+                logger.warning(f"No cross-section found for conduit {parts[0]}")
+
+        # Process Orifices
+        for line in orifice_contents:
+            parts = line.split()
+            if len(parts) < 6: continue
+            
+            orifice_data = {
+                'name': parts[0],
+                'upstream_node': parts[1],
+                'downstream_node': parts[2],
+                'type': parts[3],
+                'offset': float(parts[4]),
+                'discharge_coefficient': float(parts[5])
+            }
+            if len(parts) > 6: orifice_data['flap_gate'] = parts[6]
+            if len(parts) > 7: orifice_data['open_close_time'] = float(parts[7])
+            
+            if parts[0] in xsections_dict:
+                xs_parts = xsections_dict[parts[0]]
+                orifice_data['shape'] = xs_parts[0]
+                if len(xs_parts) > 1: orifice_data['height'] = float(xs_parts[1])
+                if len(xs_parts) > 2: orifice_data['width'] = float(xs_parts[2])
+            
+            self.add_link('orifice', orifice_data)
+
+        # Process Weirs
+        for line in weir_contents:
+            parts = line.split()
+            if len(parts) < 6: continue
+            
+            weir_data = {
+                'name': parts[0],
+                'upstream_node': parts[1],
+                'downstream_node': parts[2],
+                'type': parts[3],
+                'offset': float(parts[4]),
+                'discharge_coefficient': float(parts[5])
+            }
+            if len(parts) > 6: weir_data['flap_gate'] = parts[6]
+            if len(parts) > 7: weir_data['end_coefficient'] = float(parts[7])
+            if len(parts) > 8: weir_data['end_contractions'] = int(parts[8])
+            if len(parts) > 9: weir_data['can_surcharge'] = parts[9]
+            if len(parts) > 10: weir_data['road_width'] = float(parts[10])
+            if len(parts) > 11: weir_data['road_surface'] = parts[11]
+
+            if parts[0] in xsections_dict:
+                xs_parts = xsections_dict[parts[0]]
+                weir_data['shape'] = xs_parts[0]
+                if len(xs_parts) > 1: weir_data['height'] = float(xs_parts[1])
+                if len(xs_parts) > 2: weir_data['length'] = float(xs_parts[2])
+                if len(xs_parts) > 3: weir_data['side_slope'] = float(xs_parts[3])
+            
+            self.add_link('weir', weir_data)
                 
     def _process_vertices(self, vertices_contents):
         """
@@ -609,7 +795,10 @@ class LinkList:
         
         Writes the following sections to the SWMM input file:
         - [CONDUITS]
+        - [ORIFICES]
+        - [WEIRS]
         - [XSECTIONS]
+        - [PUMPS]
         - [VERTICES]
         
         Args:
@@ -632,6 +821,22 @@ class LinkList:
                         f.write(
                             f'{link.name:30}  {link.upstream_node:8}  {link.downstream_node:8}  {link.length:8.2f}  {link.roughness:8.3f}  {link.upstream_offset:8.3f}  {link.downstream_offset:8.3f}  {link.initial_flow:8.2f}  {link.maximum_flow:8.2f}\n')
                 
+                # Write ORIFICES section
+                f.write('\n\n[ORIFICES]\n')
+                f.write(';;Name          \t Inlet           \t Outlet          \t Type           \t Offset  \t Qcoeff  \t Gated  \t CloseTime\n')
+                f.write(';;-------------- \t ---------------- \t ---------------- \t ---------------- \t -------- \t -------- \t ------ \t --------\n')
+                for link in self.data:
+                    if isinstance(link, Orifice):
+                        f.write(f'{link.name:16}\t {link.upstream_node:16}\t {link.downstream_node:16}\t {link.type:16}\t {link.offset:8.3f}\t {link.discharge_coefficient:8.3f}\t {link.flap_gate:6}\t {link.open_close_time:8.3f}\n')
+
+                # Write WEIRS section
+                f.write('\n\n[WEIRS]\n')
+                f.write(';;Name          \t Inlet           \t Outlet          \t Type           \t Offset  \t Qcoeff  \t Gated  \t EndCoeff \t EndCon \t Surch  \t RoadWidth \t RoadSurf\n')
+                f.write(';;-------------- \t ---------------- \t ---------------- \t ---------------- \t -------- \t -------- \t ------ \t -------- \t ------ \t ------ \t --------- \t --------\n')
+                for link in self.data:
+                    if isinstance(link, Weir):
+                        f.write(f'{link.name:16}\t {link.upstream_node:16}\t {link.downstream_node:16}\t {link.type:16}\t {link.offset:8.3f}\t {link.discharge_coefficient:8.3f}\t {link.flap_gate:6}\t {link.end_coefficient:8.3f}\t {link.end_contractions:6}\t {link.can_surcharge:6}\t {link.road_width:9.3f}\t {link.road_surface:8}\n')
+
                 # Write XSECTIONS section
                 f.write('\n\n[XSECTIONS]\n')
                 f.write(
@@ -650,6 +855,10 @@ class LinkList:
                     elif isinstance(link, ConduitCustom):
                         f.write(
                             f'{link.name:30}  CUSTOM    {link.height:8.2f}  {link.curve:8}  0  0  {link.barrels_number:8}\n')
+                    elif isinstance(link, Orifice):
+                         f.write(f'{link.name:30}  {link.shape:10}  {link.height:8.2f}  {link.width:8.2f}  {zero:8}  {zero:8}  1\n')
+                    elif isinstance(link, Weir):
+                         f.write(f'{link.name:30}  {link.shape:10}  {link.height:8.2f}  {link.length:8.2f}  {link.side_slope:8.2f}  {zero:8}  1\n')
                 
                 # Write PUMPS section
                 f.write('\n\n[PUMPS]\n')

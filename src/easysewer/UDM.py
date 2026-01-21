@@ -20,6 +20,7 @@ from .Node import NodeList
 from .Area import AreaList
 from .Rain import Rain
 from .Curve import ValueList
+from .Control import ControlList
 from .utils import get_swmm_inp_content
 
 
@@ -55,6 +56,7 @@ class UrbanDrainageModel:
         # rain related information
         self.rain = Rain()
         self.value = ValueList()
+        self.control = ControlList()
 
         # label information
         self.label = {}
@@ -107,6 +109,7 @@ class UrbanDrainageModel:
             self.link.write_to_swmm_inp(filepath)
             self.area.write_to_swmm_inp(filepath)
             self.rain.write_to_swmm_inp(filepath)
+            self.control.write_to_swmm_inp(filepath)
             self.value.write_to_swmm_inp(filepath)
 
             return 0
@@ -147,5 +150,6 @@ class UrbanDrainageModel:
         self.link.read_from_swmm_inp(filename)
         self.area.read_from_swmm_inp(filename)
         self.rain.read_from_swmm_inp(filename)
+        self.control.read_from_swmm_inp(filename)
         self.value.read_from_swmm_inp(filename)
         return 0
