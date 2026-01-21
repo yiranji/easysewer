@@ -86,8 +86,17 @@ def parse_swmm_datetime(date_str: Optional[str] = None, time_str: Optional[str] 
 
     # Parse date and time when both provided
     from datetime import datetime
-    dt = datetime.strptime(f"{date_str} {time_str}", "%m/%d/%Y %H:%M")
-    return dt.hour * 60 + dt.minute
+    
+    dt_str = f"{date_str} {time_str}"
+    for fmt in ["%m/%d/%Y %H:%M", "%m/%d/%Y %H:%M:%S"]:
+        try:
+            dt = datetime.strptime(dt_str, fmt)
+            return dt.hour * 60 + dt.minute
+        except ValueError:
+            continue
+            
+    # If all fails, raise error with the last attempted format or a generic message
+    raise ValueError(f"Time data '{dt_str}' does not match any supported format")
 
 
 class TimeSeries:
@@ -217,7 +226,21 @@ class Rain:
 
             if has_date:
                 name, date, time, value = parts
-                current_datetime = datetime.strptime(f"{date} {time}", "%m/%d/%Y %H:%M")
+                dt_str = f"{date} {time}"
+                current_datetime = None
+                
+                # Define supported formats in priority order
+                formats = ["%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M"]
+                
+                for fmt in formats:
+                    try:
+                        current_datetime = datetime.strptime(dt_str, fmt)
+                        break
+                    except ValueError:
+                        continue
+                
+                if current_datetime is None:
+                    raise ValueError(f"Time data '{dt_str}' does not match any supported formats: {formats}")
             else:
                 name, time, value = parts
                 minutes = parse_swmm_datetime(time_str=time)
@@ -324,10 +347,12 @@ class Rain:
                     if ts.has_date:
                         target_datetime = get_datetime_for_minutes(ts.start_datetime, time)
                         date_str = target_datetime.strftime("%m/%d/%Y")
-                        time_str = target_datetime.strftime("%H:%M")
-                        f.write(f'{ts.name:<14} {date_str}  {time_str}  {value:>.2f}\n')
+                        # Check if original data had seconds (by checking if any time component has seconds)
+                        # For now, default to HH:MM unless we want to track precision
+                        time_str = target_datetime.strftime("%H:%M") 
+                        f.write(f'{ts.name:<14} {date_str}  {time_str}  {value:>.3f}\n')
                     else:
-                        f.write(f'{ts.name}  {time_minute2text(time)}  {value:>.2f}\n')
+                        f.write(f'{ts.name}  {time_minute2text(time)}  {value:>.3f}\n')
                 f.write(';;\n')
 
             f.write('\n\n[RAINGAGES]\n')

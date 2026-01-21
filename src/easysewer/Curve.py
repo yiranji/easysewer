@@ -53,6 +53,8 @@ class ValueList:
         this_curve.name = 'initial'
         for line in content:
             pair = line.split()
+            if not pair:
+                continue
             name = pair[0]
             if this_curve.name == 'initial':
                 this_curve.name = name
@@ -78,6 +80,8 @@ class ValueList:
         this_pattern.name = 'initial'
         for line in content:
             pair = line.split()
+            if not pair:
+                continue
             name = pair[0]
             if this_pattern.name == 'initial':
                 this_pattern.name = name
