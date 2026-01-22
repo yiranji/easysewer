@@ -318,8 +318,8 @@ class AreaList:
         new_area.width = width_value
         
         slope_value = area_information.get('slope', 0)
-        if slope_value <= 0:
-            logger.warning(f"Slope must be positive number, got {slope_value}")
+        if slope_value < 0:
+            logger.warning(f"Slope should be a non-negative number, got {slope_value}")
         new_area.slope = slope_value
         
         # Set surface attributes
