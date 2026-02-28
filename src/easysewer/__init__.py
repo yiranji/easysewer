@@ -2,7 +2,7 @@
 EasySewer: An urban drainage modeling toolkit.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 from .UDM import UrbanDrainageModel
 from .ModelAPI import Model

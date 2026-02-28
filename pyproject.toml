@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "easysewer"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
     {name = "Yiran Ji", email = "yiranji@foxmail.com"}
 ]
@@ -20,8 +20,8 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/yourusername/easysewer"
-Documentation = "https://github.com/yourusername/easysewer#readme"
+Homepage = "https://github.com/yiranji/easysewer"
+Documentation = "https://github.com/yiranji/easysewer"
 
 [tool.setuptools]
 packages = [
