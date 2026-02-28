@@ -1,4 +1,5 @@
-"""Rainfall Data Management Module
+"""
+Rainfall Data Management Module
 
 This module handles rainfall data input and processing, including rain gages,
 time series data, and rainfall patterns for the drainage model.

@@ -1,0 +1,3 @@
+# Exclude cases and tests from GitHub language statistics
+cases/** linguist-vendored
+tests/** linguist-vendored

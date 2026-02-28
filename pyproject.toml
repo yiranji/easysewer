@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "easysewer"
-version = "0.0.10"
+version = "1.0.0"
 authors = [
-    {name = "Yiran Ji", email = "yiranji@zju.edu.cn"}
+    {name = "Yiran Ji", email = "yiranji@foxmail.com"}
 ]
 description = "An urban drainage modeling toolkit"
 readme = "README.md"
 requires-python = ">=3.10"
-license = "AGPL-3.0-only"
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",

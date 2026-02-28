@@ -1,4 +1,3 @@
-
 """
 Control Rules Module
 
