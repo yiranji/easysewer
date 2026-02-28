@@ -1,3 +1,5 @@
+![EasySewer](https://raw.githubusercontent.com/yiranji/easysewer/master/assets/icon.png)
+
 # EasySewer
 > An urban drainage modeling toolkit
 
