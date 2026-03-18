@@ -11,6 +11,80 @@ import sys
 import platform
 
 
+class NativeCapabilityError(RuntimeError):
+    pass
+
+
+def _get_library_path_candidates(lib_name: str) -> tuple[str, list[str]]:
+    """
+    Build candidate library paths for current runtime platform.
+
+    Args:
+        lib_name: Base library name without extension
+
+    Returns:
+        tuple[str, list[str]]: (library extension, candidate absolute paths)
+
+    Raises:
+        OSError: If current operating system is not supported
+    """
+    # Determine base path based on execution environment
+    if getattr(sys, 'frozen', False):
+        if hasattr(sys, '_MEIPASS'):
+            # Use realpath to resolve short file names (8.3 format) to full paths
+            base_path = os.path.realpath(sys._MEIPASS)
+        else:
+            # Use realpath to resolve short file names (8.3 format) to full paths
+            base_path = os.path.realpath(os.path.dirname(sys.executable))
+    else:
+        # Development environment
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    # Define library paths for different operating systems
+    lib_paths = {
+        'Windows': ('.dll.esdll', 'win'),
+        'Linux': ('.so.esso', 'linux')
+    }
+
+    # Get the current operating system
+    system = platform.system()
+    if system not in lib_paths:
+        raise OSError(f'Unsupported operating system: {system}')
+
+    # Get the file extension and directory for the current OS
+    lib_ext, lib_dir = lib_paths[system]
+
+    # Build possible paths to search for the library
+    possible_paths = [
+        os.path.join(base_path, 'libs', lib_dir, f'{lib_name}{lib_ext}'),
+        os.path.join(base_path, 'easysewer', 'libs', lib_dir, f'{lib_name}{lib_ext}'),
+        os.path.join(os.path.dirname(__file__), 'libs', lib_dir, f'{lib_name}{lib_ext}')
+    ]
+    return lib_ext, possible_paths
+
+
+def probe_library_path(lib_name: str) -> str | None:
+    """
+    Probe native library path without loading it.
+
+    This function only checks file existence and never calls ctypes.CDLL.
+
+    Args:
+        lib_name: The name of the library file to find
+
+    Returns:
+        str | None: Resolved library path if found, otherwise None
+    """
+    try:
+        _, possible_paths = _get_library_path_candidates(lib_name)
+    except OSError:
+        return None
+    for path in possible_paths:
+        if os.path.exists(path):
+            return os.path.realpath(path)
+    return None
+
+
 def find_library_path(lib_name: str) -> str:
     """
     Find the path to a library file based on the operating system and execution environment.
@@ -25,53 +99,37 @@ def find_library_path(lib_name: str) -> str:
         FileNotFoundError: If the library file cannot be found
         OSError: If the operating system is not supported
     """
-    # Determine base path based on execution environment
-    if getattr(sys, 'frozen', False):
-        if hasattr(sys, '_MEIPASS'):
-            # Use realpath to resolve short file names (8.3 format) to full paths
-            base_path = os.path.realpath(sys._MEIPASS)
-        else:
-            # Use realpath to resolve short file names (8.3 format) to full paths
-            base_path = os.path.realpath(os.path.dirname(sys.executable))
-    else:
-        # Development environment
-        base_path = os.path.dirname(os.path.abspath(__file__))
-    
-    # Define library paths for different operating systems
-    lib_paths = {
-        'Windows': ('.dll.esdll', 'win'),
-        'Linux': ('.so.esso', 'linux')
-    }
-    
-    # Get the current operating system
-    system = platform.system()
-    
-    if system not in lib_paths:
-        raise OSError(f'Unsupported operating system: {system}')
-        
-    # Get the file extension and directory for the current OS
-    lib_ext, lib_dir = lib_paths[system]
-    
-    # Build possible paths to search for the library
-    possible_paths = [
-        os.path.join(base_path, 'libs', lib_dir, f'{lib_name}{lib_ext}'),
-        os.path.join(base_path, 'easysewer', 'libs', lib_dir, f'{lib_name}{lib_ext}'),
-        os.path.join(os.path.dirname(__file__), 'libs', lib_dir, f'{lib_name}{lib_ext}')
-    ]
-    
-    # Find the first path that exists
-    lib_path = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            # Use realpath to resolve short file names to full paths
-            lib_path = os.path.realpath(path)
-            break
-            
+    lib_ext, possible_paths = _get_library_path_candidates(lib_name)
+    lib_path = probe_library_path(lib_name)
     if lib_path is None:
         # Also resolve paths in error message for better debugging
         resolved_paths = [os.path.realpath(path) for path in possible_paths]
         raise FileNotFoundError(f"Could not find {lib_name}{lib_ext} in any of these locations: {resolved_paths}")
-        
+    return lib_path
+
+
+def get_native_capabilities() -> dict[str, bool]:
+    """
+    Detect availability of packaged native capabilities without loading any CDLL.
+
+    Returns:
+        dict[str, bool]: Capability flags keyed by feature name
+    """
+    return {
+        "swmm_solver": probe_library_path("swmm5") is not None,
+        "swmm_output": probe_library_path("swmm-output") is not None,
+        "flexible_ponding": probe_library_path("flexible_ponding") is not None,
+    }
+
+
+def require_native_capability(feature: str, lib_name: str) -> str:
+    try:
+        lib_path = find_library_path(lib_name)
+    except (FileNotFoundError, OSError) as exc:
+        raise NativeCapabilityError(
+            f"{feature} is unavailable in the current runtime. "
+            f"This capability requires native library '{lib_name}' and cannot run in environments like Pyodide."
+        ) from exc
     return lib_path
 
 

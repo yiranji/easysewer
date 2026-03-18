@@ -5,7 +5,7 @@ custom solvers for specific simulation scenarios.
 """
 from ctypes import CDLL, c_char_p, c_int, c_double, c_float, byref, POINTER, create_string_buffer
 import logging
-from .utils import find_library_path
+from .utils import require_native_capability
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,7 @@ class SWMMSolverAPI:
     swmm_NODE_RPTFLAG = 309
 
     def __init__(self):
-        # Find the library path
-        lib_path = find_library_path('swmm5')
+        lib_path = require_native_capability("SWMM solver", "swmm5")
 
         # Load the library
         self.swmm = CDLL(lib_path)
@@ -185,8 +184,7 @@ class FlexiblePondingSolverAPI(SWMMSolverAPI):
         # Store the model reference
         self.model = model
 
-        # Find the library path
-        lib_path = find_library_path('flexible_ponding')
+        lib_path = require_native_capability("Flexible ponding solver", "flexible_ponding")
 
         # Load the flexible ponding solver library
         self.swmm = CDLL(lib_path)

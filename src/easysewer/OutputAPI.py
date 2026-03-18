@@ -4,13 +4,12 @@ OutputAPI module for easysewer package.
 This module provides interfaces to the SWMM output library for reading simulation results.
 """
 import ctypes
-from .utils import find_library_path
+from .utils import require_native_capability
 
 
 class SWMMOutputAPI:
     def __init__(self):
-        # Find the library path
-        lib_path = find_library_path('swmm-output')
+        lib_path = require_native_capability("SWMM output reader", "swmm-output")
 
         # Load the shared library
         self.lib = ctypes.CDLL(lib_path)

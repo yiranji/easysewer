@@ -63,7 +63,7 @@ class Model(UrbanDrainageModel):
             inp_file: str | None = None,
             rpt_file: str | None = None,
             out_file: str | None = None,
-            solver: SWMMSolverAPI | FlexiblePondingSolverAPI = SWMMSolverAPI(),
+            solver: SWMMSolverAPI | FlexiblePondingSolverAPI | None = None,
             progress_callback: Optional[Callable[[float, float, float], None]] = None,
             **kwargs
     ) -> tuple[str, str, str]:
@@ -117,6 +117,10 @@ class Model(UrbanDrainageModel):
 
         # Export model to desired path
         self.to_inp(inp_file)
+
+        # Lazy create solver to avoid loading native CDLL during module import
+        if solver is None:
+            solver = SWMMSolverAPI()
 
         # Open the model
         err = solver.open(inp_file, rpt_file, out_file)
@@ -222,7 +226,7 @@ class Model(UrbanDrainageModel):
             json_file: str,
             out_folder: str,
             file_name: str | None = None,
-            solver: SWMMSolverAPI | FlexiblePondingSolverAPI = SWMMSolverAPI(),
+            solver: SWMMSolverAPI | FlexiblePondingSolverAPI | None = None,
             progress_callback: Optional[Callable[[float, float, float], None]] = None,
             **kwargs
     ) -> tuple[str, str, str]:

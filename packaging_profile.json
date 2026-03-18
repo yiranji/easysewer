@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "project": "easysewer",
+    "repository_layout": "src-layout",
+    "python_package_root": "src/easysewer",
+    "upstream_sync": {
+      "default_branch": "main",
+      "include_paths": [
+        "src/easysewer/**",
+        "pyproject.toml",
+        "README.md",
+        "LICENSE",
+        "MANIFEST.in"
+      ]
+    }
+  },
+  "profiles": {
+    "pyodide": {
+      "description": "Pure Python packaging profile for Pyodide and micropip.",
+      "include_modules": [
+        "src/easysewer/Area.py",
+        "src/easysewer/Control.py",
+        "src/easysewer/Curve.py",
+        "src/easysewer/JsonHandler.py",
+        "src/easysewer/Link.py",
+        "src/easysewer/ModelAPI.py",
+        "src/easysewer/Node.py",
+        "src/easysewer/Options.py",
+        "src/easysewer/Rain.py",
+        "src/easysewer/UDM.py",
+        "src/easysewer/__init__.py",
+        "src/easysewer/utils.py"
+      ],
+      "exclude_paths": [
+        "src/easysewer/libs/**",
+        "src/easysewer/SolverAPI.py",
+        "src/easysewer/OutputAPI.py"
+      ],
+      "replace_with_stub": [
+        {
+          "target": "src/easysewer/SolverAPI.py",
+          "stub_module": "stubs/SolverAPI.py",
+          "exports": [
+            "SWMMSolverAPI",
+            "FlexiblePondingSolverAPI"
+          ]
+        },
+        {
+          "target": "src/easysewer/OutputAPI.py",
+          "stub_module": "stubs/OutputAPI.py",
+          "exports": [
+            "SWMMOutputAPI"
+          ]
+        }
+      ],
+      "required_exports": [
+        "Model",
+        "UrbanDrainageModel",
+        "JsonHandler",
+        "ControlList",
+        "ControlRule",
+        "get_native_capabilities",
+        "NativeCapabilityError"
+      ],
+      "forbidden_symbols": [
+        "ctypes.CDLL",
+        "from ctypes import CDLL",
+        "CDLL("
+      ]
+    }
+  },
+  "validation": {
+    "forbidden_globs": [
+      "**/*.so",
+      "**/*.dll",
+      "**/*.dylib",
+      "**/*.pyd",
+      "**/*.esdll",
+      "**/*.esso"
+    ],
+    "forbidden_dirs": [
+      "easysewer/libs/"
+    ],
+    "wheel_smoke_checks": {
+      "import_package": "import easysewer",
+      "import_core_api": "from easysewer import Model, get_native_capabilities",
+      "native_caps_expected_false": [
+        "swmm_solver",
+        "swmm_output",
+        "flexible_ponding"
+      ]
+    }
+  }
+}
