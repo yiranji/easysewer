@@ -326,7 +326,9 @@ class Model(UrbanDrainageModel):
                             break
 
                 if time_series:
-                    if hasattr(time_series, 'time') and hasattr(time_series,
+                    if getattr(time_series, 'source_type', 'INLINE') == 'FILE':
+                        logger.info(f"    Rainfall data: External time series file ({time_series.file_path})")
+                    elif hasattr(time_series, 'time') and hasattr(time_series,
                                                                 'value') and time_series.time and time_series.value:
                         time_list = time_series.time  # Time in minutes
                         value_list = time_series.value  # Rainfall intensity values

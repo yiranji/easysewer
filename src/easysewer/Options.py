@@ -4,7 +4,32 @@ Calculation Options Module
 This module manages simulation options and parameters for the drainage model,
 including time steps, routing methods, and other calculation settings.
 """
+from math import isfinite
 from .utils import *
+
+
+def _parse_routing_step(value: str) -> int | float:
+    """Read seconds, preserving the existing two/three-part time formats."""
+    try:
+        parts = value.split(':')
+        if len(parts) == 1:
+            seconds = float(value)
+        elif len(parts) in (2, 3):
+            components = [int(part) for part in parts]
+            if any(component < 0 for component in components):
+                raise ValueError
+            seconds = sum(component * 60 ** index
+                          for index, component in enumerate(reversed(components)))
+        else:
+            raise ValueError
+        if not isfinite(seconds) or seconds <= 0:
+            raise ValueError
+    except (ValueError, OverflowError):
+        raise ValueError(
+            f'Invalid ROUTING_STEP {value!r}: expected positive finite seconds '
+            'or a colon-separated integer time'
+        ) from None
+    return int(seconds) if seconds == int(seconds) else seconds
 
 
 class CalculationInformation:
@@ -27,7 +52,7 @@ class CalculationInformation:
         report_step (str): Reporting time step
         wet_step (str): Wet weather time step
         dry_step (str): Dry weather time step
-        routing_step (str): Flow routing time step
+        routing_step (int | float): Flow routing time step in seconds
         allow_ponding (bool): Whether ponding is allowed
         inertial_damping (str): Type of inertial damping
         normal_flow_limited (str): Normal flow limitation method
@@ -303,15 +328,7 @@ class CalculationInformation:
                     self.dry_step['minute'] = keys[1]
                     self.dry_step['second'] = keys[2]
                 case 'ROUTING_STEP':
-                    keys = [int(i) for i in pair[1].split(':')]
-                    if len(keys) == 1:
-                        self.routing_step = keys[0]
-                    elif len(keys) == 2:
-                        self.routing_step = keys[-1] + keys[-2] * 60
-                    elif len(keys) == 3:
-                        self.routing_step = keys[-1] + keys[-2] * 60 + keys[-3] * 3600
-                    else:
-                        pass
+                    self.routing_step = _parse_routing_step(pair[1] if len(pair) > 1 else '')
                 case 'LENGTHENING_STEP':
                     keys = [int(i) for i in pair[1].split(':')]
                     if len(keys) == 1:

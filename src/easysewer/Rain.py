@@ -6,7 +6,10 @@ time series data, and rainfall patterns for the drainage model.
 """
 from typing import List, Optional, Union
 from datetime import datetime
+from pathlib import Path
 from warnings import warn
+import os
+import shlex
 from .utils import *
 
 
@@ -109,6 +112,8 @@ class TimeSeries:
         value (List[float]): Rainfall values in mm
         has_date (bool): Whether the timeseries includes date information
         start_datetime (Optional[datetime]): Store the start datetime if available
+        source_type (str): INLINE data or an external FILE reference
+        file_path (Optional[str]): External file path, relative to the input INP
     """
     
     def __init__(self) -> None:
@@ -117,15 +122,36 @@ class TimeSeries:
         self.value: List[float] = []  # in mm
         self.has_date: bool = False  # whether the timeseries includes date information
         self.start_datetime: Optional[datetime] = None  # store the start datetime if available
+        self.source_type: str = 'INLINE'
+        self.file_path: Optional[str] = None
+        self._source_directory: Optional[Path] = None
 
     def __repr__(self) -> str:
-        if len(self.time) == 0:
+        if self.source_type == 'FILE':
+            return f'{self.name}: FILE "{self.file_path}"'
+        elif len(self.time) == 0:
             return 'None'
         else:
             interval = self.time[1] - self.time[0]
             total = sum([(v * interval / 60) for v in self.value])
             total = round(total, 2)
             return f'{self.name}: {self.time[-1]}min - {total}mm'
+
+    def _file_path_for_output(self, filename: str) -> str:
+        """Keep external references pointing to the same file after Save As."""
+        if not self.file_path:
+            raise ValueError(f'Time series {self.name!r} has no external file path')
+        path = Path(self.file_path)
+        output_directory = Path(filename).resolve().parent
+        if (path.is_absolute() or self._source_directory is None
+                or output_directory == self._source_directory):
+            return self.file_path
+        target = (self._source_directory / path).resolve()
+        try:
+            return os.path.relpath(target, output_directory)
+        except ValueError:
+            # Windows cannot express a relative path between different drives.
+            return str(target)
 
 
 class RainGage:
@@ -216,7 +242,27 @@ class Rain:
         this_timeseries.name = 'initial'
 
         for line in content:
-            parts = line.split()
+            # Non-POSIX mode preserves Windows backslashes and quoted paths.
+            lexer = shlex.shlex(line, posix=False)
+            lexer.whitespace_split = True
+            lexer.commenters = ';'
+            lexer.quotes = '"'
+            parts = list(lexer)
+
+            if len(parts) >= 2 and parts[1].upper() == 'FILE':
+                if len(parts) != 3 or not parts[2].strip('"'):
+                    raise ValueError(f'Invalid TIMESERIES FILE reference: {line!r}')
+                if this_timeseries.name != 'initial':
+                    self.add_ts(this_timeseries)
+                external_timeseries = TimeSeries()
+                external_timeseries.name = parts[0]
+                external_timeseries.source_type = 'FILE'
+                external_timeseries.file_path = parts[2].strip('"')
+                external_timeseries._source_directory = Path(filename).resolve().parent
+                self.add_ts(external_timeseries)
+                this_timeseries = TimeSeries()
+                this_timeseries.name = 'initial'
+                continue
 
             # Skip empty lines or invalid formats
             if len(parts) < 3:
@@ -344,6 +390,9 @@ class Rain:
                 f.write(';;---------- ---------- ----------\n')
 
             for ts in self.ts_list:
+                if ts.source_type == 'FILE':
+                    f.write(f'{ts.name} FILE "{ts._file_path_for_output(filename)}"\n')
+                    continue
                 for time, value in zip(ts.time, ts.value):
                     if ts.has_date:
                         target_datetime = get_datetime_for_minutes(ts.start_datetime, time)
