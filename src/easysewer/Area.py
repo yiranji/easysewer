@@ -429,7 +429,7 @@ class AreaList:
             content = combine_swmm_inp_contents(content, infiltration_contents)
             
             # Get polygon data separately
-            polygon_contents = get_swmm_inp_content(filename, '[Polygons]')
+            polygon_contents = get_swmm_inp_content(filename, '[POLYGONS]')
             
             return content, polygon_contents
         except Exception as e:
@@ -586,8 +586,8 @@ class AreaList:
         f.write(';;Name       RainGage  Outlet     Area    %Imperv    Width    %Slope    CurbLen  (SnowPack)\n')
         for area in self.data:
             f.write(
-                f'{area.name}  {area.rain_gage}  {area.outlet}  {area.area:8.3f}  '
-                f'{area.impervious_ratio:8.2f}  {area.width:8.3f}  {area.slope:8.2f}  '
+                f'{area.name}  {area.rain_gage}  {area.outlet}  {area.area:8}  '
+                f'{area.impervious_ratio:8}  {area.width:8}  {area.slope:8}  '
                 f'{area.curb_length:8}  {area.snow_pack}\n')
     
     def _write_subareas_section(self, f):
@@ -600,9 +600,9 @@ class AreaList:
         f.write('\n\n[SUBAREAS]\n')
         f.write(';;Subcatchment   N-Imperv   N-Perv  S-Imperv  S-Perv  PctZero  RouteTo  (PctRouted)\n')
         for area in self.data:
-            base_str = (f'{area.name}  {area.manning_impervious:8.3f}  {area.manning_pervious:8.2f}  '
-                       f'{area.depression_impervious:8.2f}  {area.depression_pervious:8.2f}  '
-                       f'{area.impervious_without_depression:8.2f}  {area.route_type:8}')
+            base_str = (f'{area.name}  {area.manning_impervious:8}  {area.manning_pervious:8}  '
+                       f'{area.depression_impervious:8}  {area.depression_pervious:8}  '
+                       f'{area.impervious_without_depression:8}  {area.route_type:8}')
             
             if area.route_type_ratio != 100:
                 f.write(f'{base_str}  {area.route_type_ratio:8}\n')
@@ -628,9 +628,9 @@ class AreaList:
                 for area in self.data:
                     horton = area.infiltration.horton
                     f.write(
-                        f'{area.name}  {horton.maximum_rate:8.1f}  {horton.minimum_rate:8.1f}  '
-                        f'{horton.decay_rate:8.1f}  {horton.dry_time:8.1f}  '
-                        f'{horton.maximum_infiltration_volume:8.1f}\n')
+                        f'{area.name}  {horton.maximum_rate:8}  {horton.minimum_rate:8}  '
+                        f'{horton.decay_rate:8}  {horton.dry_time:8}  '
+                        f'{horton.maximum_infiltration_volume:8}\n')
             case 'GreenAmpt':
                 f.write(';;;;Subcatchment   Suction   Conductivity   InitialDeficit\n')
                 for area in self.data:
@@ -650,62 +650,18 @@ class AreaList:
             case _:
                 raise ValueError(f"Unsupported infiltration type: {infiltration_type}")
     
-    def _write_polygons_section(self, file):
-        """
-        Writes the Polygons section to the file.
-        
-        Args:
-            file (file): Open file handle to write to
-        """
-        # Check if any areas have polygon data
-        has_polygons = any(area.polygon.area_name is not None for area in self.data)
-
-        if has_polygons:
-            # Read file line by line to find sections
-            with open(file.name, 'r') as read_file:
-                lines = read_file.readlines()
-            # Find [Polygons] section
-            polygons_line = -1
-            next_section_line = -1
-            for i, line in enumerate(lines):
-                if line.strip() == '[Polygons]':
-                    polygons_line = i
-                elif polygons_line != -1 and line.strip().startswith('['):
-                    next_section_line = i
-                    break
-            if polygons_line == -1:
-                # No existing section, create new one at current position
-                file.write('\n\n[Polygons]\n')
-                file.write(';;Name          X-Coord            Y-Coord\n')
-
-                # Write polygon data
-                for area in self.data:
-                    if area.polygon.area_name is not None:
-                        for xi, yi in zip(area.polygon.x, area.polygon.y):
-                            file.write(f'{area.polygon.area_name}  {xi}  {yi}\n')
-            else:
-                # Section exists, we need to modify file content
-                # Insert our polygon data just after the header line
-                insert_position = polygons_line + 2  # +1 for the header, +1 for the column labels
-
-                # Prepare polygon data lines
-                new_lines = []
-                for area in self.data:
-                    if area.polygon.area_name is not None:
-                        for xi, yi in zip(area.polygon.x, area.polygon.y):
-                            new_lines.append(f'{area.polygon.area_name}  {xi}  {yi}\n')
-
-                # Insert the new lines at the appropriate position
-                lines[insert_position:insert_position] = new_lines
-
-                # Rewrite the entire file
-                file.seek(0)
-                file.writelines(lines)
-                file.truncate()
+    def _write_polygons_section(self, filename):
+        """Merge subcatchment polygons without duplicating existing sections."""
+        polygons = {
+            area.polygon.area_name: list(zip(area.polygon.x, area.polygon.y))
+            for area in self.data if area.polygon.area_name is not None
+        }
+        write_swmm_polygons(filename, polygons)
     
     def write_to_swmm_inp(self, filename):
         """
         Writes subcatchment area data to a SWMM .inp file.
+        Numeric field widths align columns without rounding model values.
         
         Args:
             filename (str): Path to the output .inp file
@@ -749,7 +705,7 @@ class AreaList:
                 self._write_subcatchments_section(f)
                 self._write_subareas_section(f)
                 self._write_infiltration_section(f, infiltration_type)
-                self._write_polygons_section(f)
+            self._write_polygons_section(filename)
             return 0
         except Exception as e:
             raise IOError(f"Error writing to SWMM input file: {str(e)}")

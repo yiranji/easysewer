@@ -133,9 +133,17 @@ def require_native_capability(feature: str, lib_name: str) -> str:
     return lib_path
 
 
+def _swmm_section_name(line):
+    """Normalize section headers only, leaving identifiers and paths intact."""
+    text = line.split(';', 1)[0].strip()
+    if text.startswith('[') and text.endswith(']'):
+        return text.upper()
+    return None
+
+
 def get_swmm_inp_content(filename, flag):
     """
-    Extracts content from a specific section of a SWMM input file.
+    Extracts content from a SWMM input section, ignoring header case and space.
     
     Args:
         filename (str): Path to the SWMM input file
@@ -144,25 +152,67 @@ def get_swmm_inp_content(filename, flag):
     Returns:
         list: Lines of content from the specified section
     """
-    flag += '\n'
+    target = _swmm_section_name(flag)
     result = []
-
+    in_section = False
     with open(filename, 'r', encoding='utf-8') as f:
-        # getting to the flag line
         for line in f:
-            if line == flag:
-                break
-        # adding related lines to results
-        for line in f:
-            # finish when getting to another section
-            if line[0] == '[':
-                break
-            # skip if this line is blank or annotation
-            if line == '\n' or line[0] == ';':
+            section = _swmm_section_name(line)
+            if section is not None:
+                if in_section:
+                    break
+                in_section = section == target
                 continue
-            result.append(line[0:-1])
-
+            if in_section and line.strip() and not line.lstrip().startswith(';'):
+                result.append(line.rstrip('\r\n'))
     return result
+
+
+def write_swmm_polygons(filename, polygons):
+    """Merge polygon rows after callers have closed their append-mode handles.
+
+    ``polygons`` maps object names to ordered (x, y) pairs. Existing rows for
+    these objects are replaced, while polygons belonging to others are kept.
+    """
+    if not polygons:
+        return
+    with open(filename, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+
+    other_lines = []
+    polygon_lines = []
+    insertion_index = None
+    in_polygons = False
+    for line in lines:
+        text = line.strip()
+        section = _swmm_section_name(line)
+        if section is not None:
+            in_polygons = section == '[POLYGONS]'
+            if in_polygons:
+                if insertion_index is None:
+                    insertion_index = len(other_lines)
+                continue
+        if in_polygons:
+            parts = text.split()
+            if not parts or parts[0] not in polygons:
+                polygon_lines.append(line)
+        else:
+            other_lines.append(line)
+
+    if insertion_index is None:
+        insertion_index = len(other_lines)
+        polygon_lines.append(';;Name          X-Coord            Y-Coord\n')
+    # Ensure a last line without a newline cannot swallow the first new row.
+    body = ''.join(polygon_lines)
+    if body and not body.endswith('\n'):
+        body += '\n'
+    for name, vertices in polygons.items():
+        body += ''.join(f'{name}  {x}  {y}\n' for x, y in vertices)
+    section = '\n[POLYGONS]\n' + body + '\n'
+    with open(filename, 'w', encoding='utf-8') as file:
+        file.writelines(other_lines[:insertion_index])
+        file.write(section)
+        file.writelines(other_lines[insertion_index:])
 
 
 def combine_swmm_inp_contents(content1, content2):

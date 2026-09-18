@@ -792,6 +792,7 @@ class LinkList:
     def write_to_swmm_inp(self, filename):
         """
         Write link data to a SWMM input file.
+        Numeric field widths align columns without rounding model values.
         
         Writes the following sections to the SWMM input file:
         - [CONDUITS]
@@ -819,7 +820,7 @@ class LinkList:
                 for link in self.data:
                     if isinstance(link, Conduit):
                         f.write(
-                            f'{link.name:30}  {link.upstream_node:8}  {link.downstream_node:8}  {link.length:8.2f}  {link.roughness:8.3f}  {link.upstream_offset:8.3f}  {link.downstream_offset:8.3f}  {link.initial_flow:8.2f}  {link.maximum_flow:8.2f}\n')
+                            f'{link.name:30}  {link.upstream_node:8}  {link.downstream_node:8}  {link.length:8}  {link.roughness:8}  {link.upstream_offset:8}  {link.downstream_offset:8}  {link.initial_flow:8}  {link.maximum_flow:8}\n')
                 
                 # Write ORIFICES section
                 f.write('\n\n[ORIFICES]\n')
@@ -827,7 +828,7 @@ class LinkList:
                 f.write(';;-------------- \t ---------------- \t ---------------- \t ---------------- \t -------- \t -------- \t ------ \t --------\n')
                 for link in self.data:
                     if isinstance(link, Orifice):
-                        f.write(f'{link.name:16}\t {link.upstream_node:16}\t {link.downstream_node:16}\t {link.type:16}\t {link.offset:8.3f}\t {link.discharge_coefficient:8.3f}\t {link.flap_gate:6}\t {link.open_close_time:8.3f}\n')
+                        f.write(f'{link.name:16}\t {link.upstream_node:16}\t {link.downstream_node:16}\t {link.type:16}\t {link.offset:8}\t {link.discharge_coefficient:8}\t {link.flap_gate:6}\t {link.open_close_time:8}\n')
 
                 # Write WEIRS section
                 f.write('\n\n[WEIRS]\n')
@@ -835,7 +836,7 @@ class LinkList:
                 f.write(';;-------------- \t ---------------- \t ---------------- \t ---------------- \t -------- \t -------- \t ------ \t -------- \t ------ \t ------ \t --------- \t --------\n')
                 for link in self.data:
                     if isinstance(link, Weir):
-                        f.write(f'{link.name:16}\t {link.upstream_node:16}\t {link.downstream_node:16}\t {link.type:16}\t {link.offset:8.3f}\t {link.discharge_coefficient:8.3f}\t {link.flap_gate:6}\t {link.end_coefficient:8.3f}\t {link.end_contractions:6}\t {link.can_surcharge:6}\t {link.road_width:9.3f}\t {link.road_surface:8}\n')
+                        f.write(f'{link.name:16}\t {link.upstream_node:16}\t {link.downstream_node:16}\t {link.type:16}\t {link.offset:8}\t {link.discharge_coefficient:8}\t {link.flap_gate:6}\t {link.end_coefficient:8}\t {link.end_contractions:6}\t {link.can_surcharge:6}\t {link.road_width:9}\t {link.road_surface:8}\n')
 
                 # Write XSECTIONS section
                 f.write('\n\n[XSECTIONS]\n')
@@ -845,20 +846,20 @@ class LinkList:
                     zero = 0
                     if isinstance(link, ConduitCircle):
                         f.write(
-                            f'{link.name:30}  CIRCULAR  {link.height:8.2f}  {zero:8}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
+                            f'{link.name:30}  CIRCULAR  {link.height:8}  {zero:8}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
                     elif isinstance(link, ConduitFilledCircle):
                         f.write(
-                            f'{link.name:30}  FILLED_CIRCULAR  {link.height:8.2f}  {link.filled:8.2f}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
+                            f'{link.name:30}  FILLED_CIRCULAR  {link.height:8}  {link.filled:8}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
                     elif isinstance(link, ConduitRectangleOpen):
                         f.write(
-                            f'{link.name:30}  RECT_OPEN {link.height:8.2f}  {link.width:8.2f}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
+                            f'{link.name:30}  RECT_OPEN {link.height:8}  {link.width:8}  {zero:8}  {zero:8}  {link.barrels_number:8}\n')
                     elif isinstance(link, ConduitCustom):
                         f.write(
-                            f'{link.name:30}  CUSTOM    {link.height:8.2f}  {link.curve:8}  0  0  {link.barrels_number:8}\n')
+                            f'{link.name:30}  CUSTOM    {link.height:8}  {link.curve:8}  0  0  {link.barrels_number:8}\n')
                     elif isinstance(link, Orifice):
-                         f.write(f'{link.name:30}  {link.shape:10}  {link.height:8.2f}  {link.width:8.2f}  {zero:8}  {zero:8}  1\n')
+                         f.write(f'{link.name:30}  {link.shape:10}  {link.height:8}  {link.width:8}  {zero:8}  {zero:8}  1\n')
                     elif isinstance(link, Weir):
-                         f.write(f'{link.name:30}  {link.shape:10}  {link.height:8.2f}  {link.length:8.2f}  {link.side_slope:8.2f}  {zero:8}  1\n')
+                         f.write(f'{link.name:30}  {link.shape:10}  {link.height:8}  {link.length:8}  {link.side_slope:8}  {zero:8}  1\n')
                 
                 # Write PUMPS section
                 f.write('\n\n[PUMPS]\n')
@@ -868,7 +869,7 @@ class LinkList:
                 for link in self.data:
                     if isinstance(link, Pump):
                         f.write(
-                            f'{link.name:16}\t {link.upstream_node:16}\t {link.downstream_node:16}\t {link.curve:16}\t {link.status:6}\t {link.startup_depth:8.3f}\t {link.shutoff_depth:8.3f}\n'
+                            f'{link.name:16}\t {link.upstream_node:16}\t {link.downstream_node:16}\t {link.curve:16}\t {link.status:6}\t {link.startup_depth:8}\t {link.shutoff_depth:8}\n'
                         )
                 
                 # Write VERTICES section

@@ -769,7 +769,7 @@ class NodeList:
             storage_contents = get_swmm_inp_content(filename, '[STORAGE]')
             dwf_contents = get_swmm_inp_content(filename, '[DWF]')
             inflow_contents = get_swmm_inp_content(filename, '[INFLOWS]')
-            polygon_contents = get_swmm_inp_content(filename, '[Polygons]')
+            polygon_contents = get_swmm_inp_content(filename, '[POLYGONS]')
             divider_contents = get_swmm_inp_content(filename, '[DIVIDERS]')
 
             # Process coordinates (needed by all node types)
@@ -1037,6 +1037,7 @@ class NodeList:
     def write_to_swmm_inp(self, filename):
         """
         Write node data to a SWMM input file.
+        Numeric field widths align columns without rounding model values.
         
         Writes the following sections to SWMM input file:
         - [JUNCTIONS]
@@ -1082,8 +1083,8 @@ class NodeList:
                 # Write inflows section
                 self._write_inflows_section(f)
 
-                # Write polygons section for Storage nodes
-                self._write_polygons_section(f)
+            # Merge only after buffered node data has been flushed and closed.
+            self._write_polygons_section(filename)
 
             return 0
         except IOError as e:
@@ -1097,8 +1098,8 @@ class NodeList:
         for node in self.data:
             if isinstance(node, Junction):
                 file.write(
-                    f'{node.name:8}  {node.elevation:8.3f}  {node.maximum_depth:8.3f}  '
-                    f'{node.initial_depth:8.3f}  {node.overload_depth:8.3f}  {node.surface_ponding_area:8.3f}\n')
+                    f'{node.name:8}  {node.elevation:8}  {node.maximum_depth:8}  '
+                    f'{node.initial_depth:8}  {node.overload_depth:8}  {node.surface_ponding_area:8}\n')
 
     def _write_outfalls_section(self, file):
         """Write outfalls section to the SWMM input file."""
@@ -1122,11 +1123,11 @@ class NodeList:
                     if extra_attr:
                         extra_value = getattr(node, extra_attr, '')
                         file.write(
-                            f'{node.name:8}  {node.elevation:8.3f}    {type_name}    '
+                            f'{node.name:8}  {node.elevation:8}    {type_name}    '
                             f'{extra_value:8}  {gate_flag}  {route_to}\n')
                     else:
                         file.write(
-                            f'{node.name:8}  {node.elevation:8.3f}    {type_name}    '
+                            f'{node.name:8}  {node.elevation:8}    {type_name}    '
                             f'{gate_flag:8}  {route_to}\n')
 
     def _write_coordinates_section(self, file):
@@ -1136,7 +1137,7 @@ class NodeList:
 
         for node in self.data:
             if hasattr(node, 'coordinate') and len(node.coordinate) >= 2:
-                file.write(f'{node.name:8}  {node.coordinate[0]:8.2f}  {node.coordinate[1]:8.2f}\n')
+                file.write(f'{node.name:8}  {node.coordinate[0]:8}  {node.coordinate[1]:8}\n')
 
     def _write_dwf_section(self, file):
         """Write dry weather flow section to the SWMM input file."""
@@ -1157,15 +1158,15 @@ class NodeList:
         for node in self.data:
             if isinstance(node, Storage):
                 # Common parameters for all storage types
-                base_params = f'{node.name:14}  {node.elevation:8.3f}  {node.maximum_depth:8.3f}  {node.initial_depth:8.3f}  '
+                base_params = f'{node.name:14}  {node.elevation:8}  {node.maximum_depth:8}  {node.initial_depth:8}  '
 
                 # Storage type specific parameters
                 if isinstance(node, StorageFunctional):
                     # For FUNCTIONAL: coefficient exponent constant
-                    shape_params = f'FUNCTIONAL  {node.coefficient:8.3f}  {node.exponent:8.3f}  {node.constant:8.3f}  '
+                    shape_params = f'FUNCTIONAL  {node.coefficient:8}  {node.exponent:8}  {node.constant:8}  '
                 elif isinstance(node, StorageCylindrical):
                     # For CYLINDRICAL: major_axis_length minor_axis_length 0
-                    shape_params = f'CYLINDRICAL  {node.major_axis_length:8.3f}  {node.minor_axis_length:8.3f}  0  '
+                    shape_params = f'CYLINDRICAL  {node.major_axis_length:8}  {node.minor_axis_length:8}  0  '
                 elif isinstance(node, StorageTabular):
                     # For TABULAR: storage_curve_name
                     shape_params = f'TABULAR  {node.storage_curve_name:8}  '
@@ -1174,13 +1175,13 @@ class NodeList:
                     continue
 
                 # Required parameters (overload_depth and evaporation_factor are always included)
-                required_params = f'{node.overload_depth:8.3f}  {node.evaporation_factor:8.3f}  '
+                required_params = f'{node.overload_depth:8}  {node.evaporation_factor:8}  '
 
                 # Seepage parameters (if present)
                 if (node.seepage_suction_head is not None and
                         node.seepage_conductivity is not None and
                         node.seepage_initial_deficit is not None):
-                    seepage_params = f'{node.seepage_suction_head:8.3f}  {node.seepage_conductivity:8.3f}  {node.seepage_initial_deficit:8.3f}'
+                    seepage_params = f'{node.seepage_suction_head:8}  {node.seepage_conductivity:8}  {node.seepage_initial_deficit:8}'
                 else:
                     seepage_params = ''
 
@@ -1268,25 +1269,25 @@ class NodeList:
         for node in self.data:
             # Only process Divider types
             if isinstance(node, Divider):
-                base = f'{node.name:14} {node.elevation:10.3f} {node.diverted_link:16} '
+                base = f'{node.name:14} {node.elevation:10} {node.diverted_link:16} '
                 # Type and specific params
                 if isinstance(node, DividerOverflow):
                     type_params = 'OVERFLOW'
                     specific = ''
                 elif isinstance(node, DividerCutoff):
                     type_params = 'CUTOFF'
-                    specific = f'{node.qmin:10.3f}'
+                    specific = f'{node.qmin:10}'
                 elif isinstance(node, DividerTabular):
                     type_params = 'TABULAR'
                     specific = f'{node.diversion_curve_name:16}'
                 elif isinstance(node, DividerWeir):
                     type_params = 'WEIR'
-                    specific = f'{node.qmin:10.3f} {node.height:10.3f} {node.coefficient:10.3f}'
+                    specific = f'{node.qmin:10} {node.height:10} {node.coefficient:10}'
                 else:
                     continue
 
                 # Optional depth/ponding parameters appended
-                optional = f' {node.maximum_depth:10.3f} {node.initial_depth:10.3f} {node.overload_depth:10.3f} {node.surface_ponding_area:10.3f}'
+                optional = f' {node.maximum_depth:10} {node.initial_depth:10} {node.overload_depth:10} {node.surface_ponding_area:10}'
                 file.write(f'{base}{type_params:<10} {specific}{optional}\n')
 
     def _write_inflows_section(self, file):
@@ -1300,60 +1301,14 @@ class NodeList:
                 formatted_values = '    '.join(str(value) for value in values)
                 file.write(f'{node.name}  FLOW  {formatted_values}  \n')
 
-    def _write_polygons_section(self, file):
-        """Write polygons section to the SWMM input file for Storage nodes."""
-        # Check if any Storage nodes have polygon data
-        has_polygons = any(isinstance(node, Storage) and
-                           hasattr(node, 'polygon') and
-                           node.polygon.node_name is not None and
-                           len(node.polygon.x) > 0 for node in self.data)
-
-        if has_polygons:
-            # Read file line by line to find sections
-            with open(file.name, 'r') as read_file:
-                lines = read_file.readlines()
-            # Find [Polygons] section
-            polygons_line = -1
-            next_section_line = -1
-            for i, line in enumerate(lines):
-                if line.strip() == '[Polygons]':
-                    polygons_line = i
-                elif polygons_line != -1 and line.strip().startswith('['):
-                    next_section_line = i
-                    break
-            if polygons_line == -1:
-                # No existing section, create new one at current position
-                file.write('\n\n[Polygons]\n')
-                file.write(';;Name          X-Coord            Y-Coord\n')
-
-                # Write polygon data
-                for node in self.data:
-                    if (isinstance(node, Storage) and
-                            hasattr(node, 'polygon') and
-                            node.polygon.node_name is not None):
-                        for xi, yi in zip(node.polygon.x, node.polygon.y):
-                            file.write(f'{node.polygon.node_name}  {xi}  {yi}\n')
-            else:
-                # Section exists, we need to modify file content
-                # Insert our polygon data just after the header line
-                insert_position = polygons_line + 2  # +1 for the header, +1 for the column labels
-
-                # Prepare polygon data lines
-                new_lines = []
-                for node in self.data:
-                    if (isinstance(node, Storage) and
-                            hasattr(node, 'polygon') and
-                            node.polygon.node_name is not None):
-                        for xi, yi in zip(node.polygon.x, node.polygon.y):
-                            new_lines.append(f'{node.polygon.node_name}  {xi}  {yi}\n')
-
-                # Insert the new lines at the appropriate position
-                lines[insert_position:insert_position] = new_lines
-
-                # Rewrite the entire file
-                file.seek(0)
-                file.writelines(lines)
-                file.truncate()
+    def _write_polygons_section(self, filename):
+        """Merge storage polygons without duplicating existing sections."""
+        polygons = {
+            node.polygon.node_name: list(zip(node.polygon.x, node.polygon.y))
+            for node in self.data
+            if isinstance(node, Storage) and node.polygon.node_name is not None
+        }
+        write_swmm_polygons(filename, polygons)
 
     def index_of(self, node_name, return_node=False):
         """

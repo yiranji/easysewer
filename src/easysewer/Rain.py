@@ -359,7 +359,7 @@ class Rain:
         return 0
 
     def write_to_swmm_inp(self, filename: str) -> int:
-        """Write rainfall data to SWMM input file
+        """Write rainfall data to SWMM input file without rounding rainfall values
         
         Args:
             filename: Path to the output SWMM input file
@@ -400,9 +400,9 @@ class Rain:
                         # Check if original data had seconds (by checking if any time component has seconds)
                         # For now, default to HH:MM unless we want to track precision
                         time_str = target_datetime.strftime("%H:%M") 
-                        f.write(f'{ts.name:<14} {date_str}  {time_str}  {value:>.3f}\n')
+                        f.write(f'{ts.name:<14} {date_str}  {time_str}  {value}\n')
                     else:
-                        f.write(f'{ts.name}  {time_minute2text(time)}  {value:>.3f}\n')
+                        f.write(f'{ts.name}  {time_minute2text(time)}  {value}\n')
                 f.write(';;\n')
 
             f.write('\n\n[RAINGAGES]\n')
