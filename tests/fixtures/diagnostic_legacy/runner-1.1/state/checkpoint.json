@@ -1,0 +1,1144 @@
+{
+  "kind": "easysewer:checkpoint",
+  "schema_version": "1.0",
+  "snapshot": {
+    "type": "run:snapshot",
+    "fields": {
+      "run_id": "checkpoint-fixture",
+      "created_at": {
+        "type": "core:datetime",
+        "value": "2020-01-01T00:00:00+00:00",
+        "fold": 0
+      },
+      "model_json": {
+        "type": "core:bytes",
+        "sha256": "cbcd80de31aa8c3b580555cd4018038429165e2341234abebffc408c337e16a0",
+        "size": 4410
+      },
+      "config_json": {
+        "type": "core:bytes",
+        "sha256": "22cb4362926233212d7b63f1c47bb594122b6b0d0030b4c38892212b2fce3e87",
+        "size": 1253
+      },
+      "model_sha256": "cbcd80de31aa8c3b580555cd4018038429165e2341234abebffc408c337e16a0",
+      "input_bytes": {
+        "type": "core:bytes",
+        "sha256": "f40a9887638d48604fcbbf8200897d6e8d808874eb1ad8517023ee204814f66a",
+        "size": 299
+      },
+      "input_sha256": "f40a9887638d48604fcbbf8200897d6e8d808874eb1ad8517023ee204814f66a",
+      "profile": {
+        "type": "core:profile",
+        "fields": {
+          "key": "epa-swmm:5.2.4",
+          "engine_version": "5.2.4",
+          "sections": {
+            "type": "core:set",
+            "values": [
+              "ADJUSTMENTS",
+              "AQUIFERS",
+              "BACKDROP",
+              "BUILDUP",
+              "CONDUITS",
+              "CONTROLS",
+              "COORDINATES",
+              "COVERAGES",
+              "CURVES",
+              "DIVIDERS",
+              "DWF",
+              "EVAPORATION",
+              "EVENTS",
+              "FILES",
+              "GROUNDWATER",
+              "GWF",
+              "HYDROGRAPHS",
+              "INFILTRATION",
+              "INFLOWS",
+              "INLETS",
+              "INLET_USAGE",
+              "JUNCTIONS",
+              "LABELS",
+              "LANDUSES",
+              "LID_CONTROLS",
+              "LID_USAGE",
+              "LOADINGS",
+              "LOSSES",
+              "MAP",
+              "OPTIONS",
+              "ORIFICES",
+              "OUTFALLS",
+              "OUTLETS",
+              "PATTERNS",
+              "POLLUTANTS",
+              "POLYGONS",
+              "PROFILES",
+              "PUMPS",
+              "RAINGAGES",
+              "RDII",
+              "REPORT",
+              "SNOWPACKS",
+              "STORAGE",
+              "STREETS",
+              "SUBAREAS",
+              "SUBCATCHMENTS",
+              "SYMBOLS",
+              "TAGS",
+              "TEMPERATURE",
+              "TIMESERIES",
+              "TITLE",
+              "TRANSECTS",
+              "TREATMENT",
+              "VERTICES",
+              "WASHOFF",
+              "WEIRS",
+              "XSECTIONS"
+            ]
+          },
+          "option_defaults": {
+            "type": "core:tuple",
+            "values": [
+              {
+                "type": "core:tuple",
+                "values": [
+                  "flow_units",
+                  "CFS"
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "infiltration",
+                  "HORTON"
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "flow_routing",
+                  "DYNWAVE"
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "link_offsets",
+                  "DEPTH"
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "force_main_equation",
+                  "H-W"
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "ignore_rainfall",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "ignore_snowmelt",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "ignore_groundwater",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "ignore_rdii",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "ignore_routing",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "ignore_quality",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "allow_ponding",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "skip_steady_state",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "sys_flow_tol",
+                  5.0
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "lat_flow_tol",
+                  5.0
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "start_date",
+                  {
+                    "type": "core:date",
+                    "value": "2004-01-01",
+                    "fold": 0
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "start_time",
+                  {
+                    "type": "core:time",
+                    "value": "00:00:00",
+                    "fold": 0
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "end_date",
+                  {
+                    "type": "core:date",
+                    "value": "2004-01-01",
+                    "fold": 0
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "end_time",
+                  {
+                    "type": "core:time",
+                    "value": "00:00:00",
+                    "fold": 0
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "report_start_date",
+                  null
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "report_start_time",
+                  null
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "sweep_start",
+                  {
+                    "type": "core:month-day",
+                    "fields": {
+                      "month": 1,
+                      "day": 1
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "sweep_end",
+                  {
+                    "type": "core:month-day",
+                    "fields": {
+                      "month": 12,
+                      "day": 31
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "dry_days",
+                  0.0
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "report_step",
+                  {
+                    "type": "core:duration",
+                    "days": 0,
+                    "seconds": 900,
+                    "microseconds": 0
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "wet_step",
+                  {
+                    "type": "core:duration",
+                    "days": 0,
+                    "seconds": 300,
+                    "microseconds": 0
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "dry_step",
+                  {
+                    "type": "core:duration",
+                    "days": 0,
+                    "seconds": 3600,
+                    "microseconds": 0
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "rule_step",
+                  {
+                    "type": "core:duration",
+                    "days": 0,
+                    "seconds": 0,
+                    "microseconds": 0
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "routing_step",
+                  {
+                    "type": "core:duration",
+                    "days": 0,
+                    "seconds": 20,
+                    "microseconds": 0
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "lengthening_step",
+                  {
+                    "type": "core:duration",
+                    "days": 0,
+                    "seconds": 0,
+                    "microseconds": 0
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "minimum_step",
+                  {
+                    "type": "core:duration",
+                    "days": 0,
+                    "seconds": 0,
+                    "microseconds": 500000
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "variable_step",
+                  0.75
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "inertial_damping",
+                  "PARTIAL"
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "normal_flow_limited",
+                  "BOTH"
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "surcharge_method",
+                  "EXTRAN"
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "min_surface_area",
+                  0.0
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "min_slope",
+                  0.0
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "max_trials",
+                  0
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "head_tolerance",
+                  0.0
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "threads",
+                  1
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "slope_weighting",
+                  true
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "compatibility",
+                  4
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "temp_directory",
+                  null
+                ]
+              }
+            ]
+          },
+          "unit_rules": {
+            "type": "core:unit-rules",
+            "fields": {
+              "key": "epa-swmm:5.2.4:units",
+              "flow_from_cfs": {
+                "type": "core:tuple",
+                "values": [
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "CFS",
+                      1.0
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "GPM",
+                      448.831
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "MGD",
+                      0.64632
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "CMS",
+                      0.02832
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "LPS",
+                      28.317
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "MLD",
+                      2.4466
+                    ]
+                  }
+                ]
+              },
+              "si_per_us": {
+                "type": "core:tuple",
+                "values": [
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "catchment_area",
+                      0.4047002962188535
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "volume",
+                      0.02832
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "weir_coefficient",
+                      0.5520899406336653
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "roadway_coefficient",
+                      0.552
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "wind_speed",
+                      1.608
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "snow_melt_coefficient",
+                      14.11111111111111
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "mass",
+                      0.45392646391284613
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "mass_per_curb_day",
+                      0.45392646391284613
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "mass_per_area_day",
+                      1.1216361049248458
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "count_per_area_day",
+                      2.470964339149435
+                    ]
+                  },
+                  {
+                    "type": "core:tuple",
+                    "values": [
+                      "groundwater_flux",
+                      0.0699724517906336
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "section_terminators": {
+            "type": "core:tuple",
+            "values": [
+              {
+                "type": "core:tuple",
+                "values": [
+                  "TRANSECTS",
+                  "REPORT"
+                ]
+              }
+            ]
+          },
+          "transect_offset_power": 2,
+          "transect_mixed_width_scaling": true,
+          "climate_defaults": {
+            "type": "core:tuple",
+            "values": [
+              {
+                "type": "core:tuple",
+                "values": [
+                  "ambient_temperature_f",
+                  70.0
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "snowfall_temperature_f",
+                  34.0
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "antecedent_weight",
+                  0.5
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "negative_melt_ratio",
+                  0.6
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "latitude",
+                  40.0
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "file_units_us",
+                  "F"
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "file_units_si",
+                  "C"
+                ]
+              }
+            ]
+          },
+          "report_defaults": {
+            "type": "core:tuple",
+            "values": [
+              {
+                "type": "core:tuple",
+                "values": [
+                  "disabled",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "input",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "continuity",
+                  true
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "flow_stats",
+                  true
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "controls",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "averages",
+                  false
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "subcatchments",
+                  {
+                    "type": "core:report-selection",
+                    "fields": {
+                      "mode": "NONE",
+                      "members": {
+                        "type": "core:tuple",
+                        "values": []
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "nodes",
+                  {
+                    "type": "core:report-selection",
+                    "fields": {
+                      "mode": "NONE",
+                      "members": {
+                        "type": "core:tuple",
+                        "values": []
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "core:tuple",
+                "values": [
+                  "links",
+                  {
+                    "type": "core:report-selection",
+                    "fields": {
+                      "mode": "NONE",
+                      "members": {
+                        "type": "core:tuple",
+                        "values": []
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "units": {
+        "type": "core:units",
+        "fields": {
+          "flow_units": "CFS"
+        }
+      },
+      "options": {
+        "type": "core:resolved-options",
+        "fields": {
+          "values": {
+            "type": "core:options",
+            "fields": {
+              "flow_units": "CFS",
+              "infiltration": "HORTON",
+              "flow_routing": "DYNWAVE",
+              "link_offsets": "DEPTH",
+              "force_main_equation": "H-W",
+              "ignore_rainfall": false,
+              "ignore_snowmelt": false,
+              "ignore_groundwater": false,
+              "ignore_rdii": false,
+              "ignore_routing": false,
+              "ignore_quality": false,
+              "allow_ponding": false,
+              "skip_steady_state": false,
+              "sys_flow_tol": 5.0,
+              "lat_flow_tol": 5.0,
+              "start_date": {
+                "type": "core:date",
+                "value": "2020-01-01",
+                "fold": 0
+              },
+              "start_time": {
+                "type": "core:time",
+                "value": "00:00:00",
+                "fold": 0
+              },
+              "end_date": {
+                "type": "core:date",
+                "value": "2020-01-01",
+                "fold": 0
+              },
+              "end_time": {
+                "type": "core:time",
+                "value": "00:10:00",
+                "fold": 0
+              },
+              "report_start_date": null,
+              "report_start_time": null,
+              "sweep_start": {
+                "type": "core:month-day",
+                "fields": {
+                  "month": 1,
+                  "day": 1
+                }
+              },
+              "sweep_end": {
+                "type": "core:month-day",
+                "fields": {
+                  "month": 12,
+                  "day": 31
+                }
+              },
+              "dry_days": 0.0,
+              "report_step": {
+                "type": "core:duration",
+                "days": 0,
+                "seconds": 600,
+                "microseconds": 0
+              },
+              "wet_step": {
+                "type": "core:duration",
+                "days": 0,
+                "seconds": 300,
+                "microseconds": 0
+              },
+              "dry_step": {
+                "type": "core:duration",
+                "days": 0,
+                "seconds": 3600,
+                "microseconds": 0
+              },
+              "routing_step": {
+                "type": "core:duration",
+                "days": 0,
+                "seconds": 5,
+                "microseconds": 0
+              },
+              "rule_step": {
+                "type": "core:duration",
+                "days": 0,
+                "seconds": 0,
+                "microseconds": 0
+              },
+              "lengthening_step": {
+                "type": "core:duration",
+                "days": 0,
+                "seconds": 0,
+                "microseconds": 0
+              },
+              "variable_step": 0,
+              "minimum_step": {
+                "type": "core:duration",
+                "days": 0,
+                "seconds": 0,
+                "microseconds": 500000
+              },
+              "inertial_damping": "PARTIAL",
+              "normal_flow_limited": "BOTH",
+              "surcharge_method": "EXTRAN",
+              "min_surface_area": 12.566,
+              "min_slope": 0.0,
+              "max_trials": 8,
+              "head_tolerance": 0.005,
+              "threads": 1,
+              "slope_weighting": true,
+              "compatibility": 4,
+              "temp_directory": null
+            }
+          },
+          "start": {
+            "type": "core:datetime",
+            "value": "2020-01-01T00:00:00",
+            "fold": 0
+          },
+          "end": {
+            "type": "core:datetime",
+            "value": "2020-01-01T00:10:00",
+            "fold": 0
+          },
+          "report_start": {
+            "type": "core:datetime",
+            "value": "2020-01-01T00:00:00",
+            "fold": 0
+          },
+          "duration": {
+            "type": "core:duration",
+            "days": 0,
+            "seconds": 600,
+            "microseconds": 0
+          },
+          "defaults_used": {
+            "type": "core:set",
+            "values": [
+              "allow_ponding",
+              "compatibility",
+              "dry_days",
+              "dry_step",
+              "flow_routing",
+              "force_main_equation",
+              "head_tolerance",
+              "ignore_groundwater",
+              "ignore_quality",
+              "ignore_rainfall",
+              "ignore_rdii",
+              "ignore_routing",
+              "ignore_snowmelt",
+              "inertial_damping",
+              "infiltration",
+              "lat_flow_tol",
+              "lengthening_step",
+              "link_offsets",
+              "max_trials",
+              "min_slope",
+              "min_surface_area",
+              "minimum_step",
+              "normal_flow_limited",
+              "report_start_date",
+              "report_start_time",
+              "report_step",
+              "rule_step",
+              "skip_steady_state",
+              "slope_weighting",
+              "start_time",
+              "surcharge_method",
+              "sweep_end",
+              "sweep_start",
+              "sys_flow_tol",
+              "temp_directory",
+              "threads",
+              "wet_step"
+            ]
+          },
+          "adjustments": {
+            "type": "core:tuple",
+            "values": [
+              {
+                "type": "core:option-adjustment",
+                "fields": {
+                  "field": "report_step",
+                  "requested": {
+                    "type": "core:duration",
+                    "days": 0,
+                    "seconds": 900,
+                    "microseconds": 0
+                  },
+                  "effective": {
+                    "type": "core:duration",
+                    "days": 0,
+                    "seconds": 600,
+                    "microseconds": 0
+                  },
+                  "reason": "Reporting step is limited to the simulation duration"
+                }
+              },
+              {
+                "type": "core:option-adjustment",
+                "fields": {
+                  "field": "min_surface_area",
+                  "requested": 0.0,
+                  "effective": 12.566,
+                  "reason": "Native default manhole surface area"
+                }
+              },
+              {
+                "type": "core:option-adjustment",
+                "fields": {
+                  "field": "head_tolerance",
+                  "requested": 0.0,
+                  "effective": 0.005,
+                  "reason": "Native default convergence tolerance"
+                }
+              },
+              {
+                "type": "core:option-adjustment",
+                "fields": {
+                  "field": "max_trials",
+                  "requested": 0,
+                  "effective": 8,
+                  "reason": "Native default iteration limit"
+                }
+              }
+            ]
+          },
+          "report": {
+            "type": "core:validation",
+            "fields": {
+              "diagnostics": {
+                "type": "core:tuple",
+                "values": [
+                  {
+                    "type": "core:diagnostic",
+                    "fields": {
+                      "code": "options.effective_adjustment",
+                      "message": "Reporting step is limited to the simulation duration",
+                      "severity": {
+                        "type": "core:severity",
+                        "value": "info"
+                      },
+                      "span": null,
+                      "feature": null,
+                      "section": null,
+                      "object_id": null,
+                      "field": "report_step"
+                    }
+                  },
+                  {
+                    "type": "core:diagnostic",
+                    "fields": {
+                      "code": "options.effective_adjustment",
+                      "message": "Native default manhole surface area",
+                      "severity": {
+                        "type": "core:severity",
+                        "value": "info"
+                      },
+                      "span": null,
+                      "feature": null,
+                      "section": null,
+                      "object_id": null,
+                      "field": "min_surface_area"
+                    }
+                  },
+                  {
+                    "type": "core:diagnostic",
+                    "fields": {
+                      "code": "options.effective_adjustment",
+                      "message": "Native default convergence tolerance",
+                      "severity": {
+                        "type": "core:severity",
+                        "value": "info"
+                      },
+                      "span": null,
+                      "feature": null,
+                      "section": null,
+                      "object_id": null,
+                      "field": "head_tolerance"
+                    }
+                  },
+                  {
+                    "type": "core:diagnostic",
+                    "fields": {
+                      "code": "options.effective_adjustment",
+                      "message": "Native default iteration limit",
+                      "severity": {
+                        "type": "core:severity",
+                        "value": "info"
+                      },
+                      "span": null,
+                      "feature": null,
+                      "section": null,
+                      "object_id": null,
+                      "field": "max_trials"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "backend": {
+        "type": "run:backend",
+        "fields": {
+          "key": "swmm:standard",
+          "available": true,
+          "reason": null,
+          "library": "/old/solver",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "engine_version": 52004,
+          "platform": "Test",
+          "architecture": "64",
+          "abi": "cdecl:64",
+          "profiles": {
+            "type": "core:tuple",
+            "values": [
+              "epa-swmm:5.2.4"
+            ]
+          },
+          "capabilities": {
+            "type": "core:tuple",
+            "values": []
+          },
+          "isolation": "process",
+          "origin": "user-library",
+          "implementation": "easysewer:process-session:1",
+          "numerical_policy": "epa-swmm:5.2.4",
+          "output_semantics": {
+            "type": "core:tuple",
+            "values": []
+          }
+        }
+      },
+      "resources": {
+        "type": "core:tuple",
+        "values": []
+      },
+      "execution_directory": "C:\\Users\\36099\\AppData\\Local\\Temp\\tmpdd0yy9a0",
+      "contract": "easysewer:run-snapshot:1",
+      "backend_settings": null
+    }
+  },
+  "execution_sha256": "417e0f5f88c59c68eab5ca8e4569b6c53a10c5938df4659a28beab92ee3e04a8",
+  "native_inputs": [],
+  "native_state": {
+    "sha256": "da53fb56a26b5a96cdb8e16dbbc3b68f17646510fbd2dc389258024f5dcd4c7a",
+    "size": 243
+  },
+  "worker_state": null,
+  "trace": null,
+  "outputs": [],
+  "blobs": [
+    {
+      "sha256": "22cb4362926233212d7b63f1c47bb594122b6b0d0030b4c38892212b2fce3e87",
+      "size": 1253
+    },
+    {
+      "sha256": "cbcd80de31aa8c3b580555cd4018038429165e2341234abebffc408c337e16a0",
+      "size": 4410
+    },
+    {
+      "sha256": "da53fb56a26b5a96cdb8e16dbbc3b68f17646510fbd2dc389258024f5dcd4c7a",
+      "size": 243
+    },
+    {
+      "sha256": "f40a9887638d48604fcbbf8200897d6e8d808874eb1ad8517023ee204814f66a",
+      "size": 299
+    }
+  ]
+}

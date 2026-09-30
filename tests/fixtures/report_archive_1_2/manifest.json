@@ -1,0 +1,11 @@
+{
+  "scope": "Actual prior installed wheel wrote result archive 1.2; contains normalized report blocks and diagnostic contexts",
+  "wheel_sha256": "8623821a37a292a5096dc19dc8f5665768a6171b1c2e6e7c186a012b807475d0",
+  "installed_files": 199,
+  "generator_sha256": "1e157b7846a52ad4a59decc3c54a511352ddf2ba75303a9a822d610a673264cb",
+  "files": {
+    "result/result.json": "f02b80af09e46faeaa2003778886bd73642a2494ad516f7984489c08177de359",
+    "result/blobs/5a8d029597221167799f04d814f47771f55790fa04392b2fcaa3f0365fdaa03b": "5a8d029597221167799f04d814f47771f55790fa04392b2fcaa3f0365fdaa03b",
+    "result/blobs/9ba7f0095f53db65d04ec57660344114eeb80b3b30a1f1fb9f27e9b123e02d17": "9ba7f0095f53db65d04ec57660344114eeb80b3b30a1f1fb9f27e9b123e02d17"
+  }
+}

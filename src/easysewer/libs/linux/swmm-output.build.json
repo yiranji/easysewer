@@ -1,0 +1,61 @@
+{
+  "target": "linux",
+  "host": "Linux-6.6.114.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "source": {
+    "base": {
+      "repository": "https://github.com/USEPA/Stormwater-Management-Model.git",
+      "tag": "v5.2.4",
+      "commit": "7952ca837988b1c32f791812eccc9fd64547e093",
+      "commit_timestamp": 1696942175,
+      "files": {
+        "src/outfile/CMakeLists.txt": "3f16e85fc1f1612dc2ed7db22288520a534f698f7c66716186d1f72fb4678d15",
+        "src/outfile/errormanager.c": "4b56ba8cd15672e327cb62fcc2a48f636ae212534f7aedae4d8632e7c36ae17c",
+        "src/outfile/errormanager.h": "a6cd625b52309123fae159cb804de210976f5b630923181b768021d7cbafbc11",
+        "src/outfile/include/swmm_output.h": "c328f692716560b0228585b9721159ac2c63f71202e713a128af951536d350b6",
+        "src/outfile/include/swmm_output_enums.h": "5c5300b14f247ff460584aaf13e9b96c983aebcd7a31e0426203b01fcb032916",
+        "src/outfile/messages.h": "cfde98c9feb827fb3d822eae54f0a844823ae58e3c56eb5145cff986b1d97ce5",
+        "src/outfile/swmm_output.c": "ef1bf4e668151bdb227b5db9c2e558753c5c74f020144babdfc56b978c5e6507"
+      }
+    },
+    "patch": "easysewer:output-io:1",
+    "output_io": 1,
+    "recipe": {
+      "prepare.py": "8431b3a3a5d0ba799b59f4956fb2715344302493de02451175a0e55848f266e7",
+      "output_reader.c": "842cb4bffd353d4b2ebaa4e0644f88d211dcb4bff87f2557e7d37c4c331b29ae"
+    },
+    "files": {
+      "src/outfile/CMakeLists.txt": "3f16e85fc1f1612dc2ed7db22288520a534f698f7c66716186d1f72fb4678d15",
+      "src/outfile/errormanager.c": "4b56ba8cd15672e327cb62fcc2a48f636ae212534f7aedae4d8632e7c36ae17c",
+      "src/outfile/errormanager.h": "a6cd625b52309123fae159cb804de210976f5b630923181b768021d7cbafbc11",
+      "src/outfile/include/swmm_output.h": "c328f692716560b0228585b9721159ac2c63f71202e713a128af951536d350b6",
+      "src/outfile/include/swmm_output_enums.h": "5c5300b14f247ff460584aaf13e9b96c983aebcd7a31e0426203b01fcb032916",
+      "src/outfile/messages.h": "cfde98c9feb827fb3d822eae54f0a844823ae58e3c56eb5145cff986b1d97ce5",
+      "src/outfile/swmm_output.c": "842cb4bffd353d4b2ebaa4e0644f88d211dcb4bff87f2557e7d37c4c331b29ae",
+      "src/outfile/include/swmm_output_export.h": "7557bdc97e67c5d1b7b82188958bee599255f9bf203e3cb7e2acce0c315fe428"
+    }
+  },
+  "command": [
+    "gcc",
+    "-std=c99",
+    "-shared",
+    "-O2",
+    "-fno-fast-math",
+    "-ffp-contract=off",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-fvisibility=hidden",
+    "-fPIC",
+    "-I/mnt/d/tmp/easysewer_2_0_out_io_20260922/source-v2/src/outfile/include",
+    "/mnt/d/tmp/easysewer_2_0_out_io_20260922/source-v2/src/outfile/swmm_output.c",
+    "-o",
+    "/mnt/d/tmp/easysewer_2_0_out_io_20260922/build-v2/linux/swmm-output.so",
+    "-lm"
+  ],
+  "compiler": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "recipe_sha256": "6b3c59f1d9e2654e677d3e42cf8212768c34126d018c4ecc7925e7431723fa25",
+  "sha256": "e5385e0d40170d03b1c0e8edfd0b7753d7e726afd426cb094e3b874b46fe42cb",
+  "size": 25896,
+  "output_io": 1,
+  "policy": "Bounded SWMM 5.2.4 OUT reader; retained SMO ABI; checked ownership and I/O"
+}

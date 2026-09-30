@@ -1,0 +1,89 @@
+{
+  "kind": "easysewer:runner-checkpoint",
+  "schema_version": "1.0",
+  "codec_version": "1.1",
+  "state_sha256": "7e38f527e0b46e1d5e7eab56f3995eabd449fabc3dc8044347424626992f53dc",
+  "context": {
+    "asset_directory": "assets",
+    "diagnostics": {
+      "type": "core:validation",
+      "fields": {
+        "diagnostics": {
+          "type": "core:tuple",
+          "values": [
+            {
+              "type": "core:diagnostic",
+              "fields": {
+                "code": "test:retained-warning",
+                "message": "保留原始诊断",
+                "severity": {
+                  "type": "core:severity",
+                  "value": "warning"
+                },
+                "span": {
+                  "type": "core:span",
+                  "fields": {
+                    "line": 7,
+                    "column": 1,
+                    "end_column": 4,
+                    "source": "old-input.inp"
+                  }
+                },
+                "feature": null,
+                "section": null,
+                "object_id": null,
+                "field": null
+              }
+            }
+          ]
+        }
+      }
+    },
+    "consumed_caches": {
+      "type": "core:tuple",
+      "values": []
+    },
+    "cache_contexts": {
+      "type": "core:tuple",
+      "values": []
+    },
+    "backend_artifacts": {
+      "type": "core:tuple",
+      "values": []
+    },
+    "steps": 3,
+    "continuations": {
+      "type": "core:tuple",
+      "values": [
+        {
+          "type": "run:continuation",
+          "fields": {
+            "attempt_id": "resume-attempt",
+            "execution_run_id": "checkpoint-fixture",
+            "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "state_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "execution_sha256": "417e0f5f88c59c68eab5ca8e4569b6c53a10c5938df4659a28beab92ee3e04a8",
+            "started_at": {
+              "type": "core:datetime",
+              "value": "2026-09-24T00:00:00+00:00",
+              "fold": 0
+            },
+            "simulation_seconds": 1.0,
+            "steps": 1,
+            "config_json": {
+              "type": "core:bytes",
+              "sha256": "22cb4362926233212d7b63f1c47bb594122b6b0d0030b4c38892212b2fce3e87",
+              "size": 1253
+            }
+          }
+        }
+      ]
+    }
+  },
+  "blobs": [
+    {
+      "sha256": "22cb4362926233212d7b63f1c47bb594122b6b0d0030b4c38892212b2fce3e87",
+      "size": 1253
+    }
+  ]
+}

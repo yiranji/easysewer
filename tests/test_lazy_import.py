@@ -36,20 +36,47 @@ print("ok")
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("ok", result.stdout)
 
-    def test_import_modelapi_does_not_touch_cdll(self):
+    def test_import_model_does_not_touch_cdll(self):
         code = f"""
 import sys
 sys.path.insert(0, r"{self.src_path}")
 import ctypes
 def fail_cdll(*args, **kwargs):
-    raise RuntimeError("ctypes.CDLL should not be called during ModelAPI import")
+    raise RuntimeError("ctypes.CDLL should not be called during Model import")
 ctypes.CDLL = fail_cdll
-from easysewer.ModelAPI import Model
+from easysewer import Model
 print(Model.__name__)
 """
         result = self._run_python(code)
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("Model", result.stdout)
+
+    def test_v2_document_and_registry_do_not_import_native_or_legacy_model_modules(self):
+        code = f"""
+import importlib.abc
+import sys
+sys.path.insert(0, r"{self.src_path}")
+class RejectNativeAndLegacy(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname in {{"ctypes", "easysewer.runtime._solver_api", "easysewer.runtime._output_api",
+                        "easysewer.UDM", "easysewer.ModelAPI"}}:
+            raise AssertionError("unexpected dependency: " + fullname)
+sys.meta_path.insert(0, RejectNativeAndLegacy())
+from easysewer.io.inp import InpDocument
+from easysewer.schema import SchemaRegistry
+from easysewer.model import Model as CandidateModel
+from easysewer import Model
+assert Model is CandidateModel
+document = InpDocument.from_text("[FUTURE]\\nx y\\n")
+decoded = SchemaRegistry().decode(document)
+assert decoded.document.to_bytes() == b"[FUTURE]\\nx y\\n"
+assert len(decoded.opaque_records) == 1
+assert CandidateModel().to_document().text == ""
+print("ok")
+"""
+        result = self._run_python(code)
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("ok", result.stdout)
 
     def test_capability_probe_does_not_load_cdll(self):
         code = f"""
@@ -71,17 +98,17 @@ print("ok")
 
     def test_solver_constructor_raises_unified_error_when_native_unavailable(self):
         sys.path.insert(0, str(self.src_path))
-        from easysewer.SolverAPI import SWMMSolverAPI
+        from easysewer.runtime._solver_api import SWMMSolverAPI
         from easysewer.utils import NativeCapabilityError
-        with patch("easysewer.SolverAPI.require_native_capability", side_effect=NativeCapabilityError("native unavailable")):
+        with patch("easysewer.runtime._solver_api.require_native_capability", side_effect=NativeCapabilityError("native unavailable")):
             with self.assertRaises(NativeCapabilityError):
                 SWMMSolverAPI()
 
     def test_output_constructor_raises_unified_error_when_native_unavailable(self):
         sys.path.insert(0, str(self.src_path))
-        from easysewer.OutputAPI import SWMMOutputAPI
+        from easysewer.runtime._output_api import SWMMOutputAPI
         from easysewer.utils import NativeCapabilityError
-        with patch("easysewer.OutputAPI.require_native_capability", side_effect=NativeCapabilityError("native unavailable")):
+        with patch("easysewer.runtime._output_api.require_native_capability", side_effect=NativeCapabilityError("native unavailable")):
             with self.assertRaises(NativeCapabilityError):
                 SWMMOutputAPI()
 

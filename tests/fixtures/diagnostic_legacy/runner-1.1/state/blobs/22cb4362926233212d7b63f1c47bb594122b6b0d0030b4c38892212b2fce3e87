@@ -1,0 +1,51 @@
+{
+  "kind": "easysewer:run",
+  "schema_version": "1.0",
+  "settings": {
+    "type": "run:config",
+    "output_directory": {
+      "type": "core:file",
+      "path": "C:\\Users\\36099\\AppData\\Local\\Temp\\tmpdd0yy9a0\\published",
+      "base_directory": null,
+      "flavor": "native",
+      "direction": "output"
+    },
+    "input_directory": null,
+    "backend": "swmm:standard",
+    "artifact_stem": "model",
+    "overwrite": false,
+    "keep_failed_artifacts": true,
+    "progress_interval": {
+      "type": "core:duration",
+      "days": 0,
+      "seconds": 1,
+      "microseconds": 0
+    },
+    "cancellation_poll_interval": {
+      "type": "core:duration",
+      "days": 0,
+      "seconds": 1,
+      "microseconds": 0
+    },
+    "wall_time_limit": null,
+    "native_call_timeout": {
+      "type": "core:duration",
+      "days": 0,
+      "seconds": 30,
+      "microseconds": 0
+    },
+    "step_batch_size": 100,
+    "file_inspection_limit": 67108864,
+    "normalize_inp": false,
+    "report_read": {
+      "type": "run:report_read",
+      "encoding": null,
+      "on_decode_error": "preserve",
+      "tables": [],
+      "on_table_error": "preserve",
+      "max_bytes": 67108864
+    },
+    "required_capabilities": [],
+    "cache_reuse": []
+  }
+}

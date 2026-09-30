@@ -1,0 +1,51 @@
+{
+  "key": "swmm:node_depth",
+  "title": "Node Depth Summary",
+  "source": {
+    "format": "swmm:rpt",
+    "path": null,
+    "sha256": "917e767ed46d8853841ed6e7c43e6cbc7f383961b053ff287f78d9dec2ff827e",
+    "run_id": null,
+    "input_sha256": null,
+    "backend_sha256": null,
+    "engine_version": null,
+    "encoding": "utf-8"
+  },
+  "columns": [],
+  "rows": [],
+  "status": "absent",
+  "semantics": "swmm:printed-native-statistics; producer=unspecified; policy=unspecified; averages=None; accounting=unspecified",
+  "raw_text": "",
+  "reason": "table_not_emitted",
+  "diagnostics": {
+    "diagnostics": [
+      {
+        "code": "example:failure",
+        "message": "原始错误",
+        "severity": "error",
+        "span": {
+          "line": 7,
+          "column": 2,
+          "end_column": 4,
+          "source": "original.inp"
+        },
+        "feature": null,
+        "section": null,
+        "object_id": null,
+        "field": null
+      }
+    ]
+  },
+  "time_origin": null,
+  "decoding_strategy": "strict",
+  "target": null,
+  "applicability": {
+    "status": "unknown",
+    "reasons": [
+      "easysewer:execution-context-unavailable"
+    ],
+    "evidence": []
+  },
+  "schema_version": "1.1",
+  "kind": "easysewer:result-table"
+}

@@ -1,3 +1,6 @@
 # Exclude cases and tests from GitHub language statistics
 cases/** linguist-vendored
 tests/** linguist-vendored
+
+# Preserve exact fixture bytes used by digest and round-trip checks.
+tests/fixtures/** -text

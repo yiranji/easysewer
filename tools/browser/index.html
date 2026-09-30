@@ -1,0 +1,27 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><title>EasySewer 浏览器验收</title>
+<style>body{font:16px system-ui;max-width:1000px;margin:40px auto;padding:0 24px;background:#f5f7fa;color:#172436}button{padding:12px 18px;font-size:16px;margin-right:10px}pre{white-space:pre-wrap;background:white;padding:20px;border:1px solid #dbe2ea}</style>
+<h1>EasySewer 2.0 浏览器验收</h1><p>实际 micropip 安装、模块摘要核对及浏览器模型读写</p>
+<button id="page">在页面运行</button><button id="worker">在 Worker 运行</button>
+<p id="status">尚未运行</p><pre id="result"></pre>
+<script type="module">
+import {qualifyBrowser} from './runner.js';
+const status=document.querySelector('#status'),display=document.querySelector('#result');
+function progress(value){status.textContent=value;}
+async function save(evidence){
+  status.textContent=evidence.success?'浏览器验收通过':'浏览器验收失败';
+  display.textContent=JSON.stringify(evidence,null,2);
+  try{
+    const result=await fetch('/result',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(evidence)});
+    if(!result.ok)throw new Error('HTTP '+result.status);
+    display.dataset.saved='true';
+  }catch(error){display.textContent+='\n保存失败：'+error;display.dataset.saved='false';}
+  display.dataset.done='true';
+}
+function begin(){document.querySelectorAll('button').forEach(button=>button.disabled=true);}
+document.querySelector('#page').onclick=async()=>{begin();await save(await qualifyBrowser(progress));};
+document.querySelector('#worker').onclick=()=>{
+  begin();const worker=new Worker('/worker.js',{type:'module'});
+  worker.onmessage=event=>{if(event.data.status)progress(event.data.status);else{save(event.data.evidence);worker.terminate();}};
+  worker.onerror=event=>{save({success:false,error:event.message,executionContext:'worker'});worker.terminate();};
+};
+</script></html>

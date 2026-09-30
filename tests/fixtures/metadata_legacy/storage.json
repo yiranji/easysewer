@@ -1,0 +1,388 @@
+{
+  "kind": "easysewer:model",
+  "schema_version": "1.0",
+  "profile": "epa-swmm:5.2.4",
+  "collections": [
+    {
+      "collection": "swmm:options",
+      "records": [
+        {
+          "key": "settings",
+          "value": {
+            "type": "swmm:options.options",
+            "flow_units": null,
+            "infiltration": null,
+            "flow_routing": null,
+            "link_offsets": null,
+            "force_main_equation": null,
+            "ignore_rainfall": null,
+            "ignore_snowmelt": null,
+            "ignore_groundwater": null,
+            "ignore_rdii": null,
+            "ignore_routing": null,
+            "ignore_quality": null,
+            "allow_ponding": null,
+            "skip_steady_state": null,
+            "sys_flow_tol": null,
+            "lat_flow_tol": null,
+            "start_date": {
+              "type": "core:date",
+              "value": "2020-01-30"
+            },
+            "start_time": null,
+            "end_date": {
+              "type": "core:date",
+              "value": "2020-01-30"
+            },
+            "end_time": {
+              "type": "core:time",
+              "value": "00:15:00",
+              "fold": 0
+            },
+            "report_start_date": {
+              "type": "core:date",
+              "value": "2020-01-30"
+            },
+            "report_start_time": null,
+            "sweep_start": null,
+            "sweep_end": null,
+            "dry_days": null,
+            "report_step": {
+              "type": "core:duration",
+              "days": 0,
+              "seconds": 60,
+              "microseconds": 0
+            },
+            "wet_step": {
+              "type": "core:duration",
+              "days": 0,
+              "seconds": 60,
+              "microseconds": 0
+            },
+            "dry_step": {
+              "type": "core:duration",
+              "days": 0,
+              "seconds": 60,
+              "microseconds": 0
+            },
+            "routing_step": {
+              "type": "core:duration",
+              "days": 0,
+              "seconds": 5,
+              "microseconds": 0
+            },
+            "rule_step": null,
+            "lengthening_step": null,
+            "variable_step": 0.0,
+            "minimum_step": null,
+            "inertial_damping": null,
+            "normal_flow_limited": null,
+            "surcharge_method": null,
+            "min_surface_area": null,
+            "min_slope": null,
+            "max_trials": null,
+            "head_tolerance": null,
+            "threads": null,
+            "slope_weighting": null,
+            "compatibility": null,
+            "temp_directory": null
+          }
+        }
+      ]
+    },
+    {
+      "collection": "swmm:timeseries",
+      "records": [
+        {
+          "key": "Rain",
+          "value": {
+            "type": "swmm:resources.inline_time_series",
+            "id": "Rain",
+            "points": [
+              {
+                "type": "swmm:resources.series_point",
+                "time": {
+                  "type": "core:duration",
+                  "days": 0,
+                  "seconds": 0,
+                  "microseconds": 0
+                },
+                "value": 0.6
+              },
+              {
+                "type": "swmm:resources.series_point",
+                "time": {
+                  "type": "core:duration",
+                  "days": 0,
+                  "seconds": 300,
+                  "microseconds": 0
+                },
+                "value": 1.2
+              },
+              {
+                "type": "swmm:resources.series_point",
+                "time": {
+                  "type": "core:duration",
+                  "days": 0,
+                  "seconds": 600,
+                  "microseconds": 0
+                },
+                "value": 0.0
+              },
+              {
+                "type": "swmm:resources.series_point",
+                "time": {
+                  "type": "core:duration",
+                  "days": 0,
+                  "seconds": 900,
+                  "microseconds": 0
+                },
+                "value": 0.0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "collection": "swmm:raingages",
+      "records": [
+        {
+          "key": "R",
+          "value": {
+            "type": "swmm:hydrology.rain_gage",
+            "id": "R",
+            "form": "INTENSITY",
+            "interval": {
+              "type": "core:duration",
+              "days": 0,
+              "seconds": 300,
+              "microseconds": 0
+            },
+            "snow_factor": 1.0,
+            "source": {
+              "type": "swmm:hydrology.series_rainfall",
+              "series": {
+                "type": "core:ref",
+                "collection": "swmm:timeseries",
+                "key": "Rain"
+              }
+            },
+            "position": {
+              "type": "core:point",
+              "x": 1.0,
+              "y": 2.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collection": "swmm:subcatchments",
+      "records": [
+        {
+          "key": "S",
+          "value": {
+            "type": "swmm:hydrology.subcatchment",
+            "id": "S",
+            "rain_gage": {
+              "type": "core:ref",
+              "collection": "swmm:raingages",
+              "key": "R"
+            },
+            "outlet": {
+              "type": "core:ref",
+              "collection": "swmm:nodes",
+              "key": "J"
+            },
+            "area": 2.0,
+            "impervious_percent": 30.0,
+            "width": 100.0,
+            "slope": 1.0,
+            "curb_length": 12.0,
+            "snowpack": null,
+            "subareas": {
+              "type": "swmm:hydrology.subareas",
+              "impervious_roughness": 0.01,
+              "pervious_roughness": 0.2,
+              "impervious_storage": 0.05,
+              "pervious_storage": 0.1,
+              "zero_storage_percent": 25.0,
+              "route_to": "OUTLET",
+              "routed_percent": null
+            },
+            "infiltration": {
+              "type": "swmm:hydrology.infiltration",
+              "parameters": {
+                "type": "swmm:hydrology.horton",
+                "maximum_rate": 3.0,
+                "minimum_rate": 0.2,
+                "decay": 4.0,
+                "drying_time": 2.0,
+                "maximum_volume": 0.0
+              },
+              "method": "HORTON"
+            },
+            "polygon": [
+              {
+                "type": "core:point",
+                "x": -1.0,
+                "y": 2.0
+              },
+              {
+                "type": "core:point",
+                "x": 3.0,
+                "y": 4.0
+              },
+              {
+                "type": "core:point",
+                "x": -1.0,
+                "y": 2.0
+              },
+              {
+                "type": "core:point",
+                "x": 8.0,
+                "y": 9.0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "collection": "swmm:nodes",
+      "records": [
+        {
+          "key": "J",
+          "value": {
+            "type": "swmm:network.storage",
+            "id": "J",
+            "elevation": 0.0,
+            "position": {
+              "type": "core:point",
+              "x": 0.0,
+              "y": 1.0
+            },
+            "max_depth": 50.0,
+            "initial_depth": 0.0,
+            "shape": {
+              "type": "swmm:network.functional_storage",
+              "coefficient": 0.0,
+              "exponent": 1.0,
+              "constant": 500.0
+            },
+            "surcharge_depth": 0.0,
+            "evaporation_fraction": 0.0,
+            "seepage": null
+          }
+        },
+        {
+          "key": "O",
+          "value": {
+            "type": "swmm:network.outfall",
+            "id": "O",
+            "elevation": -1.0,
+            "position": null,
+            "boundary": {
+              "type": "swmm:network.free_boundary"
+            },
+            "gated": null,
+            "route_to": null
+          }
+        }
+      ]
+    },
+    {
+      "collection": "swmm:links",
+      "records": [
+        {
+          "key": "P",
+          "value": {
+            "type": "swmm:network.outlet",
+            "id": "P",
+            "inlet": {
+              "type": "core:ref",
+              "collection": "swmm:nodes",
+              "key": "J"
+            },
+            "outlet": {
+              "type": "core:ref",
+              "collection": "swmm:nodes",
+              "key": "O"
+            },
+            "vertices": [
+              {
+                "type": "core:point",
+                "x": -1.0,
+                "y": 2.0
+              },
+              {
+                "type": "core:point",
+                "x": 3.0,
+                "y": 4.0
+              },
+              {
+                "type": "core:point",
+                "x": -1.0,
+                "y": 2.0
+              }
+            ],
+            "offset": 0.0,
+            "rating": {
+              "type": "swmm:network.functional_rating",
+              "basis": "HEAD",
+              "coefficient": 1.0,
+              "exponent": 1.0
+            },
+            "gated": null
+          }
+        }
+      ]
+    }
+  ],
+  "source": {
+    "format": "swmm-inp",
+    "encoding": "utf-8",
+    "path": null,
+    "bytes_base64": "W09QVElPTlNdClNUQVJUX0RBVEUgMDEvMzAvMjAyMApFTkRfREFURSAwMS8zMC8yMDIwCkVORF9USU1FIDAwOjE1OjAwClJFUE9SVF9TVEFSVF9EQVRFIDAxLzMwLzIwMjAKUkVQT1JUX1NURVAgMDA6MDE6MDAKV0VUX1NURVAgMDA6MDE6MDAKRFJZX1NURVAgMDA6MDE6MDAKUk9VVElOR19TVEVQIDUKVkFSSUFCTEVfU1RFUCAwCltUSU1FU0VSSUVTXQpSYWluIDAwOjAwOjAwIDAuNgpSYWluIDAwOjA1OjAwIDEuMgpSYWluIDAwOjEwOjAwIDAKUmFpbiAwMDoxNTowMCAwCltSQUlOR0FHRVNdClIgSU5URU5TSVRZIDAwOjA1OjAwIDEgVElNRVNFUklFUyBSYWluCltTVUJDQVRDSE1FTlRTXQpTIFIgSiAyIDMwIDEwMCAxIDEyCltTVUJBUkVBU10KUyAwLjAxIDAuMiAwLjA1IDAuMSAyNSBPVVRMRVQKW0lORklMVFJBVElPTl0KUyAzIDAuMiA0IDIgMCBIT1JUT04KW1BPTFlHT05TXQpTIC0xIDIKUyAzIDQKUyAtMSAyClMgOCA5CltTWU1CT0xTXQpSIDEgMgpbU1RPUkFHRV0KSiAwIDUwIDAgRlVOQ1RJT05BTCAwIDEgNTAwIDAgMApbT1VURkFMTFNdCk8gLTEgRlJFRQpbQ09PUkRJTkFURVNdCkogMCAxCltQT0xZR09OU10KSiAtMSAyCkogMyA0CkogLTEgMgpbT1VUTEVUU10KUCBKIE8gMCBGVU5DVElPTkFML0hFQUQgMSAxCltWRVJUSUNFU10KUCAtMSAyClAgMyA0ClAgLTEgMgo=",
+    "known_records": [
+      {
+        "type": "core:ref",
+        "collection": "swmm:options",
+        "key": "settings"
+      },
+      {
+        "type": "core:ref",
+        "collection": "swmm:timeseries",
+        "key": "Rain"
+      },
+      {
+        "type": "core:ref",
+        "collection": "swmm:raingages",
+        "key": "R"
+      },
+      {
+        "type": "core:ref",
+        "collection": "swmm:subcatchments",
+        "key": "S"
+      },
+      {
+        "type": "core:ref",
+        "collection": "swmm:nodes",
+        "key": "J"
+      },
+      {
+        "type": "core:ref",
+        "collection": "swmm:nodes",
+        "key": "O"
+      },
+      {
+        "type": "core:ref",
+        "collection": "swmm:links",
+        "key": "P"
+      }
+    ]
+  },
+  "extensions": {}
+}
+

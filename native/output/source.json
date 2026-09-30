@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/USEPA/Stormwater-Management-Model.git",
+  "tag": "v5.2.4",
+  "commit": "7952ca837988b1c32f791812eccc9fd64547e093",
+  "commit_timestamp": 1696942175,
+  "files": {
+    "src/outfile/CMakeLists.txt": "3f16e85fc1f1612dc2ed7db22288520a534f698f7c66716186d1f72fb4678d15",
+    "src/outfile/errormanager.c": "4b56ba8cd15672e327cb62fcc2a48f636ae212534f7aedae4d8632e7c36ae17c",
+    "src/outfile/errormanager.h": "a6cd625b52309123fae159cb804de210976f5b630923181b768021d7cbafbc11",
+    "src/outfile/include/swmm_output.h": "c328f692716560b0228585b9721159ac2c63f71202e713a128af951536d350b6",
+    "src/outfile/include/swmm_output_enums.h": "5c5300b14f247ff460584aaf13e9b96c983aebcd7a31e0426203b01fcb032916",
+    "src/outfile/messages.h": "cfde98c9feb827fb3d822eae54f0a844823ae58e3c56eb5145cff986b1d97ce5",
+    "src/outfile/swmm_output.c": "ef1bf4e668151bdb227b5db9c2e558753c5c74f020144babdfc56b978c5e6507"
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "kind": "easysewer:run-result",
+  "schema_version": "1.1",
+  "result": {
+    "type": "run:result",
+    "fields": {
+      "run_id": "fixture",
+      "status": "failed",
+      "diagnostics": {
+        "type": "core:validation",
+        "fields": {
+          "diagnostics": {
+            "type": "core:tuple",
+            "values": [
+              {
+                "type": "core:diagnostic",
+                "fields": {
+                  "code": "example:failure",
+                  "message": "原始错误",
+                  "severity": {
+                    "type": "core:severity",
+                    "value": "error"
+                  },
+                  "span": {
+                    "type": "core:span",
+                    "fields": {
+                      "line": 7,
+                      "column": 2,
+                      "end_column": 4,
+                      "source": "original.inp"
+                    }
+                  },
+                  "feature": null,
+                  "section": null,
+                  "object_id": null,
+                  "field": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      "artifacts": {
+        "type": "core:tuple",
+        "values": []
+      },
+      "snapshot": null,
+      "backend": null,
+      "engine_objects": null,
+      "mass_balance": null,
+      "failure": {
+        "type": "run:failure",
+        "fields": {
+          "stage": "step",
+          "exception_type": "SessionError",
+          "message": "primary",
+          "native": {
+            "type": "run:native-failure",
+            "fields": {
+              "stage": "step",
+              "code": 101,
+              "message": "native primary"
+            }
+          },
+          "cleanup": {
+            "type": "core:tuple",
+            "values": [
+              {
+                "type": "run:native-failure",
+                "fields": {
+                  "stage": "close",
+                  "code": 306,
+                  "message": "secondary"
+                }
+              }
+            ]
+          },
+          "stderr": "raw stderr �\n",
+          "worker_returncode": -11
+        }
+      },
+      "native_completed": false,
+      "produced_caches": {
+        "type": "core:tuple",
+        "values": []
+      },
+      "consumed_caches": {
+        "type": "core:tuple",
+        "values": []
+      },
+      "output_metadata": null,
+      "report_document": null,
+      "failure_report": {
+        "type": "report:capture",
+        "fields": {
+          "document": {
+            "type": "report:document",
+            "fields": {
+              "raw": {
+                "type": "core:bytes",
+                "sha256": "68263d2dfde4be11c182fbf33fb1982a0ac076ee360467e45953b8c801d93c0a",
+                "size": 14
+              },
+              "text": null,
+              "requested_encoding": null,
+              "encoding": null,
+              "diagnostics": {
+                "type": "core:validation",
+                "fields": {
+                  "diagnostics": {
+                    "type": "core:tuple",
+                    "values": [
+                      {
+                        "type": "core:diagnostic",
+                        "fields": {
+                          "code": "report.undecoded_bytes",
+                          "message": "RPT is not valid utf-8 at byte 4; original bytes retained. Specify an encoding supported by its producer.",
+                          "severity": {
+                            "type": "core:severity",
+                            "value": "warning"
+                          },
+                          "span": null,
+                          "feature": null,
+                          "section": null,
+                          "object_id": null,
+                          "field": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "source": "old.rpt",
+              "profile": null,
+              "decoding_strategy": "undecoded",
+              "repaired_byte_offsets": {
+                "type": "core:tuple",
+                "values": []
+              },
+              "blocks": {
+                "type": "core:tuple",
+                "values": []
+              },
+              "messages": {
+                "type": "core:tuple",
+                "values": []
+              },
+              "message_contexts": {
+                "type": "core:tuple",
+                "values": []
+              }
+            }
+          },
+          "truncated": true
+        }
+      },
+      "report_tables": {
+        "type": "core:tuple",
+        "values": []
+      },
+      "retained_directory": null,
+      "backend_results": {
+        "type": "core:json",
+        "raw": {
+          "type": "core:bytes",
+          "sha256": "9ba7f0095f53db65d04ec57660344114eeb80b3b30a1f1fb9f27e9b123e02d17",
+          "size": 25
+        },
+        "source": "observed"
+      },
+      "continuations": {
+        "type": "core:tuple",
+        "values": []
+      }
+    }
+  },
+  "blobs": [
+    {
+      "sha256": "68263d2dfde4be11c182fbf33fb1982a0ac076ee360467e45953b8c801d93c0a",
+      "size": 14
+    },
+    {
+      "sha256": "9ba7f0095f53db65d04ec57660344114eeb80b3b30a1f1fb9f27e9b123e02d17",
+      "size": 25
+    }
+  ]
+}

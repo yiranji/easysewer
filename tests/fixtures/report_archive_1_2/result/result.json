@@ -1,0 +1,323 @@
+{
+  "kind": "easysewer:run-result",
+  "schema_version": "1.2",
+  "result": {
+    "type": "run:result",
+    "fields": {
+      "run_id": "fixture",
+      "status": "failed",
+      "diagnostics": {
+        "type": "core:validation",
+        "fields": {
+          "diagnostics": {
+            "type": "core:tuple",
+            "values": [
+              {
+                "type": "core:diagnostic",
+                "fields": {
+                  "code": "example:failure",
+                  "message": "原始错误",
+                  "severity": {
+                    "type": "core:severity",
+                    "value": "error"
+                  },
+                  "span": {
+                    "type": "core:span",
+                    "fields": {
+                      "line": 7,
+                      "column": 2,
+                      "end_column": 4,
+                      "source": "original.inp"
+                    }
+                  },
+                  "feature": null,
+                  "section": null,
+                  "object_id": null,
+                  "field": null,
+                  "subject": null,
+                  "related": {
+                    "type": "core:tuple",
+                    "values": []
+                  },
+                  "locations": {
+                    "type": "core:tuple",
+                    "values": []
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "artifacts": {
+        "type": "core:tuple",
+        "values": []
+      },
+      "snapshot": null,
+      "backend": null,
+      "engine_objects": null,
+      "mass_balance": null,
+      "failure": {
+        "type": "run:failure",
+        "fields": {
+          "stage": "step",
+          "exception_type": "SessionError",
+          "message": "primary",
+          "native": {
+            "type": "run:native-failure",
+            "fields": {
+              "stage": "step",
+              "code": 101,
+              "message": "native primary"
+            }
+          },
+          "cleanup": {
+            "type": "core:tuple",
+            "values": [
+              {
+                "type": "run:native-failure",
+                "fields": {
+                  "stage": "close",
+                  "code": 306,
+                  "message": "secondary"
+                }
+              }
+            ]
+          },
+          "stderr": "raw stderr �\n",
+          "worker_returncode": -11
+        }
+      },
+      "native_completed": false,
+      "produced_caches": {
+        "type": "core:tuple",
+        "values": []
+      },
+      "consumed_caches": {
+        "type": "core:tuple",
+        "values": []
+      },
+      "output_metadata": null,
+      "report_document": null,
+      "failure_report": {
+        "type": "report:capture",
+        "fields": {
+          "document": {
+            "type": "report:document",
+            "fields": {
+              "raw": {
+                "type": "core:bytes",
+                "sha256": "5a8d029597221167799f04d814f47771f55790fa04392b2fcaa3f0365fdaa03b",
+                "size": 252
+              },
+              "text": "  ********************\r\n  Node Flooding Summary\r\n  ********************\r\n  Node Flooded CMS days hr:min 10^6 ltr 1000 m³\r\n  <<< Node J >>>\r\n  01/01/2020 00:05:00 1.234\r\n  ERROR 209: undefined object X at line 8 of [CONDUITS] section:\r\n  P X O 10 0.01\r\n",
+              "requested_encoding": null,
+              "encoding": "utf-8",
+              "diagnostics": {
+                "type": "core:validation",
+                "fields": {
+                  "diagnostics": {
+                    "type": "core:tuple",
+                    "values": [
+                      {
+                        "type": "core:diagnostic",
+                        "fields": {
+                          "code": "report.volume_header_encoding",
+                          "message": "Normalized 1 native ANSI superscripts in known volume headers; original bytes and offsets retained.",
+                          "severity": {
+                            "type": "core:severity",
+                            "value": "info"
+                          },
+                          "span": null,
+                          "feature": null,
+                          "section": null,
+                          "object_id": null,
+                          "field": null,
+                          "subject": null,
+                          "related": {
+                            "type": "core:tuple",
+                            "values": []
+                          },
+                          "locations": {
+                            "type": "core:tuple",
+                            "values": []
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "source": "original/池.rpt",
+              "profile": "epa-swmm:5.2.4:utf8-report",
+              "decoding_strategy": "swmm-volume-header-normalization",
+              "repaired_byte_offsets": {
+                "type": "core:tuple",
+                "values": [
+                  119
+                ]
+              },
+              "blocks": {
+                "type": "core:tuple",
+                "values": [
+                  {
+                    "type": "report:block",
+                    "fields": {
+                      "title": "Node Flooding Summary",
+                      "kind": "section",
+                      "start_line": 1,
+                      "end_line": 4,
+                      "text": "  ********************\r\n  Node Flooding Summary\r\n  ********************\r\n  Node Flooded CMS days hr:min 10^6 ltr 1000 m³\r\n",
+                      "target": null
+                    }
+                  },
+                  {
+                    "type": "report:block",
+                    "fields": {
+                      "title": "Node J",
+                      "kind": "detail",
+                      "start_line": 5,
+                      "end_line": 8,
+                      "text": "  <<< Node J >>>\r\n  01/01/2020 00:05:00 1.234\r\n  ERROR 209: undefined object X at line 8 of [CONDUITS] section:\r\n  P X O 10 0.01\r\n",
+                      "target": {
+                        "type": "core:ref",
+                        "fields": {
+                          "collection": "swmm:nodes",
+                          "key": "J"
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "messages": {
+                "type": "core:tuple",
+                "values": [
+                  {
+                    "type": "core:diagnostic",
+                    "fields": {
+                      "code": "swmm.error.209",
+                      "message": "undefined object X at line 8 of [CONDUITS] section:",
+                      "severity": {
+                        "type": "core:severity",
+                        "value": "error"
+                      },
+                      "span": {
+                        "type": "core:span",
+                        "fields": {
+                          "line": 7,
+                          "column": 3,
+                          "end_column": 65,
+                          "source": "original/池.rpt"
+                        }
+                      },
+                      "feature": null,
+                      "section": null,
+                      "object_id": null,
+                      "field": null,
+                      "subject": null,
+                      "related": {
+                        "type": "core:tuple",
+                        "values": []
+                      },
+                      "locations": {
+                        "type": "core:tuple",
+                        "values": []
+                      }
+                    }
+                  }
+                ]
+              },
+              "message_contexts": {
+                "type": "core:tuple",
+                "values": [
+                  {
+                    "type": "report:message",
+                    "fields": {
+                      "diagnostic": {
+                        "type": "core:diagnostic",
+                        "fields": {
+                          "code": "swmm.error.209",
+                          "message": "undefined object X at line 8 of [CONDUITS] section:",
+                          "severity": {
+                            "type": "core:severity",
+                            "value": "error"
+                          },
+                          "span": {
+                            "type": "core:span",
+                            "fields": {
+                              "line": 7,
+                              "column": 3,
+                              "end_column": 65,
+                              "source": "original/池.rpt"
+                            }
+                          },
+                          "feature": null,
+                          "section": null,
+                          "object_id": null,
+                          "field": null,
+                          "subject": null,
+                          "related": {
+                            "type": "core:tuple",
+                            "values": []
+                          },
+                          "locations": {
+                            "type": "core:tuple",
+                            "values": []
+                          }
+                        }
+                      },
+                      "raw_text": "  ERROR 209: undefined object X at line 8 of [CONDUITS] section:\r\n  P X O 10 0.01\r\n",
+                      "input_line": 8,
+                      "input_section": "CONDUITS",
+                      "input_text": "P X O 10 0.01",
+                      "input_report_span": {
+                        "type": "core:span",
+                        "fields": {
+                          "line": 8,
+                          "column": 3,
+                          "end_column": 16,
+                          "source": "original/池.rpt"
+                        }
+                      },
+                      "model_time": null
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "truncated": true
+        }
+      },
+      "report_tables": {
+        "type": "core:tuple",
+        "values": []
+      },
+      "retained_directory": null,
+      "backend_results": {
+        "type": "core:json",
+        "raw": {
+          "type": "core:bytes",
+          "sha256": "9ba7f0095f53db65d04ec57660344114eeb80b3b30a1f1fb9f27e9b123e02d17",
+          "size": 25
+        },
+        "source": "observed"
+      },
+      "continuations": {
+        "type": "core:tuple",
+        "values": []
+      }
+    }
+  },
+  "blobs": [
+    {
+      "sha256": "5a8d029597221167799f04d814f47771f55790fa04392b2fcaa3f0365fdaa03b",
+      "size": 252
+    },
+    {
+      "sha256": "9ba7f0095f53db65d04ec57660344114eeb80b3b30a1f1fb9f27e9b123e02d17",
+      "size": 25
+    }
+  ]
+}

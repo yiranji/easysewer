@@ -1,0 +1,1528 @@
+{
+  "format": "easysewer:development-document-archive",
+  "version": 1,
+  "date": "2026-09-30",
+  "local_archive": "build/docs-cleanup-20260930/archive",
+  "purpose": "Original development documentation and evidence. Historical hashes do not certify current source.",
+  "files": [
+    {
+      "path": "docs/2.0-a-domain-acceptance.md",
+      "sha256": "7ef5f7eac7db65d0f17ae0477a098e0308e206555eb78db7743af7ec1aabc1b9",
+      "bytes": 4963,
+      "disposition": "archived",
+      "current_guide": "2.0-architecture.md"
+    },
+    {
+      "path": "docs/2.0-architecture-acceptance.md",
+      "sha256": "15df900f5a97f740a6a3b7f2b0e27d4e0fd83324ac2a3bd68dbc6b184c7c482a",
+      "bytes": 4907,
+      "disposition": "archived",
+      "current_guide": "2.0-architecture.md"
+    },
+    {
+      "path": "docs/2.0-area-migration.md",
+      "sha256": "0b215bab438d36e22180e6145bd3d0cdbd9e7a95b262c766daf47f2f217912da",
+      "bytes": 9150,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-b-domain-acceptance.md",
+      "sha256": "183b9d6609cec37c96867e454cdecaf86a227ebb5987852c4674261e65535887",
+      "bytes": 4097,
+      "disposition": "archived",
+      "current_guide": "2.0-architecture.md"
+    },
+    {
+      "path": "docs/2.0-backend.md",
+      "sha256": "0f3dac4451378f234dbe1a55a6ec1c8154330cf1cb83f16dc610b02a96ffd6d6",
+      "bytes": 12683,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-browser-pyodide.md",
+      "sha256": "0165908de484c39c82e68c19d12d98425479daa021fc3cfadf6107ecb83a566f",
+      "bytes": 3607,
+      "disposition": "archived",
+      "current_guide": "2.0-installation.md"
+    },
+    {
+      "path": "docs/2.0-business-json-migration.md",
+      "sha256": "36365c0bdc4d5fbb45a9ca22ab6f5c00ab23522cffd157aefcba70a737b039e3",
+      "bytes": 4660,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-c-domain-acceptance.md",
+      "sha256": "b8426db043fc0aac059e0fe2c4eb4c61edc53da38a0c941965ccb1076a598059",
+      "bytes": 6281,
+      "disposition": "archived",
+      "current_guide": "2.0-architecture.md"
+    },
+    {
+      "path": "docs/2.0-cache-conditions.md",
+      "sha256": "54411828e15381741decd5449fdf2391d5edf7658c4dff3d2651f834aac40f9d",
+      "bytes": 11494,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-climate-data.md",
+      "sha256": "0fcd21ed76548c43d1d0e23ca06663b791ab5da7e9d33bc46cb7e2c3e2d7c1a8",
+      "bytes": 8875,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-climate-io.md",
+      "sha256": "c1a88f0e35963dddde78436b15f574dd92a038ffc9521de602875176614764aa",
+      "bytes": 5344,
+      "disposition": "archived",
+      "current_guide": "2.0-native-io.md"
+    },
+    {
+      "path": "docs/2.0-climate.md",
+      "sha256": "8ab1f908adc6ae2fb49e7e48385ba2bdbd87d40e55e0ca9639cf1c500fa9c6bf",
+      "bytes": 10255,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-controls.md",
+      "sha256": "51754b7482f2cac3a637fdb6e169fc6c6eb932dff57fd0e991f805c05bb03204",
+      "bytes": 10257,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-current-input-gates.md",
+      "sha256": "91bea1a8a6bc118a8da6231658142fd178f2bddaef691b67e52e6640ba864e13",
+      "bytes": 2845,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-d-domain-acceptance.md",
+      "sha256": "c5d5937d40424b8c8c74b55e6c0d7cc6abb6446d061c827af2f8cf776eb5d116",
+      "bytes": 6168,
+      "disposition": "archived",
+      "current_guide": "2.0-architecture.md"
+    },
+    {
+      "path": "docs/2.0-data-files.md",
+      "sha256": "6a87f0156a204a06a0c66e48095274ca990533b80856e684bd8d81de64ebc235",
+      "bytes": 9722,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-delivery.md",
+      "sha256": "73e2464e59b8783d7563a006a31d05ada7fa9c344ffba1f4defd54f1e70101b6",
+      "bytes": 2773,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-diagnostic-locations.md",
+      "sha256": "402c8738e302505d742eb38c7caefee4fc4a9eb68853553c2e500eebf9f38378",
+      "bytes": 9248,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-directory-integration.md",
+      "sha256": "2de34c3450a00d41aa49acaa186e225e860d7a425f1419cac1c8da9573332854",
+      "bytes": 4413,
+      "disposition": "archived",
+      "current_guide": "2.0-resource-management.md"
+    },
+    {
+      "path": "docs/2.0-directory-resources.md",
+      "sha256": "4591528aeac4106bb931c7fa251fb0e3a9a5ba8f3c3deabcce288c0b3955442b",
+      "bytes": 6689,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-directory-scan-reuse.md",
+      "sha256": "ddd0982221cd2e37932a6d367c55b0507abe01a6f862f328d639db8ed53b0a0e",
+      "bytes": 9360,
+      "disposition": "archived",
+      "current_guide": "2.0-resource-management.md"
+    },
+    {
+      "path": "docs/2.0-display.md",
+      "sha256": "705f7a0022ddf12ca88fb0ba856c965104df4a67ac37cd1944ff83e476ab9cfe",
+      "bytes": 5817,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-divider-gates.md",
+      "sha256": "a452e08a44a3142eb2d03016feb836d804313d59f067904669dbce90ba64fb72",
+      "bytes": 677,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-dry-start-continuity.md",
+      "sha256": "2bac913f2e7bf2a584198964024b15152d8069b79c925514ce889c905fe806ab",
+      "bytes": 6574,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-e-domain-acceptance.md",
+      "sha256": "1d1ffccbd750d173de9406b49ada283dd3b65993eb7c9098e49d0be0616a54b6",
+      "bytes": 4853,
+      "disposition": "archived",
+      "current_guide": "2.0-architecture.md"
+    },
+    {
+      "path": "docs/2.0-events.md",
+      "sha256": "4620136f165d6758e862d153c9069217042a9e684a8da14547eb34dfa7ce1502",
+      "bytes": 3627,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-f-domain-acceptance.md",
+      "sha256": "b011543deecbee09f4ba379be2b1385f8d57b3d0960052ff66ec48a9ea064eb2",
+      "bytes": 6194,
+      "disposition": "archived",
+      "current_guide": "2.0-architecture.md"
+    },
+    {
+      "path": "docs/2.0-factory-migration.md",
+      "sha256": "0ed0d09c2a2119b9a5136422979c1334107584d00f4d58ef0abb875c55e6bba0",
+      "bytes": 6153,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-field-inspection.md",
+      "sha256": "9f9912c13cb259a3a3cdeecb66bb87f27d7fc13b2821fc501c1e4049a98fcf3d",
+      "bytes": 50043,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-files.md",
+      "sha256": "b97d62c4f25ba687d723e6a6241c3663f01f8074355edd6bba946b93c4f412c7",
+      "bytes": 14627,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-first-run.md",
+      "sha256": "d7d94a3f8ceb2063348bb3fd9e3e151c18ee2e72489e59d697beacd22bd9cfba",
+      "bytes": 3467,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-flexible-ponding.md",
+      "sha256": "7209b54eabe01678e621951ede97a7e80b792cb4ae28d3216a82a774f56455c2",
+      "bytes": 11368,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-foundation.md",
+      "sha256": "ad207427448d3b1244b79dcb7066fa2e1d16d0d0743c3bc7ed9c500fd5126bfe",
+      "bytes": 9952,
+      "disposition": "archived",
+      "current_guide": "2.0-architecture.md"
+    },
+    {
+      "path": "docs/2.0-g-domain-acceptance.md",
+      "sha256": "76ca811817da484a9f323a9e154f9b6d9b559f47184382b550be7b3dcb235b5b",
+      "bytes": 3763,
+      "disposition": "archived",
+      "current_guide": "2.0-architecture.md"
+    },
+    {
+      "path": "docs/2.0-groundwater.md",
+      "sha256": "a06676a4eeb4c6171b717e177f07aa51a67622ffdb0991c7f1617df6205d3567",
+      "bytes": 9080,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-h-domain-acceptance.md",
+      "sha256": "3baf21700fc2e1db1926eed1b9a4d242b3e61824a114b553cc706318d4feea70",
+      "bytes": 5080,
+      "disposition": "archived",
+      "current_guide": "2.0-architecture.md"
+    },
+    {
+      "path": "docs/2.0-historical-rainfall.md",
+      "sha256": "998246fe1d24b4c5c04bcbed8dda4462c4c38896056794ba6bb3a1c918567f66",
+      "bytes": 10218,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-horton-capacity.md",
+      "sha256": "a0a794e86f8e3bbad44b27ca06bc92b1b39886ff32f84e38c634ed47dd229adf",
+      "bytes": 5717,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-horton-degenerate-candidate.md",
+      "sha256": "dc5ab8175e7c84d9cb3881254e98c19a9f721b1c609ac8f0347b15f33a80c30d",
+      "bytes": 4803,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-horton-degenerate-complete.md",
+      "sha256": "17e60d297ee31f7bc515a756fc88aa7ca88bed284a9e23add2c44a6b14058367",
+      "bytes": 2423,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-horton-degenerate-gates.md",
+      "sha256": "be32da6a77e2c023fc2710789b35671221790bc64227c5cb61f73264e80f1434",
+      "bytes": 7733,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-horton-degenerate.md",
+      "sha256": "0ab638c23946c18fe24f1e43af33ad5511c6e3eae47b38f90a5fe5fb26b1124f",
+      "bytes": 3794,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-horton-factor-recovery.md",
+      "sha256": "1b70cdd4f16e99a9915c09ce9e07ca8a540076532680c1090e19a49ad988473f",
+      "bytes": 3739,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-horton-integration.md",
+      "sha256": "42ce79ac8232c60e15e4c1a6a93ba89a3939faa8f05328b87e53a65ba6799b2d",
+      "bytes": 4045,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-horton-monthly-recovery.md",
+      "sha256": "6dfd3c16e6e0b79de6ff55b92267c2328eccf080047ca31d5b2ca454fba3afff",
+      "bytes": 4252,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-horton-outfall-integration.md",
+      "sha256": "cf0d4e218daa4803352d28018e319b6ee344110891f89e440a913f230741d718",
+      "bytes": 9821,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-horton-reference-review.md",
+      "sha256": "03378fb3e4256dc4821e92a1efd81c0cea995be0cdb3658cda6c1f3c80194576",
+      "bytes": 4031,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-hotstart.md",
+      "sha256": "064a939443b67c28dd5ebba43bdacc14ca539ac7baf8f4888f01a1fd9015884d",
+      "bytes": 12053,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-hydrology.md",
+      "sha256": "d43ca4aef3e449a04e75a78ba8aee3cf9042c67c430e90f5a883e856bb625ffd",
+      "bytes": 13660,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-inflows.md",
+      "sha256": "f1fa94afb602978306c0a8d28798a79f4965bb55925204ff861afeadb89d9756",
+      "bytes": 8165,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-json.md",
+      "sha256": "3706199eee89eb0cbdaf6e1a1df69afcf037a52348a049eb074a4b496cbb85e3",
+      "bytes": 11766,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-junction-gates.md",
+      "sha256": "0ed142501b0818ef0379e034e7b8f88ddd82fa99343e691d4e686490148a51de",
+      "bytes": 4193,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-kinwave-boundary-experiment.md",
+      "sha256": "87b894e4561f1cbb1e43e5d8828054fbdaacc514a82d440f1997a3080afba6b2",
+      "bytes": 7211,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-kinwave-capacity-experiment.md",
+      "sha256": "0ad015872bc0af9dc25f8585e9ba34573d20ed4fb35422e5b8bcf91cb3bbcc49",
+      "bytes": 5727,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-kinwave-limiter-experiment.md",
+      "sha256": "b4048d812e7d498081327ad0983fe24abb9618990161edc25ba8db7fa6b4aa9a",
+      "bytes": 6596,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-kinwave-reference-review.md",
+      "sha256": "b7fdbec9f2ac58bd63c8fe035cdf082f1ef05366b44b88141533c6185c45c093",
+      "bytes": 5414,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-legacy-unit-basis.md",
+      "sha256": "8174fafe2f974b5cd0a49eeb8bf0f73935369bb9fdf9ba4250ea153413635fa2",
+      "bytes": 3013,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-lid-report-io.md",
+      "sha256": "553f6a14423b0f33fda8b1d4c52f425608ab10d9cb3babd01e24b4971ce3d531",
+      "bytes": 3094,
+      "disposition": "archived",
+      "current_guide": "2.0-native-io.md"
+    },
+    {
+      "path": "docs/2.0-lid.md",
+      "sha256": "5a8ca160d1cf792313b05cd07b0143112976b697dbd02629f48d22ee8c66276e",
+      "bytes": 10865,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-linux-performance.md",
+      "sha256": "62af5bd252c130207cc820dc07b0cfd6d325f2d7b2d4c7521e6bb7d8b8d0ba0f",
+      "bytes": 8271,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-migrate-config.md",
+      "sha256": "e48a4d62de6ca8fa25c313834b7375b93144abad3d4e9d5f595146b03138e886",
+      "bytes": 8047,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-model.md",
+      "sha256": "6b59a15ec0c650623cfec0b44737afac51ac64fd63f74bf7ca48e2056df6d3dc",
+      "bytes": 13252,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-native-loader-dialog.md",
+      "sha256": "b3139884ea6493e9ce72186e1129543c09e760bbd2d18b3484e8db9aba94cfc4",
+      "bytes": 1880,
+      "disposition": "archived",
+      "current_guide": "2.0-resource-management.md"
+    },
+    {
+      "path": "docs/2.0-node-initial-depth.md",
+      "sha256": "3cba6415d1501980186c5dcea20e6c89ca608be000b35f42dbc3409f9461596a",
+      "bytes": 7258,
+      "disposition": "archived",
+      "current_guide": "development-archive.md"
+    },
+    {
+      "path": "docs/2.0-nodes.md",
+      "sha256": "c7800112227c5aadbfbd54ec4b10a25c9772fbb0f55fb222d268b5bb05d71fee",
+      "bytes": 8987,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-object-state-migration.md",
+      "sha256": "0c0ec47129d570b20d67b52ca16cca4bcefa5a7175428cc8aeb578b298c1b6fb",
+      "bytes": 5813,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-options-gates.md",
+      "sha256": "c816b683158a06dd7d1c6c0463d2cdac36cbfb2218bdc1e519b016ba332c248b",
+      "bytes": 17214,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-options-review.md",
+      "sha256": "3e1f4568a2d69682a536d46b3c6d5106e50941c31c2129d36fa2e1ceea29b26a",
+      "bytes": 24029,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-options.md",
+      "sha256": "d7264b964279311176ec45c99b413cf945fa3ac47e97105edb45338cf0b1669e",
+      "bytes": 10891,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-outfall-gates.md",
+      "sha256": "89dd6ab38fda1efdd83350f78c7b152e3a70add626ba3a288cd973df94aa0674",
+      "bytes": 3521,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-outfall-route-gate.md",
+      "sha256": "f737193e76a77168f1c3306523c1175ac7db650a3a44c440ed57bd2720f53ab6",
+      "bytes": 3458,
+      "disposition": "archived",
+      "current_guide": "development-archive.md"
+    },
+    {
+      "path": "docs/2.0-output.md",
+      "sha256": "9013a008a29a39b5bf35bcfde956dc4a4710abb9e77b72d2c5c2d09beeefe2d4",
+      "bytes": 9828,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-path-io.md",
+      "sha256": "a9e79d6c6c3bcd38debcb8772e2dd75c137e0b016b099fd3005bdc79539e0d18",
+      "bytes": 9024,
+      "disposition": "archived",
+      "current_guide": "2.0-resource-management.md"
+    },
+    {
+      "path": "docs/2.0-physical-inp-lines.md",
+      "sha256": "5053a94d5f99528fb29c2709e5101cacedbe4d5aaa7f13a56395b72d227d9765",
+      "bytes": 3322,
+      "disposition": "archived",
+      "current_guide": "2.0-resource-management.md"
+    },
+    {
+      "path": "docs/2.0-pollutant-units.md",
+      "sha256": "0c1a4ec6d6e601dbb13dc0370db8cb21c7e98cb97a92e5bd2faa3503f2320a0a",
+      "bytes": 7248,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-project.md",
+      "sha256": "b983c833d8bf36b6e394f639f5a7aa9bba7a200ecd9647fbc2afaf20767028a3",
+      "bytes": 15339,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-provenance.md",
+      "sha256": "7b2596bc16125aca8b85206e37750be0e36d66f70f897dcd4ba2ac9e76556297",
+      "bytes": 4085,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-pure-python.md",
+      "sha256": "850722d5bcf2146a52e0b2555b501977a75a9d603d39b69c94a042810a07e9b7",
+      "bytes": 1931,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-quality.md",
+      "sha256": "15afd9651933721df6cb2dd53f65436834ada98c692f7c81920d731c96043345",
+      "bytes": 10740,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-quick-start-migration.md",
+      "sha256": "ea937148d0e6b3f7a9f4f3bba67e70a5c057b2c8a338b4623cbbfedb846be2b3",
+      "bytes": 5156,
+      "disposition": "archived",
+      "current_guide": "2.0-quick-start.md"
+    },
+    {
+      "path": "docs/2.0-rain-interface.md",
+      "sha256": "727ac17e89384a944a2d71d8301612d04ed9c96ea83a6883b4d4dd183e6e397b",
+      "bytes": 4393,
+      "disposition": "archived",
+      "current_guide": "2.0-native-io.md"
+    },
+    {
+      "path": "docs/2.0-rdii-io.md",
+      "sha256": "b3bf1e5a56f2db2e99ae7ea1f930cecb007b7eb7724879a5bfd0e1dfb5913018",
+      "bytes": 4915,
+      "disposition": "archived",
+      "current_guide": "2.0-native-io.md"
+    },
+    {
+      "path": "docs/2.0-rdii.md",
+      "sha256": "b4852497b8233959a315f3ee0ca8d340d70dcd456822eb016883fa85ed3782a7",
+      "bytes": 7957,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-recovery-journal-readers.md",
+      "sha256": "0ddb551b82c30b98930d90d8d3bf60a4d7a05fe40f0eae6009689eaccdffdb06",
+      "bytes": 5030,
+      "disposition": "archived",
+      "current_guide": "2.0-resource-management.md"
+    },
+    {
+      "path": "docs/2.0-regulators.md",
+      "sha256": "c3e899bc1209ea993f8b6e134cfccf94c890a6eae517fe7b4cd56cae3292689a",
+      "bytes": 9302,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-report-io.md",
+      "sha256": "aa5405097dd0ae084d399a80d85ed74fbd6556506a418e262edad692b14fb75c",
+      "bytes": 4504,
+      "disposition": "archived",
+      "current_guide": "2.0-native-io.md"
+    },
+    {
+      "path": "docs/2.0-report.md",
+      "sha256": "dcd2364e40e9a97129323dfb6ccb696150cdd1e1fcbf665d60206ada3c66cea3",
+      "bytes": 22882,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-resource-migration.md",
+      "sha256": "bffc91915719cfe879db19315ebe9fe0c969f65a7005ecadbe1638371b9c1588",
+      "bytes": 5975,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-resources.md",
+      "sha256": "93938ff5888bebb181c637279e0b18aab93e9bf8ef8fc99b14b8092c14e11c80",
+      "bytes": 8036,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-result-applicability.md",
+      "sha256": "8a48b522525dd97ea7d8b90a634fe08c37fb760fe5c7e97b3fd055b2eec6464e",
+      "bytes": 6650,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-result-archive.md",
+      "sha256": "a654d011d16a2a18a8972a964278ffac177ad138b620febca1a6a6e69022ed6f",
+      "bytes": 9995,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-result-duration-candidate.md",
+      "sha256": "3abb098e2f6d4f8b27ed77cae9791f1122cd95770d2c1b591cd4ecd37233a2e1",
+      "bytes": 3489,
+      "disposition": "archived",
+      "current_guide": "2.0-known-issues.md"
+    },
+    {
+      "path": "docs/2.0-result-schemas.md",
+      "sha256": "739ecd8f270dd797bbd5872d06aa1fb9c3627a90a12acaa08947b6f353791460",
+      "bytes": 3726,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-routing-io.md",
+      "sha256": "2c6cafb8f6aaec8bde0d296d51b042fd725bb07363abb44e9fa2f41a9afcf6e4",
+      "bytes": 5728,
+      "disposition": "archived",
+      "current_guide": "2.0-native-io.md"
+    },
+    {
+      "path": "docs/2.0-run-recovery.md",
+      "sha256": "c830d82513a78cf6da238195bbe672120a59260f554098479efb743f6602365d",
+      "bytes": 23350,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-runner.md",
+      "sha256": "a16f9e0a320339bdf467d3c12b3fb8a9a9cde41e4e6af73747fe6961f4425a4c",
+      "bytes": 22070,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-runoff-cache.md",
+      "sha256": "c2e90bfe805409fc6a1217da142f720f73f1748610477566c74eb09ef2d17822",
+      "bytes": 8956,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-runoff-io.md",
+      "sha256": "3c79c63378e68c6d78e3d209fcc41da64b06d84a9a29bdd1c03007dd9e9533ef",
+      "bytes": 4173,
+      "disposition": "archived",
+      "current_guide": "2.0-native-io.md"
+    },
+    {
+      "path": "docs/2.0-runoff-replay.md",
+      "sha256": "2738a93de4a99937402d6468ccc422649804abeff13a46ef40cf8337afaa5ecf",
+      "bytes": 8503,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-scenarios.md",
+      "sha256": "604fbf1ffc9a2e4a765b8281894bf12b455bedfd1cf9a45adf78a74c9866e3fe",
+      "bytes": 12908,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-sdist-tests.md",
+      "sha256": "67fcc7cd7d29214048eeec59901a1958ed9c099fbdb76310d8ea6decf121a9ff",
+      "bytes": 2388,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-solver-output-io.md",
+      "sha256": "bc772ef05d74ee211e70c72116d26eeec098423491b964eb1a1a7963a34e1f3d",
+      "bytes": 4698,
+      "disposition": "archived",
+      "current_guide": "2.0-native-io.md"
+    },
+    {
+      "path": "docs/2.0-support-matrix.json",
+      "sha256": "71ffb4e7079257ad9cf0839b3d7d7eccc6884327fa08d7910113fbd908a9fd9c",
+      "bytes": 53191,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-support-matrix.md",
+      "sha256": "abd2b88cddce69df1df88b705d854964f9552733a2d82702d3d8cf90690b1cea",
+      "bytes": 7194,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-surface.md",
+      "sha256": "d2727cdecdfb7cf49e0be028a6a8ce5ac875d8c3aefa200d29bea36cdff7a291",
+      "bytes": 9075,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-tag-gates.md",
+      "sha256": "0ebff9cd6621efa8fbc1aa923bb613b889e62bddff71ae83cc91609772febdf9",
+      "bytes": 3573,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-timeseries-io.md",
+      "sha256": "d459ac8cdc3d134ad61777a20e5d36cc87bf5d098a4a9f5ecaada45b2ca43861",
+      "bytes": 4283,
+      "disposition": "archived",
+      "current_guide": "2.0-native-io.md"
+    },
+    {
+      "path": "docs/2.0-title-report-gates.md",
+      "sha256": "4cd04ceb512e37d9e85bafcf0337c912ef288000777dccea252da6788272a457",
+      "bytes": 7186,
+      "disposition": "archived",
+      "current_guide": "2.0-testing.md"
+    },
+    {
+      "path": "docs/2.0-treatment.md",
+      "sha256": "561ea3a7c3431e355cde5a2e3a6b590264d52608e187610dab52a1c3e3de0b72",
+      "bytes": 10253,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/2.0-v1-api-migration.md",
+      "sha256": "92a50ef954e47afd9f1291ee714d06a3972db99cb5a8596084988a33d893de2e",
+      "bytes": 13217,
+      "disposition": "archived",
+      "current_guide": "2.0-model.md"
+    },
+    {
+      "path": "docs/2.0-windows-directory-handles.md",
+      "sha256": "da6b32c84d6c5aaa1d22ce8421e7c70ba95d5b08a5f7aacefa3536c1b0b885f4",
+      "bytes": 2710,
+      "disposition": "archived",
+      "current_guide": "2.0-resource-management.md"
+    },
+    {
+      "path": "docs/checkpoint-runner-context.md",
+      "sha256": "99188d620bfd9054efad1843e9d49762ec54ded3b6260cb28fa4de78e3207521",
+      "bytes": 3519,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/checkpoint-runner.md",
+      "sha256": "e18e1c14bbb00638a63253a41027af1d6cbdbb5ab2371b1f91aac7ceaece3c3f",
+      "bytes": 5921,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/checkpoint-session.md",
+      "sha256": "e4e3f9fee455ddec447452b375897ee99762a8d209f5cc719ccf880c5ac634e7",
+      "bytes": 4438,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/checkpoint-support.md",
+      "sha256": "8d29e610232a64a9d4036ada7823ddd6953180489de32cae272edbc5fe80ff5e",
+      "bytes": 6369,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/flexible-ponding-policy-1.0.schema.json",
+      "sha256": "1c31548a08ed0b90f1f1a32ce7a1bf65436b346b2a3c356be17a3b655afc2599",
+      "bytes": 564,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/model-json-1.0.schema.json",
+      "sha256": "d667118230f1ad3bc781e2b27a43e18327ee4c60574ef1af1a7d161e97a14967",
+      "bytes": 262541,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/a-domain-20260929.json",
+      "sha256": "3868d1046401a2d58d80f3543e96cfff422748ef0f69fe0c008ef462ccb72ea1",
+      "bytes": 361069,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/area-migration-20260930.json",
+      "sha256": "3ecd6615deee44b45f3261e445b64e25ff0d2a3a65e4df0151e0646d2022c260",
+      "bytes": 392741,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/b-domain-20260929.json",
+      "sha256": "a6d71a02ce9f67a384fe2019dab21b2ef6715d242adb3dd5a2ee5655411932ec",
+      "bytes": 369248,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/browser-pyodide-20260929.json",
+      "sha256": "2662012460eb2f793ced0db8793858d44f4c03bfaa31bf59478df9d8808e4f0a",
+      "bytes": 3053,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/browser-pyodide-20260930.json",
+      "sha256": "12c00a399e8125721ed4fc550a255a8decd324f6cfd8271eb8571d04a2daa498",
+      "bytes": 15104,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/business-migration-20260930.json",
+      "sha256": "8b5a14023b050e9cfd1d8878f5366b6c63376f16e666697089716ab8b019047c",
+      "bytes": 109870,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/c-domain-20260929.json",
+      "sha256": "60e02fcebe1e68510991a866d3c82e26a03e96124d7d14c80ca719edfb9f0bc3",
+      "bytes": 1071378,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/current-input-gates-20260930.json",
+      "sha256": "2f22e89980d247d795cc98dcc00215e341516ef993e9df8692a7bb755352332e",
+      "bytes": 19789352,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/current-native-docs-20260930.json",
+      "sha256": "3dc27f121f6a517c0dc36c07122099a3de3ebf5cc2c8c4e372ba1e9c54d3d228",
+      "bytes": 18759,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/d-domain-20260929.json",
+      "sha256": "bd265d1b01611a44a9b025fad6804cf3560010622bd39158c0bf697f01c25c30",
+      "bytes": 464494,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/directory-cancellation-complete-20260929.json",
+      "sha256": "d046331c7cdefacc23c90cb48ec248709fc21c85fbce7481e041481fbe4ffef2",
+      "bytes": 83427,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/directory-cancellation-initial-20260929.json",
+      "sha256": "5463b7292ffaa9464b6609b172de2d22fc374d3462771e1cf29e6b8225956926",
+      "bytes": 27975,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/directory-cancellation-linux-312-mounted-20260929.json",
+      "sha256": "7b20fc98828fcbd13f1360fe59046f1e1dcc97e8a827ce14c53282d2c2b9bff1",
+      "bytes": 27062,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/directory-cancellation-linux-312-native-20260929.json",
+      "sha256": "c368ef4dec0dfbaa39f83a3611758d1ef0fc1942379502ff6b3828dda49b7c76",
+      "bytes": 21173,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/directory-cancellation-windows-313-host-20260929.json",
+      "sha256": "72aa808a24f628c2821de28300168a4edb6c2df93a4f40c113e4159672f27c18",
+      "bytes": 27810,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/directory-integration-20260929.json",
+      "sha256": "3c13a20e58865e9042a791662a98740b745b09bd8e357050c3ce21cd919c3b31",
+      "bytes": 11566,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/directory-performance-initial-20260929.json",
+      "sha256": "8dcb7b5f08cf844567561fd8356135045002701df650d08f8ac0489bb47596e4",
+      "bytes": 7192,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/directory-performance-windows-paired-20260929.json",
+      "sha256": "ad1b468876c6660ff2c9140051385966c8b650dbe884b412c6ca0293cf23b2b7",
+      "bytes": 119674,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/directory-scan-reuse-20260929.json",
+      "sha256": "2b7a28d47234fc9ced6d1ae8d3df806ffacecfee75222dd7471cc39770b576cc",
+      "bytes": 194433,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/directory-scan-reuse-initial-20260929.json",
+      "sha256": "b17c364274636255a61d3a78e0c3e0085a6e43eb8b29c79feaf35a27b3972e86",
+      "bytes": 50418,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/divider-input-gates-20260930.json",
+      "sha256": "09f55bcdcdadcdd4ba367ba642d6f0636c4cb76c0888d9bc7e371a4121401ee7",
+      "bytes": 246625,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/dry-start-continuity-20260929.json",
+      "sha256": "1c9c9fbb94ce64f00eb501fdd819464cd4f133f42864305112eacd70a5cf922c",
+      "bytes": 29833,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/e-domain-20260929.json",
+      "sha256": "1edce566f3471b5673c39fa234e1674fe41650c8ad59b48431dcbbb18771a72d",
+      "bytes": 610881,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/f-domain-20260929.json",
+      "sha256": "e3414bc1c8f49a6c90bfca8b1dcf670b2e9ac258ccb741d321957ba58256b945",
+      "bytes": 840707,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/factory-migration-20260929.json",
+      "sha256": "918613d4c3db1f97fb72d5194a467288dd55080caacbfbb2f3b15ae03bd9240c",
+      "bytes": 311569,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/g-domain-20260929.json",
+      "sha256": "82681846a103a572b5657135a6e2fde6ad07b29121c4e884708dd3eb1c06773d",
+      "bytes": 348010,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/h-domain-20260929.json",
+      "sha256": "1a05f63f201507310aaa257c2c0cee7cd3a854b0f2458844381c203af55f4aaa",
+      "bytes": 537087,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-capacity-20260930.json",
+      "sha256": "72906e4031ef786ee62c487b5b030cfc8697d516c847b56413b182d810387307",
+      "bytes": 9463,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-degenerate-20260930.json",
+      "sha256": "60a895f8e3a2283d24f77cc9e3ac6f3607cd400193f23d0af62609bad5f05f30",
+      "bytes": 22914,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-degenerate-candidate-20260930.json",
+      "sha256": "e5c3aed1e4758f5fe0bc6c9721f63ef0b168c99ea827ef6ecf20c69ad1e2c389",
+      "bytes": 38605,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-degenerate-candidate-complete-20260930.json",
+      "sha256": "b65c7efbd20b19e22f7997d9e5aff6aaa683dacc68814233da0e2331d53c5ecc",
+      "bytes": 4843,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-degenerate-gates-20260930.json",
+      "sha256": "59e0ed48c56b20319472b2ea0403a16c9eea0d357796230ce1672a518808fa0a",
+      "bytes": 52118,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-degenerate-replay-20260930.json",
+      "sha256": "6d57bd3b84a13e0a6b0eeb5c53bdd31fd6dd0e838285531865486dcfff00d092",
+      "bytes": 64055,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-factor-recovery-20260930.json",
+      "sha256": "266a8597da3e144a173a20c94eb4551f0d63128337570d3165d0747a55ed76ee",
+      "bytes": 28784,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-integration-20260930.json",
+      "sha256": "75b92bdf25ebd6c821b85d1dca785892c698c93fd29a51d9aa3b6f8b84101341",
+      "bytes": 12662,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-monthly-recovery-20260930.json",
+      "sha256": "7ec7517b111b586d84a2e4f2a3563a48ed32b208b2349b86c92fc5395b131549",
+      "bytes": 9614,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-outfall-build-progress-20260930.json",
+      "sha256": "41c6d5c0f7f5e25288e3fbcabe69cde07b89ffa2d82c5f4fb6e3d8957c0ed408",
+      "bytes": 44661,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-outfall-reader-adoption-20260930.json",
+      "sha256": "761d753d6f3c21d151481f0ec3f68c167a8dd3b1207f83aa4079d098735cd859",
+      "bytes": 91145,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-outfall-reader-input-gates-20260930.json",
+      "sha256": "601fd855d9c2434b0c1e340cadd08fc0299712fe73bfc4bab9fd8672711804f5",
+      "bytes": 1668441,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-outfall-reader-progress-20260930.json",
+      "sha256": "ae3e8453bedbff6d58479bdec83cf571e2961a853af10f4cb886b2ef4c392a9b",
+      "bytes": 16810,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-project-gate-preflight-20260930.json",
+      "sha256": "b135e89c890e65956bcd1a94fa43a00019240aa59ba0c4477390250dae0009fc",
+      "bytes": 2398,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-reference-review-20260930.json",
+      "sha256": "5758faedd91ca5ca419c0c600a42f981629670a34075f0dbcbef2696f32faffc",
+      "bytes": 12293,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/horton-serial-continuation-start-20260930.json",
+      "sha256": "b49cbe47fd9c91787252d09974eace9acb11ae169d96e3e0cbf44c09bb66fe27",
+      "bytes": 6927,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/junction-gates-20260930.json",
+      "sha256": "667d76dbf8ead3302911b89fcb590006fdef831bfb2d0d79c92f48415457dffe",
+      "bytes": 22382,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/junction-gates-20260930.patch",
+      "sha256": "aa02a6d11659ab5420deff72f76cb85dedc26087f422fb69e86c2b23bc69e5c9",
+      "bytes": 21712,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/kinwave-boundary-20260929.json",
+      "sha256": "ae065e74bedc5dc7cbb32b3c254984da6598a57f1cfc6c672370964cb9bb190a",
+      "bytes": 108199,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/kinwave-capacity-20260929.json",
+      "sha256": "2c4845d4c4ef40d467656ad3fe60576b4be931adcea45077acc2f5982585a611",
+      "bytes": 62130,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/kinwave-limiter-20260929.json",
+      "sha256": "ab23ba8d1ee424f523451379a5b4483f3efadfdcc8a26ab93a1fdf5dd719fb54",
+      "bytes": 40876,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/kinwave-reference-20260929.json",
+      "sha256": "c553c6daecc79506736b9648b2123742da9bf1d707815fdea0cfa5645809e4a9",
+      "bytes": 28900,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/legacy-unit-basis-20260929.json",
+      "sha256": "61838c6d2115d08180fc65ca5ea30b41a63b2f2b899e316f197fcb4e6bb3b71c",
+      "bytes": 33685,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/linux-performance-complete-20260930.json",
+      "sha256": "29d25f92c37c60a2b5e1d457ca8b3ddcbfd8d75c7dea5a11f2f06d9dd337d3c3",
+      "bytes": 356780,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/linux-performance-pilot-20260930.json",
+      "sha256": "70c9adb970d2d10e14246294a77a9cc25a2ffd30648c50c29028401d01c2e993",
+      "bytes": 9143,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/linux-performance-resume-20260930.json",
+      "sha256": "0609c4b04fa3bc60e0ab5583d6af3d9fb84641b108277d707a7860cd8464abd7",
+      "bytes": 3822,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/native-loader-dialog-20260929.json",
+      "sha256": "dc1e90a5243d0261553f91866cd210181ca098efdf78e3f84eeee1281de458f1",
+      "bytes": 71711,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/node-initial-depth-candidate-20260930.json",
+      "sha256": "d544d1d43c8365efeaf214932e5c9d7cf7794f72964f3b9c969381b918dde307",
+      "bytes": 45777,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/node-initial-depth-candidate-20260930.patch",
+      "sha256": "9d24e561a0a8d2d6bbfb97ced82e806857fd633ffc6addafbd9854ded34af20d",
+      "bytes": 24415,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/node-initial-depth-v2-20260930.json",
+      "sha256": "3e274d56d25c9077f3b3bcc31313a3cabd2b82c1e88906283c510fc6e4249616",
+      "bytes": 53829,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/node-initial-depth-v2-20260930.patch",
+      "sha256": "737c43c155cadd9d033ebbd6e23b6a535866c28317a917600e2f757aec690f08",
+      "bytes": 27140,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/object-state-migration-20260929.json",
+      "sha256": "e32c48d480007d314ed9422b6d8fba02e538d154bf85bd939c0c36eda0170d29",
+      "bytes": 280291,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/options-boundaries-20260929.json",
+      "sha256": "f0b8487e3aa5efb10b7f6aec2024584f32f91334e593f94c12ad640adffb6ae7",
+      "bytes": 7391658,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/options-calendar-20260929.json",
+      "sha256": "26970147664ca0b42022f377a61045983b450ed6ce11fb7cc414e8ad9dbe0a4a",
+      "bytes": 10423755,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/options-date-syntax-20260929.json",
+      "sha256": "809050abec7f25d9175689b93372961f37c58adadb8091411396689700dcaef5",
+      "bytes": 18588818,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/options-effects-20260929.json",
+      "sha256": "8dc11772c04890115c5e44284a24662edc701c17c21309c1e3cd63f808e0161c",
+      "bytes": 1719305,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/options-gates-20260929.json",
+      "sha256": "efeb4d14ff73641d3e16c148d4872b3ae6596c52dbb902c5415a1a76e3f4cb24",
+      "bytes": 20474619,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/options-hydraulics-20260929.json",
+      "sha256": "c8c1ffb2596ab89cdd8b884568ad5c86a6736c75d00aac43e5433996417f69aa",
+      "bytes": 1129313,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/options-schedule-20260929.json",
+      "sha256": "8abc4daf23e7b6d2fc4159fa92ee28ef436f6bf063a42883a28d24b122fc30cb",
+      "bytes": 684684,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/outfall-input-gates-20260930.json",
+      "sha256": "8ce6f437814e29737adada529480dea656d6afdaed1a5018d3b2d64bbd634449",
+      "bytes": 259279,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/outfall-route-gate-20260930.json",
+      "sha256": "d6900cc31fb579d6a68e7289aa5ce6e8372750e38412582100c3415ae534895a",
+      "bytes": 98836,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/path-io-20260929.json",
+      "sha256": "351a42f554311f2e9f3bdd549a4c580f27b1f7d42f374e35eb0618fc0d97ca25",
+      "bytes": 15136,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/path-io-integration-20260929.json",
+      "sha256": "3deed780049890ea737f84b7c62e50adf17f135948cd88ca66bd72795a243dc1",
+      "bytes": 26583,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/path-io-ownership.md",
+      "sha256": "bfdbf61a6177d620aa7d00ab5f4d23bd02b3e12014865c1d75c7d3b4fdced27e",
+      "bytes": 3844,
+      "disposition": "archived",
+      "current_guide": "development-archive.md"
+    },
+    {
+      "path": "docs/qualification/path-io-temp-20260929.json",
+      "sha256": "f531e7123ff49759dc9ff4ba1d10051197dfadf28b065451814052f823831ed4",
+      "bytes": 17450,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/physical-inp-installed-gates-20260930.json",
+      "sha256": "fb4e1cec7ff58586f9529a46510102eb5b98629b8ab9b89915e096986fb65d12",
+      "bytes": 1827344,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/project-migration-20260930.json",
+      "sha256": "d98cad57aa7d2c1afe254fd1e6134ececb4d6ce6bc154da23ca6498546345168",
+      "bytes": 97837,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/public-example-20260929.json",
+      "sha256": "50f0fb2ec8d35670434343d4d2b48e41945134b82d53d317bf7dc728d9b79f99",
+      "bytes": 26874,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/public-example-distribution-20260929.json",
+      "sha256": "dcf9874f3d3f58488cefc01240b43637b4cb3969016430d7ff9a5db7b544a69d",
+      "bytes": 1452,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/quick-start-migration-20260929.json",
+      "sha256": "2875de6117329d935b00fec196b533f227936e46a3c83b8b7f447d42f6252587",
+      "bytes": 186300,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/recovery-journal-readers-20260930.json",
+      "sha256": "5e8170aad241a9eb9709feadd20b05d5a4997223c55348d0b0eb7ad68aa10e60",
+      "bytes": 137131,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/resource-migration-20260930.json",
+      "sha256": "b16a2b793007206baf27c0bbfd853a878995f778922151009b2cac48de9bd431",
+      "bytes": 34094,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/result-duration-candidate-20260930.json",
+      "sha256": "6d285720501974d77625d2350e59968fb4fdc28c50b4d312539090b72465dcb6",
+      "bytes": 3065,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/result-schemas-20260930.json",
+      "sha256": "e4b57b7fd2186ab564166dbe71d89dd60b4eac5e823dda5c9e610e43a1710131",
+      "bytes": 11746,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/sdist-tests-20260930.json",
+      "sha256": "ecd7594839e27be32830cfe76bbca46b9fbf7a114176b997997c6bfbc49794eb",
+      "bytes": 2475,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/tag-gates-20260930.json",
+      "sha256": "f87d43a147eed636f097e3177486b08e8a9c89171faf962d5951caa623cd9a92",
+      "bytes": 660459,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/tag-gates-final-20260930.json",
+      "sha256": "8e27c71d24f0524ce913bf330379d705d9b1827b48989b8b8de04095e1460693",
+      "bytes": 745307,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/title-report-gates-20260929.json",
+      "sha256": "3ac609d34bc1af0665b9d108eaa21f0ff53163d12f8e08b0ff25e32b6fe70916",
+      "bytes": 3799625,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/v1-edit-workflow-20260929.json",
+      "sha256": "0416c74dc53b60f262576fe7c16f711f129f5d19c710ed1bbb07026064037daf",
+      "bytes": 212439,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/windows-directory-handles-20260929.json",
+      "sha256": "45acf7dd0181630eab035854bc075af33f2c64b81cd4546122038a252c1032d2",
+      "bytes": 108799,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/qualification/windows-enumeration-sharing-20260930.json",
+      "sha256": "dab8f61a8177b26061e741409b7b7d697b7080ec2e93048e85018407f9ce3ec5",
+      "bytes": 1506,
+      "disposition": "archived",
+      "current_guide": null
+    },
+    {
+      "path": "docs/result-archive-1.0.schema.json",
+      "sha256": "e8e9a6a817853af0fcda74e805dc9d2a6cc5ce6b9f85e625a86eb51505c191ff",
+      "bytes": 100756,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/result-archive-1.1.schema.json",
+      "sha256": "606d981df1f84a00d311e70a2c22929f23e5c0de0d91938f5fae5c4e112b1874",
+      "bytes": 101318,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/result-archive-1.2.schema.json",
+      "sha256": "233ccf966698e19cf05b9615d0268a3c1ce5bede964252e5b0375cdcde38d639",
+      "bytes": 106797,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/result-archive-1.3.schema.json",
+      "sha256": "5fabf52c008a97f3c410186c645e3f4393f7c3fec6169c6d4c05e37101a7b725",
+      "bytes": 108187,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/result-archive-1.4.schema.json",
+      "sha256": "6a05afc8b9084b084e9503a5d27e8384c49ea42129d3843f22b55bc53d9566e8",
+      "bytes": 114947,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/result-archive-1.5.schema.json",
+      "sha256": "8714b3839156e524ea0032547f43f939b708663f895cb4433abfcda9a66a7318",
+      "bytes": 115220,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/result-archive-1.6.schema.json",
+      "sha256": "585a6cf914cde90328579e4c790f4c183cbf7437283a9e097bc5a3e7fa71df98",
+      "bytes": 115371,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/result-archive-1.7.schema.json",
+      "sha256": "2c9385ec0f833351cf5d2ed602c37dec6ce511b211987b9706335c02a2057d33",
+      "bytes": 115624,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/result-archive-1.8.schema.json",
+      "sha256": "3d71dd15b185421360a59e1268288bd89202914bedd91de5d6d2a9fe86622894",
+      "bytes": 122642,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/result-archive-1.9.schema.json",
+      "sha256": "79811f1775286f399aaed50240022b15d785edfe6a042a8586d9cc7f50689b31",
+      "bytes": 122730,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/run-1.0.schema.json",
+      "sha256": "b3ffcd000b8630697b75ffe7abd3d8de3280e15aae9bb841c13c338fef91834b",
+      "bytes": 206567,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    },
+    {
+      "path": "docs/scenario-1.0.schema.json",
+      "sha256": "ee9213f09efd6b228a98e552c0106c9da9958bbcb3ca28d9222720710e927951",
+      "bytes": 210396,
+      "disposition": "original_snapshot",
+      "current_guide": null
+    }
+  ]
+}

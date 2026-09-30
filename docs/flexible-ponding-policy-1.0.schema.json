@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "policy": {
+      "const": "easysewer:flexible-ponding:incremental-volume:2"
+    },
+    "external_flooding_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "depth_threshold_m": {
+      "type": "number",
+      "minimum": 0
+    },
+    "flow_threshold_cms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "record_steps": {
+      "type": "boolean"
+    }
+  }
+}

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "easysewer"
-version = "1.0.6"
+version = "2.0.0"
 authors = [
     {name = "Yiran Ji", email = "yiranji@foxmail.com"}
 ]
@@ -24,18 +24,19 @@ Homepage = "https://github.com/yiranji/easysewer"
 Documentation = "https://github.com/yiranji/easysewer"
 
 [tool.setuptools]
-packages = [
-    "easysewer",
-    "easysewer.libs",
-    "easysewer.libs.win",
-    "easysewer.libs.linux"
-]
 package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["easysewer", "easysewer.*"]
+namespaces = true
 
 [tool.setuptools.package-data]
 easysewer = [
     "libs/win/*.esdll",
-    "libs/linux/*.esso"
+    "libs/linux/*.esso",
+    "libs/win/*.json",
+    "libs/linux/*.json"
 ]
 
 [dependency-groups]

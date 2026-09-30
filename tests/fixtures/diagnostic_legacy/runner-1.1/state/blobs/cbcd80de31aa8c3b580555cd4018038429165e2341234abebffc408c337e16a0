@@ -1,0 +1,162 @@
+{
+  "kind": "easysewer:model",
+  "schema_version": "1.0",
+  "profile": "epa-swmm:5.2.4",
+  "collections": [
+    {
+      "collection": "swmm:options",
+      "records": [
+        {
+          "key": "settings",
+          "value": {
+            "type": "swmm:options.options",
+            "flow_units": "CFS",
+            "infiltration": null,
+            "flow_routing": null,
+            "link_offsets": null,
+            "force_main_equation": null,
+            "ignore_rainfall": null,
+            "ignore_snowmelt": null,
+            "ignore_groundwater": null,
+            "ignore_rdii": null,
+            "ignore_routing": null,
+            "ignore_quality": null,
+            "allow_ponding": null,
+            "skip_steady_state": null,
+            "sys_flow_tol": null,
+            "lat_flow_tol": null,
+            "start_date": {
+              "type": "core:date",
+              "value": "2020-01-01"
+            },
+            "start_time": null,
+            "end_date": {
+              "type": "core:date",
+              "value": "2020-01-01"
+            },
+            "end_time": {
+              "type": "core:time",
+              "value": "00:10:00",
+              "fold": 0
+            },
+            "report_start_date": null,
+            "report_start_time": null,
+            "sweep_start": null,
+            "sweep_end": null,
+            "dry_days": null,
+            "report_step": null,
+            "wet_step": null,
+            "dry_step": null,
+            "routing_step": {
+              "type": "core:duration",
+              "days": 0,
+              "seconds": 5,
+              "microseconds": 0
+            },
+            "rule_step": null,
+            "lengthening_step": null,
+            "variable_step": 0,
+            "minimum_step": null,
+            "inertial_damping": null,
+            "normal_flow_limited": null,
+            "surcharge_method": null,
+            "min_surface_area": null,
+            "min_slope": null,
+            "max_trials": null,
+            "head_tolerance": null,
+            "threads": null,
+            "slope_weighting": null,
+            "compatibility": null,
+            "temp_directory": null
+          }
+        }
+      ]
+    },
+    {
+      "collection": "swmm:nodes",
+      "records": [
+        {
+          "key": "J",
+          "value": {
+            "type": "swmm:network.junction",
+            "id": "J",
+            "elevation": 10,
+            "position": {
+              "type": "core:point",
+              "x": 1000,
+              "y": 2000
+            },
+            "max_depth": 5,
+            "initial_depth": 1,
+            "surcharge_depth": null,
+            "ponded_area": 20
+          }
+        },
+        {
+          "key": "O",
+          "value": {
+            "type": "swmm:network.outfall",
+            "id": "O",
+            "elevation": 9,
+            "position": null,
+            "boundary": {
+              "type": "swmm:network.free_boundary"
+            },
+            "gated": null,
+            "route_to": null
+          }
+        }
+      ]
+    },
+    {
+      "collection": "swmm:links",
+      "records": [
+        {
+          "key": "P",
+          "value": {
+            "type": "swmm:network.conduit",
+            "id": "P",
+            "inlet": {
+              "type": "core:ref",
+              "collection": "swmm:nodes",
+              "key": "J"
+            },
+            "outlet": {
+              "type": "core:ref",
+              "collection": "swmm:nodes",
+              "key": "O"
+            },
+            "vertices": [],
+            "length": 100,
+            "roughness": 0.013,
+            "inlet_offset": 0.5,
+            "outlet_offset": 0.25,
+            "initial_flow": 0.1,
+            "maximum_flow": 3,
+            "section": {
+              "type": "swmm:geometry.cross_section",
+              "geometry": {
+                "type": "swmm:geometry.trapezoidal",
+                "full_depth": 2,
+                "bottom_width": 3,
+                "left_slope": 0.5,
+                "right_slope": 1
+              },
+              "barrels": 2,
+              "culvert": null
+            },
+            "losses": {
+              "type": "swmm:network.conduit_losses",
+              "entry": 0.1,
+              "exit": 0.2,
+              "average": 0.3,
+              "flap_gate": null,
+              "seepage": 0.04
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "extensions": {}
+}

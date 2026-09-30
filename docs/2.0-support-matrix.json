@@ -1,0 +1,1371 @@
+{
+  "format": "easysewer:support-matrix",
+  "version": 1,
+  "profile": "epa-swmm:5.2.4",
+  "status": "current_inventory_with_historical_evidence",
+  "scope": "Current 57-section implementation inventory. Historical gate evidence is optional external material, not acceptance of current source.",
+  "levels": {
+    "L1": "Original document preservation",
+    "L2": "Structured creation/edit/roundtrip and graph behavior",
+    "L3": "Native behavior or documented GUI-only invariance"
+  },
+  "required_gates": [
+    "source_preservation",
+    "create_edit_clear",
+    "inp_json_roundtrip",
+    "identity_order_references_rollback",
+    "defaults_units_and_context",
+    "invalid_unknown_and_diagnostic_sources",
+    "native_behavior_or_gui_invariance",
+    "variant_combinations_and_boundaries"
+  ],
+  "sections": [
+    {
+      "section": "TITLE",
+      "owners": [
+        "swmm:title"
+      ],
+      "variant_groups": [
+        "raw lines",
+        "empty lines",
+        "comments",
+        "repeated sections"
+      ],
+      "test_modules": [
+        "test_project_v2",
+        "test_project_fields_v2",
+        "test_title_report_gates_v2",
+        "test_native_v2_title_report_gates"
+      ],
+      "boundary": "Singleton text owner; annotations in comments are a separate extension.",
+      "acceptance": "historical_gates_verified",
+      "historical_evidence": {
+        "path": "docs/qualification/horton-outfall-reader-input-gates-20260930.json",
+        "sha256": "601fd855d9c2434b0c1e340cadd08fc0299712fe73bfc4bab9fd8672711804f5"
+      }
+    },
+    {
+      "section": "OPTIONS",
+      "owners": [
+        "swmm:options"
+      ],
+      "variant_groups": [
+        "43 option keywords",
+        "categorical alternatives",
+        "boolean alternatives",
+        "compatibility values",
+        "omitted versus zero",
+        "clock versus numeric durations",
+        "cross-day dates",
+        "ordered repeated assignments"
+      ],
+      "test_modules": [
+        "test_calendar_syntax_v2",
+        "test_field_inspection_v2",
+        "test_native_v2_calendar_syntax",
+        "test_native_v2_context_fields",
+        "test_native_v2_option_calendar_gates",
+        "test_native_v2_option_context_fields",
+        "test_native_v2_option_effects",
+        "test_native_v2_option_gate_boundaries",
+        "test_native_v2_option_hydraulics",
+        "test_native_v2_option_schedule",
+        "test_native_v2_option_threads",
+        "test_native_v2_option_variants",
+        "test_native_v2_options",
+        "test_option_calendar_gates_v2",
+        "test_option_context_fields_v2",
+        "test_option_defaults_v2",
+        "test_option_effects_v2",
+        "test_option_gate_boundaries_v2",
+        "test_option_hydraulics_v2",
+        "test_option_lifecycle_gates_v2",
+        "test_option_schedule_v2",
+        "test_option_source_boundaries_v2",
+        "test_option_variants_v2",
+        "test_options_v2"
+      ],
+      "boundary": "FLOW_ROUTING NONE is routing suppression; NORMAL_FLOW_LIMITED NONE differs from omission. Exact canonical spellings and declared numeric coercions are supported; arbitrary native suffixes, negative scheduled-time wraparound and non-ASCII calendar digits are retained with diagnostics. Static defaults do not claim actual thread counts, rain-gage scheduling or file availability.",
+      "acceptance": "historical_gates_verified",
+      "historical_evidence": {
+        "path": "docs/qualification/horton-outfall-reader-input-gates-20260930.json",
+        "sha256": "601fd855d9c2434b0c1e340cadd08fc0299712fe73bfc4bab9fd8672711804f5"
+      }
+    },
+    {
+      "section": "REPORT",
+      "owners": [
+        "swmm:report"
+      ],
+      "variant_groups": [
+        "six boolean switches",
+        "SUBCATCHMENTS/NODES/LINKS ALL/NONE/SELECTED",
+        "sticky members",
+        "long lists",
+        "repeated sections"
+      ],
+      "test_modules": [
+        "test_project_v2",
+        "test_context_fields_v2",
+        "test_title_report_gates_v2",
+        "test_native_v2_title_report_gates",
+        "test_reference_container_diagnostics_v2"
+      ],
+      "boundary": "Native NODESTATS and manual LID syntax must not be silently reinterpreted; inspect unsupported diagnostics.",
+      "acceptance": "historical_gates_verified",
+      "historical_evidence": {
+        "path": "docs/qualification/horton-outfall-reader-input-gates-20260930.json",
+        "sha256": "601fd855d9c2434b0c1e340cadd08fc0299712fe73bfc4bab9fd8672711804f5"
+      }
+    },
+    {
+      "section": "FILES",
+      "owners": [
+        "swmm:files"
+      ],
+      "variant_groups": [
+        "RAINFALL USE/SAVE",
+        "RUNOFF USE/SAVE",
+        "HOTSTART USE/SAVE",
+        "RDII USE/SAVE",
+        "INFLOWS USE",
+        "OUTFLOWS SAVE"
+      ],
+      "test_modules": [
+        "test_files_v2",
+        "test_file_diagnostics_v2"
+      ],
+      "boundary": "Composite kind/mode identity; external contents are separate from declarations; HOTSTART is partial state.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "RAINGAGES",
+      "owners": [
+        "swmm:raingages"
+      ],
+      "variant_groups": [
+        "INTENSITY",
+        "VOLUME",
+        "CUMULATIVE",
+        "TIMESERIES",
+        "FILE",
+        "IN/MM",
+        "optional start date"
+      ],
+      "test_modules": [
+        "test_hydrology_v2",
+        "test_hydrology_fields_v2"
+      ],
+      "boundary": "Rain forms and source kinds are independent axes; external formats need separate file inspection.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "EVAPORATION",
+      "owners": [
+        "swmm:climate"
+      ],
+      "variant_groups": [
+        "CONSTANT",
+        "MONTHLY",
+        "TIMESERIES",
+        "TEMPERATURE",
+        "FILE",
+        "RECOVERY",
+        "DRY_ONLY"
+      ],
+      "test_modules": [
+        "test_climate_v2",
+        "test_climate_fields_v2"
+      ],
+      "boundary": "Source selection and auxiliary settings are independent; bare FILE requires explicit normalization.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "TEMPERATURE",
+      "owners": [
+        "swmm:climate"
+      ],
+      "variant_groups": [
+        "TIMESERIES",
+        "FILE",
+        "FILE C10/C/F",
+        "WINDSPEED MONTHLY/FILE",
+        "SNOWMELT",
+        "ADC IMPERVIOUS/PERVIOUS"
+      ],
+      "test_modules": [
+        "test_climate_v2",
+        "test_climate_fields_v2"
+      ],
+      "boundary": "Shared file and selected temperature source remain separate; static configuration is not live climate state.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "ADJUSTMENTS",
+      "owners": [
+        "swmm:climate",
+        "swmm:subcatchment_adjustments"
+      ],
+      "variant_groups": [
+        "global TEMPERATURE/EVAPORATION/RAINFALL/CONDUCTIVITY",
+        "local INFIL/DSTORE/N-PERV"
+      ],
+      "test_modules": [
+        "test_climate_v2",
+        "test_climate_fields_v2",
+        "test_hydrology_v2",
+        "test_snow_fields_v2"
+      ],
+      "boundary": "Global monthly values and local pattern references have different owners.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "SUBCATCHMENTS",
+      "owners": [
+        "swmm:subcatchments"
+      ],
+      "variant_groups": [
+        "node outlet",
+        "subcatchment outlet",
+        "optional snowpack",
+        "zero/nonzero area"
+      ],
+      "test_modules": [
+        "test_hydrology_v2",
+        "test_hydrology_fields_v2"
+      ],
+      "boundary": "Same-name outlet namespace ambiguity is diagnosed; outlet references cannot be guessed.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "SUBAREAS",
+      "owners": [
+        "swmm:subcatchments"
+      ],
+      "variant_groups": [
+        "OUTLET",
+        "IMPERVIOUS",
+        "PERVIOUS",
+        "optional routed percentage"
+      ],
+      "test_modules": [
+        "test_hydrology_v2",
+        "test_hydrology_fields_v2"
+      ],
+      "boundary": "Part of the catchment aggregate; absent and later overwritten subgroups differ.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "INFILTRATION",
+      "owners": [
+        "swmm:subcatchments"
+      ],
+      "variant_groups": [
+        "HORTON",
+        "MODIFIED_HORTON",
+        "GREEN_AMPT",
+        "MODIFIED_GREEN_AMPT",
+        "CURVE_NUMBER",
+        "inherited method",
+        "explicit method"
+      ],
+      "test_modules": [
+        "test_hydrology_v2",
+        "test_hydrology_fields_v2"
+      ],
+      "boundary": "Three parameter classes represent five methods; inherited project method must match the parameter family.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "LID_CONTROLS",
+      "owners": [
+        "swmm:lid_controls"
+      ],
+      "variant_groups": [
+        "BC",
+        "RG",
+        "GR",
+        "IT",
+        "PP",
+        "RB",
+        "RD",
+        "VS",
+        "SURFACE",
+        "PAVEMENT",
+        "SOIL",
+        "STORAGE",
+        "DRAIN",
+        "DRAINMAT",
+        "REMOVALS"
+      ],
+      "test_modules": [
+        "test_lid_v2",
+        "test_lid_fields_v2"
+      ],
+      "boundary": "Type/layer combinations need an explicit legality matrix; native defaults and manual discrepancies stay visible.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "LID_USAGE",
+      "owners": [
+        "swmm:lid_usage"
+      ],
+      "variant_groups": [
+        "active deployment",
+        "disabled deployment",
+        "repeated deployments",
+        "report file",
+        "node drain",
+        "subcatchment drain",
+        "pervious return"
+      ],
+      "test_modules": [
+        "test_lid_v2",
+        "test_lid_fields_v2"
+      ],
+      "boundary": "Unnamed INP rows have model-only ordered identities; disabled trailing tokens remain inert.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "AQUIFERS",
+      "owners": [
+        "swmm:aquifers"
+      ],
+      "variant_groups": [
+        "required soil and water fields",
+        "optional evaporation pattern"
+      ],
+      "test_modules": [
+        "test_groundwater_v2",
+        "test_groundwater_fields_v2"
+      ],
+      "boundary": "Shared parameter object; instantaneous groundwater state is not a configuration default.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "GROUNDWATER",
+      "owners": [
+        "swmm:groundwater"
+      ],
+      "variant_groups": [
+        "required relation",
+        "optional threshold elevation",
+        "bottom elevation override",
+        "water table override",
+        "moisture override"
+      ],
+      "test_modules": [
+        "test_groundwater_v2",
+        "test_groundwater_fields_v2"
+      ],
+      "boundary": "Derived subcatchment identity and linked aquifer/node; missing overrides inherit explicitly.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "GWF",
+      "owners": [
+        "swmm:gwf"
+      ],
+      "variant_groups": [
+        "LATERAL",
+        "DEEP",
+        "variables",
+        "functions",
+        "arithmetic expressions"
+      ],
+      "test_modules": [
+        "test_groundwater_v2",
+        "test_groundwater_fields_v2"
+      ],
+      "boundary": "Composite subcatchment/kind identity; unknown expression dimensions reject unsafe conversion.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "SNOWPACKS",
+      "owners": [
+        "swmm:snowpacks"
+      ],
+      "variant_groups": [
+        "PLOWABLE",
+        "IMPERVIOUS",
+        "PERVIOUS",
+        "REMOVAL",
+        "short removal",
+        "destination transfer"
+      ],
+      "test_modules": [
+        "test_hydrology_v2",
+        "test_snow_fields_v2"
+      ],
+      "boundary": "Shared parameter set with per-catchment state; native area-transfer behavior is documented.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "JUNCTIONS",
+      "owners": [
+        "swmm:nodes"
+      ],
+      "variant_groups": [
+        "minimum row",
+        "optional maximum/initial/surcharge depths",
+        "ponded area"
+      ],
+      "test_modules": [
+        "test_semantic_model",
+        "test_node_fields_v2",
+        "test_junction_gates_v2",
+        "test_native_v2_junction_gates",
+        "test_native_v2_junction_boundaries",
+        "test_physical_inp_v2",
+        "test_native_physical_inp_v2",
+        "test_node_initial_depth_v2"
+      ],
+      "boundary": "Named node; per-field validation and topology checks are separate gates.",
+      "acceptance": "historical_gates_verified",
+      "resolved_issues": [
+        {
+          "description": "Initial-depth field facts and preflight now share the native internal-feet bound; adopted and verified in current installed packages.",
+          "evidence": {
+            "path": "docs/qualification/physical-inp-installed-gates-20260930.json",
+            "sha256": "fb4e1cec7ff58586f9529a46510102eb5b98629b8ab9b89915e096986fb65d12"
+          },
+          "previous": {
+            "description": "Initial-depth field facts and run preflight need the native internal-feet bound, including adjacent crowns and surcharge. A five-file isolated Python candidate passed three-environment native comparisons and regression checks; formal adoption remains open. Second revision uses a structured bound result, skips zero-depth crown work, and passes six native/pure model comparison configurations.",
+            "evidence": {
+              "path": "docs/qualification/node-initial-depth-v2-20260930.json",
+              "sha256": "3e274d56d25c9077f3b3bcc31313a3cabd2b82c1e88906283c510fc6e4249616"
+            },
+            "adopted": false,
+            "previous_evidence": [
+              {
+                "path": "docs/qualification/node-initial-depth-candidate-20260930.json",
+                "sha256": "d544d1d43c8365efeaf214932e5c9d7cf7794f72964f3b9c969381b918dde307"
+              }
+            ]
+          }
+        },
+        {
+          "description": "Physical-line preflight now rejects the 72 previously missed cases, with exact byte boundaries, diagnostics and real Runner output protection.",
+          "evidence": {
+            "path": "docs/qualification/physical-inp-installed-gates-20260930.json",
+            "sha256": "fb4e1cec7ff58586f9529a46510102eb5b98629b8ab9b89915e096986fb65d12"
+          },
+          "previous": [
+            {
+              "code": "missing_physical_inp_line_preflight",
+              "fixed": false,
+              "description": "1024/1025-byte JUNCTIONS rows with long comments pass model run preflight but are rejected by both native engines. 72 failing subcases across Windows 3.13/3.10 and Linux 3.12.",
+              "evidence": {
+                "path": "docs/qualification/junction-gates-20260930.json",
+                "sha256": "667d76dbf8ead3302911b89fcb590006fdef831bfb2d0d79c92f48415457dffe"
+              }
+            }
+          ]
+        }
+      ],
+      "historical_candidate_gate_evidence": {
+        "path": "docs/qualification/junction-gates-20260930.json",
+        "sha256": "667d76dbf8ead3302911b89fcb590006fdef831bfb2d0d79c92f48415457dffe",
+        "accepted": false,
+        "adopted": false,
+        "description": "Six isolated configurations pass ordinary gates; physical-line run preflight fails in three environments. 2814 complete solves and 468 boundary opens retained."
+      },
+      "historical_evidence": {
+        "path": "docs/qualification/horton-outfall-reader-input-gates-20260930.json",
+        "sha256": "601fd855d9c2434b0c1e340cadd08fc0299712fe73bfc4bab9fd8672711804f5"
+      }
+    },
+    {
+      "section": "OUTFALLS",
+      "owners": [
+        "swmm:nodes"
+      ],
+      "variant_groups": [
+        "FREE",
+        "NORMAL",
+        "FIXED",
+        "TIDAL",
+        "TIMESERIES",
+        "flap gate",
+        "route-to catchment"
+      ],
+      "test_modules": [
+        "test_semantic_model",
+        "test_node_fields_v2",
+        "test_outfall_gates_v2",
+        "test_native_v2_outfall_gates"
+      ],
+      "boundary": "Five boundary forms, gate/default and route combinations, dynamic stage and external resources; both engines and all six units compare complete native results.",
+      "acceptance": "historical_gates_verified",
+      "resolved_issues": [
+        {
+          "description": "Standard 16/custom 14 readers retain the flap-gate flag when followed by route-to. The seven OUTFALLS variants now have 56 reviewed gates; R07 remains open.",
+          "evidence": {
+            "path": "build/horton-outfall-reader-integration-20260930/integration-audit.json",
+            "sha256": "565593839f26b7a8c28dba537469d5a0d4ace67a9b8b4337a5eb96c439da8aee"
+          },
+          "previous": {
+            "description": "Current formal native readers ignore a supplied flap-gate flag when a route-to subcatchment follows it. Isolated candidate passes the combined high-tailwater/backflow and forward-runon matrix; formal integration remains open.",
+            "evidence": {
+              "path": "docs/qualification/outfall-route-gate-20260930.json",
+              "sha256": "d6900cc31fb579d6a68e7289aa5ce6e8372750e38412582100c3415ae534895a"
+            },
+            "adopted": false
+          },
+          "adopted": true
+        }
+      ],
+      "historical_evidence": {
+        "path": "docs/qualification/outfall-input-gates-20260930.json",
+        "sha256": "8ce6f437814e29737adada529480dea656d6afdaed1a5018d3b2d64bbd634449"
+      }
+    },
+    {
+      "section": "DIVIDERS",
+      "owners": [
+        "swmm:nodes"
+      ],
+      "variant_groups": [
+        "OVERFLOW",
+        "CUTOFF",
+        "TABULAR",
+        "WEIR",
+        "optional node fields"
+      ],
+      "test_modules": [
+        "test_nodes_v2",
+        "test_node_fields_v2",
+        "test_divider_gates_v2",
+        "test_native_v2_divider_gates"
+      ],
+      "boundary": "Four laws and optional node fields; active standard STEADY/KINWAVE, inactive DYNWAVE, explicit custom routing rejection, native link sorting, six units and invalid weir/topology boundaries.",
+      "acceptance": "historical_gates_verified",
+      "resolved_issues": [
+        {
+          "description": "Initial-depth field facts and preflight now share the native internal-feet bound; adopted and verified in current installed packages.",
+          "evidence": {
+            "path": "docs/qualification/physical-inp-installed-gates-20260930.json",
+            "sha256": "fb4e1cec7ff58586f9529a46510102eb5b98629b8ab9b89915e096986fb65d12"
+          },
+          "previous": {
+            "description": "Initial-depth field facts and run preflight need the native internal-feet bound, including adjacent crowns and surcharge. A five-file isolated Python candidate passed three-environment native comparisons and regression checks; formal adoption remains open. Second revision uses a structured bound result, skips zero-depth crown work, and passes six native/pure model comparison configurations.",
+            "evidence": {
+              "path": "docs/qualification/node-initial-depth-v2-20260930.json",
+              "sha256": "3e274d56d25c9077f3b3bcc31313a3cabd2b82c1e88906283c510fc6e4249616"
+            },
+            "adopted": false,
+            "previous_evidence": [
+              {
+                "path": "docs/qualification/node-initial-depth-candidate-20260930.json",
+                "sha256": "d544d1d43c8365efeaf214932e5c9d7cf7794f72964f3b9c969381b918dde307"
+              }
+            ]
+          }
+        }
+      ],
+      "historical_evidence": {
+        "path": "docs/qualification/divider-input-gates-20260930.json",
+        "sha256": "09f55bcdcdadcdd4ba367ba642d6f0636c4cb76c0888d9bc7e371a4121401ee7"
+      }
+    },
+    {
+      "section": "STORAGE",
+      "owners": [
+        "swmm:nodes"
+      ],
+      "variant_groups": [
+        "FUNCTIONAL",
+        "TABULAR",
+        "CYLINDRICAL",
+        "CONICAL",
+        "PARABOLIC",
+        "PARABOLOID alias",
+        "PYRAMIDAL",
+        "constant seepage",
+        "Green-Ampt seepage"
+      ],
+      "test_modules": [
+        "test_nodes_v2",
+        "test_node_fields_v2"
+      ],
+      "boundary": "PARABOLOID requires canonical native spelling; geometry-dependent native limits remain explicit.",
+      "acceptance": "pending_assertion_and_evidence_review",
+      "resolved_issues": [
+        {
+          "description": "Initial-depth field facts and preflight now share the native internal-feet bound; adopted and verified in current installed packages.",
+          "evidence": {
+            "path": "docs/qualification/physical-inp-installed-gates-20260930.json",
+            "sha256": "fb4e1cec7ff58586f9529a46510102eb5b98629b8ab9b89915e096986fb65d12"
+          },
+          "previous": {
+            "description": "Initial-depth field facts and run preflight need the native internal-feet bound, including adjacent crowns and surcharge. A five-file isolated Python candidate passed three-environment native comparisons and regression checks; formal adoption remains open. Second revision uses a structured bound result, skips zero-depth crown work, and passes six native/pure model comparison configurations.",
+            "evidence": {
+              "path": "docs/qualification/node-initial-depth-v2-20260930.json",
+              "sha256": "3e274d56d25c9077f3b3bcc31313a3cabd2b82c1e88906283c510fc6e4249616"
+            },
+            "adopted": false,
+            "previous_evidence": [
+              {
+                "path": "docs/qualification/node-initial-depth-candidate-20260930.json",
+                "sha256": "d544d1d43c8365efeaf214932e5c9d7cf7794f72964f3b9c969381b918dde307"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "section": "CONDUITS",
+      "owners": [
+        "swmm:links"
+      ],
+      "variant_groups": [
+        "required hydraulic fields",
+        "optional initial/maximum flow",
+        "DEPTH offsets",
+        "ELEVATION offsets",
+        "node-invert marker"
+      ],
+      "test_modules": [
+        "test_semantic_model",
+        "test_network_fields_v2"
+      ],
+      "boundary": "References and offset context are explicit; cross-section and losses are owned subrecords.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "PUMPS",
+      "owners": [
+        "swmm:links"
+      ],
+      "variant_groups": [
+        "IDEAL",
+        "PUMP1",
+        "PUMP2",
+        "PUMP3",
+        "PUMP4",
+        "PUMP5",
+        "ON/OFF",
+        "startup/shutoff thresholds"
+      ],
+      "test_modules": [
+        "test_regulators_v2",
+        "test_regulator_fields_v2"
+      ],
+      "boundary": "Five characteristic curve kinds and ideal form; shared curve dimensions depend on kind.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "ORIFICES",
+      "owners": [
+        "swmm:links"
+      ],
+      "variant_groups": [
+        "SIDE",
+        "BOTTOM",
+        "flap gate",
+        "opening duration",
+        "CIRCULAR/RECT_CLOSED section"
+      ],
+      "test_modules": [
+        "test_regulators_v2",
+        "test_regulator_fields_v2"
+      ],
+      "boundary": "Opening time uses decimal hours in INP; section compatibility is separate from generic geometry support.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "WEIRS",
+      "owners": [
+        "swmm:links"
+      ],
+      "variant_groups": [
+        "TRANSVERSE",
+        "SIDEFLOW",
+        "V-NOTCH",
+        "TRAPEZOIDAL",
+        "ROADWAY",
+        "PAVED/GRAVEL",
+        "coefficient curve",
+        "surcharge control"
+      ],
+      "test_modules": [
+        "test_regulators_v2",
+        "test_regulator_fields_v2"
+      ],
+      "boundary": "Per-kind geometry, coefficient dimensions and native ignored fields require contextual checks.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "OUTLETS",
+      "owners": [
+        "swmm:links"
+      ],
+      "variant_groups": [
+        "FUNCTIONAL/HEAD",
+        "FUNCTIONAL/DEPTH",
+        "TABULAR/HEAD",
+        "TABULAR/DEPTH",
+        "legacy FUNCTIONAL/TABULAR aliases"
+      ],
+      "test_modules": [
+        "test_regulators_v2",
+        "test_regulator_fields_v2"
+      ],
+      "boundary": "Rating basis and formula dimensions differ; aliases normalize explicitly.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "XSECTIONS",
+      "owners": [
+        "swmm:links"
+      ],
+      "variant_groups": [
+        "CIRCULAR",
+        "FORCE_MAIN",
+        "FILLED_CIRCULAR",
+        "RECT_CLOSED",
+        "RECT_OPEN",
+        "TRAPEZOIDAL",
+        "TRIANGULAR",
+        "HORIZ_ELLIPSE",
+        "VERT_ELLIPSE",
+        "ARCH",
+        "PARABOLIC",
+        "POWER",
+        "RECT_TRIANGULAR",
+        "RECT_ROUND",
+        "MODBASKETHANDLE",
+        "EGG",
+        "HORSESHOE",
+        "GOTHIC",
+        "CATENARY",
+        "SEMIELLIPTICAL",
+        "BASKETHANDLE",
+        "SEMICIRCULAR",
+        "CUSTOM",
+        "IRREGULAR",
+        "STREET",
+        "DUMMY",
+        "ellipse/arch dimension or size-code forms",
+        "barrels",
+        "culvert code"
+      ],
+      "test_modules": [
+        "test_semantic_model",
+        "test_geometry_fields_v2"
+      ],
+      "boundary": "26 geometry kinds do not imply every link/shape/parameter combination is valid.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "TRANSECTS",
+      "owners": [
+        "swmm:transects"
+      ],
+      "variant_groups": [
+        "NC",
+        "X1",
+        "GR",
+        "inherited roughness",
+        "repeated stations",
+        "section transitions",
+        "EOF termination"
+      ],
+      "test_modules": [
+        "test_surface_v2",
+        "test_surface_fields_v2"
+      ],
+      "boundary": "Stateful NC inheritance and native finalization affect the entire block.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "STREETS",
+      "owners": [
+        "swmm:streets"
+      ],
+      "variant_groups": [
+        "minimum street",
+        "gutter parameters",
+        "one/two sides",
+        "backing parameters"
+      ],
+      "test_modules": [
+        "test_surface_v2",
+        "test_surface_fields_v2"
+      ],
+      "boundary": "Backing width requires slope/roughness; geometry is a shared resource.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "INLETS",
+      "owners": [
+        "swmm:inlets"
+      ],
+      "variant_groups": [
+        "GRATE",
+        "CURB",
+        "SLOTTED",
+        "DROP_GRATE",
+        "DROP_CURB",
+        "CUSTOM",
+        "GRATE+CURB combination",
+        "standard grates",
+        "generic grate",
+        "curb throat forms"
+      ],
+      "test_modules": [
+        "test_surface_v2",
+        "test_surface_fields_v2"
+      ],
+      "boundary": "Combination components share one ID; curve purpose and placement need separate validation.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "INLET_USAGE",
+      "owners": [
+        "swmm:inlet_usage"
+      ],
+      "variant_groups": [
+        "minimum usage",
+        "count",
+        "clogging",
+        "flow cap",
+        "depression",
+        "AUTOMATIC/ON_GRADE/ON_SAG"
+      ],
+      "test_modules": [
+        "test_surface_v2",
+        "test_surface_fields_v2"
+      ],
+      "boundary": "Derived conduit identity; references conduit/design/node.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "LOSSES",
+      "owners": [
+        "swmm:links"
+      ],
+      "variant_groups": [
+        "entry/exit/average coefficients",
+        "flap gate",
+        "seepage"
+      ],
+      "test_modules": [
+        "test_semantic_model",
+        "test_network_fields_v2"
+      ],
+      "boundary": "Owned conduit subrecord; explicit zero differs from omitted optional fields.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "CONTROLS",
+      "owners": [
+        "swmm:controls"
+      ],
+      "variant_groups": [
+        "VARIABLE",
+        "EXPRESSION",
+        "RULE",
+        "IF/AND/OR",
+        "THEN/ELSE",
+        "PRIORITY",
+        "constant status/setting",
+        "CURVE",
+        "TIMESERIES",
+        "PID",
+        "calendar/duration",
+        "gage history"
+      ],
+      "test_modules": [
+        "test_controls_v2",
+        "test_control_fields_v2"
+      ],
+      "boundary": "Ordered program and composite kind/name identity; unknown syntax preserves the whole atomic block.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "POLLUTANTS",
+      "owners": [
+        "swmm:pollutants"
+      ],
+      "variant_groups": [
+        "MG/L",
+        "UG/L",
+        "#/L",
+        "snow-only",
+        "co-pollutant",
+        "DWF concentration",
+        "initial concentration"
+      ],
+      "test_modules": [
+        "test_quality_v2",
+        "test_inflow_fields_v2",
+        "test_pollutant_units_v2"
+      ],
+      "boundary": "FLOW is reserved; conversion affects dependent pollutant consumers.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "LANDUSES",
+      "owners": [
+        "swmm:landuses"
+      ],
+      "variant_groups": [
+        "sweep interval",
+        "availability",
+        "days since sweeping",
+        "optional tail"
+      ],
+      "test_modules": [
+        "test_quality_v2",
+        "test_landuse_fields_v2"
+      ],
+      "boundary": "Named land-use parameter set; curb units remain user-defined.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "COVERAGES",
+      "owners": [
+        "swmm:coverages"
+      ],
+      "variant_groups": [
+        "single pair",
+        "multiple pairs",
+        "repeated land-use assignment"
+      ],
+      "test_modules": [
+        "test_quality_v2",
+        "test_landuse_fields_v2"
+      ],
+      "boundary": "Composite catchment/land-use identity; aggregate coverage constraints remain separate.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "LOADINGS",
+      "owners": [
+        "swmm:loadings"
+      ],
+      "variant_groups": [
+        "single pair",
+        "multiple pairs",
+        "repeated pollutant assignment"
+      ],
+      "test_modules": [
+        "test_quality_v2",
+        "test_landuse_fields_v2"
+      ],
+      "boundary": "Composite catchment/pollutant identity; surface loading unit depends on pollutant.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "BUILDUP",
+      "owners": [
+        "swmm:buildup"
+      ],
+      "variant_groups": [
+        "NONE",
+        "POW",
+        "EXP",
+        "SAT",
+        "EXT",
+        "AREA",
+        "CURBLENGTH"
+      ],
+      "test_modules": [
+        "test_quality_v2",
+        "test_landuse_fields_v2"
+      ],
+      "boundary": "Formula/normalizer axes and external series role must all be covered.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "WASHOFF",
+      "owners": [
+        "swmm:washoff"
+      ],
+      "variant_groups": [
+        "NONE",
+        "EXP",
+        "RC",
+        "EMC",
+        "sweeping efficiency",
+        "BMP removal"
+      ],
+      "test_modules": [
+        "test_quality_v2",
+        "test_landuse_fields_v2"
+      ],
+      "boundary": "Formula coefficients have distinct dimensions; ignored parameters are preserved.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "TREATMENT",
+      "owners": [
+        "swmm:treatment"
+      ],
+      "variant_groups": [
+        "C",
+        "R",
+        "HRT/DT/FLOW/DEPTH/AREA",
+        "pollutant concentration",
+        "R_pollutant",
+        "functions/arithmetic"
+      ],
+      "test_modules": [
+        "test_treatment_v2",
+        "test_treatment_fields_v2"
+      ],
+      "boundary": "Composite node/pollutant identity; removal cycles and variable precedence are validated.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "INFLOWS",
+      "owners": [
+        "swmm:inflows"
+      ],
+      "variant_groups": [
+        "FLOW",
+        "pollutant CONCEN",
+        "pollutant MASS",
+        "inline/file series",
+        "scale/baseline/pattern",
+        "empty series"
+      ],
+      "test_modules": [
+        "test_inflows_v2",
+        "test_quality_v2",
+        "test_inflow_fields_v2"
+      ],
+      "boundary": "Composite node/constituent identity; mass, concentration and hydraulic units differ.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "DWF",
+      "owners": [
+        "swmm:dwf"
+      ],
+      "variant_groups": [
+        "FLOW",
+        "pollutant concentration",
+        "four pattern slots",
+        "empty slots",
+        "repeated kinds"
+      ],
+      "test_modules": [
+        "test_inflows_v2",
+        "test_quality_v2",
+        "test_inflow_fields_v2"
+      ],
+      "boundary": "Composite node/constituent identity; pattern positions and weekend replacement matter.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "RDII",
+      "owners": [
+        "swmm:rdii"
+      ],
+      "variant_groups": [
+        "node/hydrograph/area relation",
+        "repeated assignment",
+        "cache consumption"
+      ],
+      "test_modules": [
+        "test_rdii_v2",
+        "test_rdii_fields_v2"
+      ],
+      "boundary": "Derived node identity; generated RDII and reused interface applicability differ.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "HYDROGRAPHS",
+      "owners": [
+        "swmm:hydrographs"
+      ],
+      "variant_groups": [
+        "rain-gage binding",
+        "ALL",
+        "JAN-DEC",
+        "SHORT",
+        "MEDIUM",
+        "LONG",
+        "legacy triples",
+        "abstraction optional tail"
+      ],
+      "test_modules": [
+        "test_rdii_v2",
+        "test_rdii_fields_v2"
+      ],
+      "boundary": "Ordered month/response overrides; prior gage declarations remain live source dependencies.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "CURVES",
+      "owners": [
+        "swmm:curves"
+      ],
+      "variant_groups": [
+        "STORAGE",
+        "DIVERSION",
+        "TIDAL",
+        "RATING",
+        "CONTROL",
+        "SHAPE",
+        "WEIR",
+        "PUMP1",
+        "PUMP2",
+        "PUMP3",
+        "PUMP4",
+        "PUMP5",
+        "multi-pair continuation"
+      ],
+      "test_modules": [
+        "test_resources_v2",
+        "test_resource_fields_v2"
+      ],
+      "boundary": "Kind must match each consumer; an unbound resource has no invented physical dimensions.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "TIMESERIES",
+      "owners": [
+        "swmm:timeseries"
+      ],
+      "variant_groups": [
+        "relative clock",
+        "decimal hours",
+        "absolute date/time",
+        "date continuation",
+        "multi-pair rows",
+        "FILE"
+      ],
+      "test_modules": [
+        "test_resources_v2",
+        "test_resource_fields_v2"
+      ],
+      "boundary": "Date continuation is per series; file content and declared reference are separate.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "PATTERNS",
+      "owners": [
+        "swmm:patterns"
+      ],
+      "variant_groups": [
+        "MONTHLY",
+        "DAILY",
+        "HOURLY",
+        "WEEKEND",
+        "multi-row continuation",
+        "short explicit lengths"
+      ],
+      "test_modules": [
+        "test_resources_v2",
+        "test_resource_fields_v2"
+      ],
+      "boundary": "Retain explicit factors and distinguish native fill defaults.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "MAP",
+      "owners": [
+        "swmm:map"
+      ],
+      "variant_groups": [
+        "DIMENSIONS",
+        "UNITS NONE/FEET/METERS/DEGREES",
+        "keyword/unit prefixes"
+      ],
+      "test_modules": [
+        "test_map_v2",
+        "test_project_fields_v2"
+      ],
+      "boundary": "Map units are independent of hydraulic flow units; GUI semantics need invariance evidence.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "COORDINATES",
+      "owners": [
+        "swmm:nodes"
+      ],
+      "variant_groups": [
+        "all four node kinds",
+        "repeated assignment",
+        "ignored trailing columns",
+        "declarations after coordinates"
+      ],
+      "test_modules": [
+        "test_map_geometry_v2",
+        "test_display_fields_v2"
+      ],
+      "boundary": "Named node geometry; source declaration order may differ from object order.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "VERTICES",
+      "owners": [
+        "swmm:links"
+      ],
+      "variant_groups": [
+        "all five link kinds",
+        "ordered duplicate points",
+        "empty/repeated sections"
+      ],
+      "test_modules": [
+        "test_map_geometry_v2",
+        "test_display_fields_v2"
+      ],
+      "boundary": "Ordered link geometry; preserved across rename/reorder, removed by explicit clear.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "POLYGONS",
+      "owners": [
+        "swmm:nodes",
+        "swmm:subcatchments"
+      ],
+      "variant_groups": [
+        "storage polygon",
+        "catchment polygon",
+        "same-name catchment priority",
+        "ordered duplicate points"
+      ],
+      "test_modules": [
+        "test_map_geometry_v2",
+        "test_display_fields_v2"
+      ],
+      "boundary": "Shared section has two codecs; source ownership must not be guessed by name alone.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "SYMBOLS",
+      "owners": [
+        "swmm:raingages"
+      ],
+      "variant_groups": [
+        "rain-gage position",
+        "repeated assignment",
+        "ignored tail"
+      ],
+      "test_modules": [
+        "test_map_geometry_v2",
+        "test_display_fields_v2"
+      ],
+      "boundary": "Rain-gage owner; map coordinates do not follow hydraulic unit conversion.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "LABELS",
+      "owners": [
+        "swmm:labels"
+      ],
+      "variant_groups": [
+        "unnamed duplicates",
+        "position/text",
+        "node anchor",
+        "font",
+        "size",
+        "bold/italic",
+        "manual flag aliases"
+      ],
+      "test_modules": [
+        "test_display_v2",
+        "test_display_fields_v2"
+      ],
+      "boundary": "Ordered layer owns unnamed labels; anchors are nodes, not same-name catchments.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "BACKDROP",
+      "owners": [
+        "swmm:backdrop",
+        "swmm:map"
+      ],
+      "variant_groups": [
+        "FILE",
+        "DIMENSIONS",
+        "UNITS",
+        "OFFSET",
+        "SCALING",
+        "keyword prefixes"
+      ],
+      "test_modules": [
+        "test_map_v2",
+        "test_project_fields_v2"
+      ],
+      "boundary": "UNITS changes map settings; legacy offset/scaling values are not asserted as active image placement.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "TAGS",
+      "owners": [
+        "swmm:tags"
+      ],
+      "variant_groups": [
+        "Gage",
+        "Subcatch",
+        "Node",
+        "Link",
+        "empty text",
+        "repeated last assignment",
+        "keyword prefixes"
+      ],
+      "test_modules": [
+        "test_tags_v2",
+        "test_tag_gates_v2",
+        "test_project_fields_v2",
+        "test_native_v2_tags",
+        "test_native_v2_tag_gates"
+      ],
+      "boundary": "Composite target collection/ID allows same names across object kinds. GUI text remains complete in the model; current native input records accept at most 1023 content bytes, reject longer records with error 200 and permit retry. Prefix matching follows the reviewed four-letter GUI contract.",
+      "acceptance": "historical_gates_verified",
+      "historical_evidence": {
+        "path": "docs/qualification/horton-outfall-reader-input-gates-20260930.json",
+        "sha256": "601fd855d9c2434b0c1e340cadd08fc0299712fe73bfc4bab9fd8672711804f5"
+      }
+    },
+    {
+      "section": "PROFILES",
+      "owners": [
+        "swmm:profiles"
+      ],
+      "variant_groups": [
+        "ordered links",
+        "multiple continuation rows",
+        "duplicate links",
+        "disconnected links",
+        "header-like names"
+      ],
+      "test_modules": [
+        "test_display_v2",
+        "test_project_fields_v2"
+      ],
+      "boundary": "Named GUI profile; native header-like names have separate run restrictions.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    },
+    {
+      "section": "EVENTS",
+      "owners": [
+        "swmm:events"
+      ],
+      "variant_groups": [
+        "ordered periods",
+        "duplicates",
+        "overlap",
+        "cross-day clocks",
+        "empty schedule"
+      ],
+      "test_modules": [
+        "test_events_v2",
+        "test_context_fields_v2"
+      ],
+      "boundary": "Unnamed hydraulic periods; source order and native sorting/truncation are different facts.",
+      "acceptance": "pending_assertion_and_evidence_review"
+    }
+  ],
+  "additional_contracts": [
+    "Comment-carried easysewer project annotations",
+    "A-H independent extension acceptance",
+    "Result/runtime/checkpoint contracts and release gates"
+  ]
+}

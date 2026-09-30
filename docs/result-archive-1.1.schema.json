@@ -1,0 +1,4126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EasySewer result archive 1.1",
+  "description": "Structural contract for result.json. RunResult.load additionally verifies blob bytes, Python scalar types, calendar parsing, evidence and cross-record invariants. Schema validation alone does not establish a loadable or valid simulation result.",
+  "$defs": {
+    "run:result": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:result"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "run_id": {
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "succeeded",
+                "rejected",
+                "failed",
+                "cancelled",
+                "timed_out"
+              ]
+            },
+            "diagnostics": {
+              "$ref": "#/$defs/core:validation"
+            },
+            "artifacts": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/run:artifact"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "snapshot": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/run:snapshot"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "backend": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/run:backend"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "engine_objects": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/run:objects"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mass_balance": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/run:balance"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "failure": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/run:failure"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "native_completed": {
+              "type": "boolean"
+            },
+            "produced_caches": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/run:produced-cache"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "consumed_caches": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/run:consumed-cache"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "output_metadata": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/result:output-metadata"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "report_document": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/report:document"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "failure_report": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/report:capture"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "report_tables": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/result:table"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "retained_directory": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "backend_results": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:json"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "continuations": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/run:continuation"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "run_id",
+            "status",
+            "diagnostics",
+            "artifacts",
+            "snapshot",
+            "backend",
+            "engine_objects",
+            "mass_balance",
+            "failure",
+            "native_completed",
+            "produced_caches",
+            "consumed_caches",
+            "output_metadata",
+            "report_document",
+            "failure_report",
+            "report_tables",
+            "retained_directory",
+            "backend_results",
+            "continuations"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:continuation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:continuation"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "attempt_id": {
+              "type": "string"
+            },
+            "execution_run_id": {
+              "type": "string"
+            },
+            "checkpoint_sha256": {
+              "type": "string"
+            },
+            "state_sha256": {
+              "type": "string"
+            },
+            "execution_sha256": {
+              "type": "string"
+            },
+            "started_at": {
+              "$ref": "#/$defs/core:datetime"
+            },
+            "simulation_seconds": {
+              "type": "number"
+            },
+            "steps": {
+              "type": "integer"
+            },
+            "config_json": {
+              "$ref": "#/$defs/core:bytes"
+            }
+          },
+          "required": [
+            "attempt_id",
+            "execution_run_id",
+            "checkpoint_sha256",
+            "state_sha256",
+            "execution_sha256",
+            "started_at",
+            "simulation_seconds",
+            "steps",
+            "config_json"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:backend-artifact": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:backend-artifact"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "role": {
+              "type": "string"
+            },
+            "relative_path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "role",
+            "relative_path"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:snapshot": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:snapshot"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "run_id": {
+              "type": "string"
+            },
+            "created_at": {
+              "$ref": "#/$defs/core:datetime"
+            },
+            "model_json": {
+              "$ref": "#/$defs/core:bytes"
+            },
+            "config_json": {
+              "$ref": "#/$defs/core:bytes"
+            },
+            "model_sha256": {
+              "type": "string"
+            },
+            "input_bytes": {
+              "$ref": "#/$defs/core:bytes"
+            },
+            "input_sha256": {
+              "type": "string"
+            },
+            "profile": {
+              "$ref": "#/$defs/core:profile"
+            },
+            "units": {
+              "$ref": "#/$defs/core:units"
+            },
+            "options": {
+              "$ref": "#/$defs/core:resolved-options"
+            },
+            "backend": {
+              "$ref": "#/$defs/run:backend"
+            },
+            "resources": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/run:resource"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "execution_directory": {
+              "type": "string"
+            },
+            "contract": {
+              "type": "string"
+            },
+            "backend_settings": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:bytes"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "run_id",
+            "created_at",
+            "model_json",
+            "config_json",
+            "model_sha256",
+            "input_bytes",
+            "input_sha256",
+            "profile",
+            "units",
+            "options",
+            "backend",
+            "resources",
+            "execution_directory",
+            "contract",
+            "backend_settings"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:artifact": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:artifact"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "role": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string"
+            },
+            "size": {
+              "type": "integer"
+            },
+            "complete": {
+              "type": "boolean"
+            },
+            "owner": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:ref"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "field": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "declared_path": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "role",
+            "path",
+            "sha256",
+            "size",
+            "complete",
+            "owner",
+            "field",
+            "declared_path"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:resource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:resource"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "$ref": "#/$defs/core:ref"
+            },
+            "field": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "role": {
+              "type": "string"
+            },
+            "format": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string"
+            },
+            "access": {
+              "type": "string"
+            },
+            "active": {
+              "type": "boolean"
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "original_path": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "relative_path": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "owner",
+            "field",
+            "role",
+            "format",
+            "kind",
+            "access",
+            "active",
+            "required",
+            "original_path",
+            "relative_path",
+            "sha256",
+            "size"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:failure": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:failure"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "stage": {
+              "type": "string"
+            },
+            "exception_type": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "native": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/run:native-failure"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cleanup": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/run:native-failure"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "stderr": {
+              "type": "string"
+            },
+            "worker_returncode": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "stage",
+            "exception_type",
+            "message",
+            "native",
+            "cleanup",
+            "stderr",
+            "worker_returncode"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:native-failure": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:native-failure"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "stage": {
+              "type": "string"
+            },
+            "code": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "stage",
+            "code",
+            "message"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:backend": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:backend"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "available": {
+              "type": "boolean"
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "library": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "engine_version": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "platform": {
+              "type": "string"
+            },
+            "architecture": {
+              "type": "string"
+            },
+            "abi": {
+              "type": "string"
+            },
+            "profiles": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "capabilities": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "isolation": {
+              "type": "string"
+            },
+            "origin": {
+              "type": "string"
+            },
+            "implementation": {
+              "type": "string"
+            },
+            "numerical_policy": {
+              "type": "string"
+            },
+            "output_semantics": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "key",
+            "available",
+            "reason",
+            "library",
+            "sha256",
+            "engine_version",
+            "platform",
+            "architecture",
+            "abi",
+            "profiles",
+            "capabilities",
+            "isolation",
+            "origin",
+            "implementation",
+            "numerical_policy",
+            "output_semantics"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:objects": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:objects"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "groups": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "const": "core:tuple"
+                              },
+                              "values": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "values"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "groups"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:balance": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:balance"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "runoff_percent": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "flow_percent": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "quality_percent": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "raw_percentages": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "result_context": {
+              "$ref": "#/$defs/result:context"
+            }
+          },
+          "required": [
+            "runoff_percent",
+            "flow_percent",
+            "quality_percent",
+            "raw_percentages",
+            "result_context"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:produced-cache": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:produced-cache"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string"
+            },
+            "artifact": {
+              "$ref": "#/$defs/run:artifact"
+            },
+            "manifest": {
+              "$ref": "#/$defs/wire-value"
+            },
+            "producer": {
+              "$ref": "#/$defs/run:snapshot"
+            },
+            "applicability": {
+              "$ref": "#/$defs/result:applicability"
+            },
+            "reuse_evidence": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/run:cache-evidence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "artifact",
+            "manifest",
+            "producer",
+            "applicability",
+            "reuse_evidence"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:consumed-cache": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:consumed-cache"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string"
+            },
+            "producer_run_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "producer_input_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "producer_model_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "producer_engine_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "consumer_model_sha256": {
+              "type": "string"
+            },
+            "verification": {
+              "type": "string"
+            },
+            "reuse": {
+              "$ref": "#/$defs/run:cache-reuse"
+            }
+          },
+          "required": [
+            "kind",
+            "sha256",
+            "producer_run_id",
+            "producer_input_sha256",
+            "producer_model_sha256",
+            "producer_engine_sha256",
+            "consumer_model_sha256",
+            "verification",
+            "reuse"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:cache-context": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:cache-context"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "policy": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string"
+            },
+            "input_sha256": {
+              "type": "string"
+            },
+            "engine_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "facts": {
+              "$ref": "#/$defs/core:json"
+            },
+            "limitations": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "policy",
+            "kind",
+            "input_sha256",
+            "engine_sha256",
+            "facts",
+            "limitations"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:cache-evidence": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:cache-evidence"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "cache_sha256": {
+              "type": "string"
+            },
+            "context": {
+              "$ref": "#/$defs/run:cache-context"
+            }
+          },
+          "required": [
+            "cache_sha256",
+            "context"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "run:cache-reuse": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "run:cache-reuse"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "policy": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "intent": {
+              "type": "string"
+            },
+            "origin": {
+              "type": "string"
+            },
+            "differences": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "reasons": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "producer_context_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "consumer_context_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "policy",
+            "status",
+            "intent",
+            "origin",
+            "differences",
+            "reasons",
+            "producer_context_sha256",
+            "consumer_context_sha256"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "result:context": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "result:context"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "policy": {
+              "type": "string"
+            },
+            "facts": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "evidence": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "policy",
+            "facts",
+            "evidence"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "result:applicability": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "result:applicability"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "reasons": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "evidence": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "status",
+            "reasons",
+            "evidence"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "result:output-metadata": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "result:output-metadata"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "engine_version": {
+              "type": "integer"
+            },
+            "flow_units": {
+              "type": "string"
+            },
+            "groups": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "const": "core:tuple"
+                              },
+                              "values": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "values"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "pollutant_units": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "variable_codes": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "const": "core:tuple"
+                              },
+                              "values": {
+                                "type": "array",
+                                "items": {
+                                  "type": "integer"
+                                }
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "values"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "periods": {
+              "type": "integer"
+            },
+            "report_step": {
+              "$ref": "#/$defs/core:duration"
+            },
+            "saved_start": {
+              "$ref": "#/$defs/core:datetime"
+            },
+            "first_time": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:datetime"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "last_time": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:datetime"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "output_offset": {
+              "type": "integer"
+            },
+            "period_bytes": {
+              "type": "integer"
+            },
+            "semantics": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "averages": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "producer": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "input_properties": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/wire-value"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "identifier_encoding": {
+              "type": "string"
+            },
+            "result_context": {
+              "$ref": "#/$defs/result:context"
+            }
+          },
+          "required": [
+            "engine_version",
+            "flow_units",
+            "groups",
+            "pollutant_units",
+            "variable_codes",
+            "periods",
+            "report_step",
+            "saved_start",
+            "first_time",
+            "last_time",
+            "output_offset",
+            "period_bytes",
+            "semantics",
+            "averages",
+            "producer",
+            "input_properties",
+            "identifier_encoding",
+            "result_context"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "report:document": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "report:document"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "raw": {
+              "$ref": "#/$defs/core:bytes"
+            },
+            "text": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "requested_encoding": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "encoding": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "diagnostics": {
+              "$ref": "#/$defs/core:validation"
+            },
+            "source": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "profile": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "decoding_strategy": {
+              "type": "string"
+            },
+            "repaired_byte_offsets": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "blocks": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/report:block"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "messages": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/core:diagnostic"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "message_contexts": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/report:message"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "raw",
+            "text",
+            "requested_encoding",
+            "encoding",
+            "diagnostics",
+            "source",
+            "profile",
+            "decoding_strategy",
+            "repaired_byte_offsets",
+            "blocks",
+            "messages",
+            "message_contexts"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "report:capture": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "report:capture"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "document": {
+              "$ref": "#/$defs/report:document"
+            },
+            "truncated": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "document",
+            "truncated"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "report:block": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "report:block"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string"
+            },
+            "start_line": {
+              "type": "integer"
+            },
+            "end_line": {
+              "type": "integer"
+            },
+            "text": {
+              "type": "string"
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:ref"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "title",
+            "kind",
+            "start_line",
+            "end_line",
+            "text",
+            "target"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "report:message": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "report:message"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "diagnostic": {
+              "$ref": "#/$defs/core:diagnostic"
+            },
+            "raw_text": {
+              "type": "string"
+            },
+            "input_line": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "input_section": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "input_text": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "input_report_span": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:span"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "model_time": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:datetime"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "diagnostic",
+            "raw_text",
+            "input_line",
+            "input_section",
+            "input_text",
+            "input_report_span",
+            "model_time"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:diagnostic": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:diagnostic"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "severity": {
+              "$ref": "#/$defs/core:severity"
+            },
+            "span": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:span"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "feature": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "section": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "object_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "field": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "severity",
+            "span",
+            "feature",
+            "section",
+            "object_id",
+            "field"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:span": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:span"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "line": {
+              "type": "integer"
+            },
+            "column": {
+              "type": "integer"
+            },
+            "end_column": {
+              "type": "integer"
+            },
+            "source": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "line",
+            "column",
+            "end_column",
+            "source"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:validation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:validation"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "diagnostics": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/core:diagnostic"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "diagnostics"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:ref": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:ref"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "collection": {
+              "type": "string"
+            },
+            "key": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "const": "core:tuple"
+                    },
+                    "values": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "values"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "collection",
+            "key"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:file": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:file"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "base_directory": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "flavor": {
+              "type": "string"
+            },
+            "direction": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "base_directory",
+            "flavor",
+            "direction"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:units": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:units"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "flow_units": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "flow_units"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:unit-rules": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:unit-rules"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "flow_from_cfs": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "si_per_us": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "key",
+            "flow_from_cfs",
+            "si_per_us"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:profile": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:profile"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "engine_version": {
+              "type": "string"
+            },
+            "sections": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:set"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "option_defaults": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/$defs/wire-value"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "unit_rules": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:unit-rules"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "section_terminators": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "transect_offset_power": {
+              "type": "integer"
+            },
+            "transect_mixed_width_scaling": {
+              "type": "boolean"
+            },
+            "climate_defaults": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/$defs/wire-value"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "report_defaults": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "core:tuple"
+                      },
+                      "values": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/$defs/wire-value"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "key",
+            "engine_version",
+            "sections",
+            "option_defaults",
+            "unit_rules",
+            "section_terminators",
+            "transect_offset_power",
+            "transect_mixed_width_scaling",
+            "climate_defaults",
+            "report_defaults"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:resolved-options": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:resolved-options"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "values": {
+              "$ref": "#/$defs/core:options"
+            },
+            "start": {
+              "$ref": "#/$defs/core:datetime"
+            },
+            "end": {
+              "$ref": "#/$defs/core:datetime"
+            },
+            "report_start": {
+              "$ref": "#/$defs/core:datetime"
+            },
+            "duration": {
+              "$ref": "#/$defs/core:duration"
+            },
+            "defaults_used": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:set"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "adjustments": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/core:option-adjustment"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            "report": {
+              "$ref": "#/$defs/core:validation"
+            }
+          },
+          "required": [
+            "values",
+            "start",
+            "end",
+            "report_start",
+            "duration",
+            "defaults_used",
+            "adjustments",
+            "report"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:option-adjustment": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:option-adjustment"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "requested": {
+              "$ref": "#/$defs/wire-value"
+            },
+            "effective": {
+              "$ref": "#/$defs/wire-value"
+            },
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "field",
+            "requested",
+            "effective",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:options": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:options"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "flow_units": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "CFS",
+                    "GPM",
+                    "MGD",
+                    "CMS",
+                    "LPS",
+                    "MLD"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "infiltration": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "HORTON",
+                    "MODIFIED_HORTON",
+                    "GREEN_AMPT",
+                    "MODIFIED_GREEN_AMPT",
+                    "CURVE_NUMBER"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "flow_routing": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "STEADY",
+                    "KINWAVE",
+                    "DYNWAVE"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "link_offsets": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "DEPTH",
+                    "ELEVATION"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "force_main_equation": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "H-W",
+                    "D-W"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ignore_rainfall": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ignore_snowmelt": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ignore_groundwater": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ignore_rdii": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ignore_routing": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ignore_quality": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "allow_ponding": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "skip_steady_state": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sys_flow_tol": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "lat_flow_tol": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "start_date": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:date"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "start_time": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:time"
+                },
+                {
+                  "$ref": "#/$defs/core:day-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "end_date": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:date"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "end_time": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:time"
+                },
+                {
+                  "$ref": "#/$defs/core:day-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "report_start_date": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:date"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "report_start_time": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:time"
+                },
+                {
+                  "$ref": "#/$defs/core:day-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sweep_start": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:month-day"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sweep_end": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:month-day"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "dry_days": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "report_step": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:duration"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "wet_step": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:duration"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "dry_step": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:duration"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "routing_step": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:duration"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "rule_step": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:duration"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "lengthening_step": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:duration"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "variable_step": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "minimum_step": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:duration"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "inertial_damping": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "NONE",
+                    "PARTIAL",
+                    "FULL"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "normal_flow_limited": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SLOPE",
+                    "FROUDE",
+                    "BOTH",
+                    "NONE"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "surcharge_method": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "EXTRAN",
+                    "SLOT"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "min_surface_area": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "min_slope": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "max_trials": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "head_tolerance": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "threads": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "slope_weighting": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "compatibility": {
+              "anyOf": [
+                {
+                  "enum": [
+                    3,
+                    4,
+                    5
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "temp_directory": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/core:file"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "flow_units",
+            "infiltration",
+            "flow_routing",
+            "link_offsets",
+            "force_main_equation",
+            "ignore_rainfall",
+            "ignore_snowmelt",
+            "ignore_groundwater",
+            "ignore_rdii",
+            "ignore_routing",
+            "ignore_quality",
+            "allow_ponding",
+            "skip_steady_state",
+            "sys_flow_tol",
+            "lat_flow_tol",
+            "start_date",
+            "start_time",
+            "end_date",
+            "end_time",
+            "report_start_date",
+            "report_start_time",
+            "sweep_start",
+            "sweep_end",
+            "dry_days",
+            "report_step",
+            "wet_step",
+            "dry_step",
+            "routing_step",
+            "rule_step",
+            "lengthening_step",
+            "variable_step",
+            "minimum_step",
+            "inertial_damping",
+            "normal_flow_limited",
+            "surcharge_method",
+            "min_surface_area",
+            "min_slope",
+            "max_trials",
+            "head_tolerance",
+            "threads",
+            "slope_weighting",
+            "compatibility",
+            "temp_directory"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:day-time": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:day-time"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "clock": {
+              "$ref": "#/$defs/core:time"
+            },
+            "day_offset": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "clock",
+            "day_offset"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:month-day": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:month-day"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "month": {
+              "type": "integer"
+            },
+            "day": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "month",
+            "day"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:report-selection": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:report-selection"
+        },
+        "fields": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": [
+                "ALL",
+                "NONE",
+                "SELECTED"
+              ]
+            },
+            "members": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "core:tuple"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/core:ref"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "mode",
+            "members"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "core:bytes": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:bytes"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "type",
+        "sha256",
+        "size"
+      ],
+      "additionalProperties": false
+    },
+    "core:tuple": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:tuple"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wire-value"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "values"
+      ],
+      "additionalProperties": false
+    },
+    "core:set": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:set"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "type",
+        "values"
+      ],
+      "additionalProperties": false
+    },
+    "core:severity": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:severity"
+        },
+        "value": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "core:date": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:date"
+        },
+        "value": {
+          "type": "string"
+        },
+        "fold": {
+          "enum": [
+            0
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "value",
+        "fold"
+      ],
+      "additionalProperties": false
+    },
+    "core:datetime": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:datetime"
+        },
+        "value": {
+          "type": "string"
+        },
+        "fold": {
+          "enum": [
+            0,
+            1
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "value",
+        "fold"
+      ],
+      "additionalProperties": false
+    },
+    "core:time": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:time"
+        },
+        "value": {
+          "type": "string"
+        },
+        "fold": {
+          "enum": [
+            0,
+            1
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "value",
+        "fold"
+      ],
+      "additionalProperties": false
+    },
+    "core:duration": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:duration"
+        },
+        "days": {
+          "type": "integer",
+          "minimum": -999999999,
+          "maximum": 999999999
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86399
+        },
+        "microseconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999999
+        }
+      },
+      "required": [
+        "type",
+        "days",
+        "seconds",
+        "microseconds"
+      ],
+      "additionalProperties": false
+    },
+    "core:json": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "core:json"
+        },
+        "raw": {
+          "$ref": "#/$defs/core:bytes"
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "raw",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "cache:hotstart": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "cache:hotstart"
+        },
+        "raw": {
+          "$ref": "#/$defs/core:bytes"
+        }
+      },
+      "required": [
+        "type",
+        "raw"
+      ],
+      "additionalProperties": false
+    },
+    "cache:interface": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "cache:interface"
+        },
+        "raw": {
+          "$ref": "#/$defs/core:bytes"
+        }
+      },
+      "required": [
+        "type",
+        "raw"
+      ],
+      "additionalProperties": false
+    },
+    "result:table": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "result:table"
+        },
+        "raw": {
+          "$ref": "#/$defs/core:bytes"
+        }
+      },
+      "required": [
+        "type",
+        "raw"
+      ],
+      "additionalProperties": false
+    },
+    "wire-value": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "string",
+            "boolean",
+            "number"
+          ]
+        },
+        {
+          "$ref": "#/$defs/run:result"
+        },
+        {
+          "$ref": "#/$defs/run:continuation"
+        },
+        {
+          "$ref": "#/$defs/run:backend-artifact"
+        },
+        {
+          "$ref": "#/$defs/run:snapshot"
+        },
+        {
+          "$ref": "#/$defs/run:artifact"
+        },
+        {
+          "$ref": "#/$defs/run:resource"
+        },
+        {
+          "$ref": "#/$defs/run:failure"
+        },
+        {
+          "$ref": "#/$defs/run:native-failure"
+        },
+        {
+          "$ref": "#/$defs/run:backend"
+        },
+        {
+          "$ref": "#/$defs/run:objects"
+        },
+        {
+          "$ref": "#/$defs/run:balance"
+        },
+        {
+          "$ref": "#/$defs/run:produced-cache"
+        },
+        {
+          "$ref": "#/$defs/run:consumed-cache"
+        },
+        {
+          "$ref": "#/$defs/run:cache-context"
+        },
+        {
+          "$ref": "#/$defs/run:cache-evidence"
+        },
+        {
+          "$ref": "#/$defs/run:cache-reuse"
+        },
+        {
+          "$ref": "#/$defs/result:context"
+        },
+        {
+          "$ref": "#/$defs/result:applicability"
+        },
+        {
+          "$ref": "#/$defs/result:output-metadata"
+        },
+        {
+          "$ref": "#/$defs/report:document"
+        },
+        {
+          "$ref": "#/$defs/report:capture"
+        },
+        {
+          "$ref": "#/$defs/report:block"
+        },
+        {
+          "$ref": "#/$defs/report:message"
+        },
+        {
+          "$ref": "#/$defs/core:diagnostic"
+        },
+        {
+          "$ref": "#/$defs/core:span"
+        },
+        {
+          "$ref": "#/$defs/core:validation"
+        },
+        {
+          "$ref": "#/$defs/core:ref"
+        },
+        {
+          "$ref": "#/$defs/core:file"
+        },
+        {
+          "$ref": "#/$defs/core:units"
+        },
+        {
+          "$ref": "#/$defs/core:unit-rules"
+        },
+        {
+          "$ref": "#/$defs/core:profile"
+        },
+        {
+          "$ref": "#/$defs/core:resolved-options"
+        },
+        {
+          "$ref": "#/$defs/core:option-adjustment"
+        },
+        {
+          "$ref": "#/$defs/core:options"
+        },
+        {
+          "$ref": "#/$defs/core:day-time"
+        },
+        {
+          "$ref": "#/$defs/core:month-day"
+        },
+        {
+          "$ref": "#/$defs/core:report-selection"
+        },
+        {
+          "$ref": "#/$defs/core:bytes"
+        },
+        {
+          "$ref": "#/$defs/core:tuple"
+        },
+        {
+          "$ref": "#/$defs/core:set"
+        },
+        {
+          "$ref": "#/$defs/core:severity"
+        },
+        {
+          "$ref": "#/$defs/core:date"
+        },
+        {
+          "$ref": "#/$defs/core:datetime"
+        },
+        {
+          "$ref": "#/$defs/core:time"
+        },
+        {
+          "$ref": "#/$defs/core:duration"
+        },
+        {
+          "$ref": "#/$defs/core:json"
+        },
+        {
+          "$ref": "#/$defs/cache:hotstart"
+        },
+        {
+          "$ref": "#/$defs/cache:interface"
+        },
+        {
+          "$ref": "#/$defs/result:table"
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "easysewer:run-result"
+    },
+    "schema_version": {
+      "const": "1.1"
+    },
+    "result": {
+      "$ref": "#/$defs/run:result"
+    },
+    "blobs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "properties": {
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "sha256",
+          "size"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "kind",
+    "schema_version",
+    "result",
+    "blobs"
+  ],
+  "additionalProperties": false
+}
