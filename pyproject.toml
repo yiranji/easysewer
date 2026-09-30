@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=65.0", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -20,8 +20,10 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/yiranji/easysewer"
-Documentation = "https://github.com/yiranji/easysewer"
+Homepage = "https://github.com/Jistill/easysewer"
+Documentation = "https://github.com/Jistill/easysewer/blob/master/docs/README.md"
+Source = "https://github.com/Jistill/easysewer"
+Issues = "https://github.com/Jistill/easysewer/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

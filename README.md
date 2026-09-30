@@ -1,27 +1,29 @@
-![EasySewer](https://raw.githubusercontent.com/yiranji/easysewer/master/assets/icon.png)
+![EasySewer](https://raw.githubusercontent.com/Jistill/easysewer/master/assets/icon.png)
 
 # EasySewer
 > An urban drainage modeling toolkit
 
 EasySewer 2.0 uses `from easysewer import Model` for its typed model API.
-See the [delivery scope and follow-up work](docs/2.0-delivery.md),
-[first runnable example](docs/2.0-first-run.md) and [model guide](docs/2.0-model.md).
+See the [delivery scope and follow-up work](https://github.com/Jistill/easysewer/blob/master/docs/2.0-delivery.md),
+[first runnable example](https://github.com/Jistill/easysewer/blob/master/docs/2.0-first-run.md) and [model guide](https://github.com/Jistill/easysewer/blob/master/docs/2.0-model.md).
 EasySewer 2.0 does not support 1.x APIs or proprietary data migration.
 Use the 2.0 model/runtime APIs and standard SWMM INP or current Model JSON.
 
-## Run the local 2.0 package
+## Installation
 
 ```console
-python -m pip install dist/2.0.0/native/easysewer-2.0.0-py3-none-any.whl
-python examples/v2_first_run.py runs/first-example
+python -m pip install easysewer==2.0.0
+python -c "from easysewer import Model; print(Model())"
 ```
 
-Use a new output directory each time. Python 3.10+ is required. The native package
-bundles Windows/Linux solver libraries; `dist/2.0.0/pure/` contains the
-pure Python package for modeling, conversion and portable result reading.
+Python 3.10+ is required. The PyPI distribution includes Windows/Linux native
+solver libraries. Simulation requires a compatible native backend; package
+installation alone does not establish solver availability on every platform.
+Modeling, conversion and pure result reading do not require a native solver.
+See [installation and backend checks](https://github.com/Jistill/easysewer/blob/master/docs/2.0-installation.md).
 
-See the [documentation index](docs/README.md) for installation, the Quick Start notebook,
-modeling, runtime, results, maintenance and known limits. The [editable network example](examples/v2_edit_model.py)
+See the [documentation index](https://github.com/Jistill/easysewer/blob/master/docs/README.md) for installation, the Quick Start notebook,
+modeling, runtime, results, maintenance and known limits. The [editable network example](https://github.com/Jistill/easysewer/blob/master/examples/v2_edit_model.py)
 demonstrates reference updates and transaction rollback.
 
 ## Introduction
