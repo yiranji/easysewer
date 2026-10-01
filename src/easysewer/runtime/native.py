@@ -8,7 +8,7 @@ import struct
 import sys
 
 from .backend import BackendInfo, NativeFailure, SessionError
-from ..utils import probe_library_path
+from ..utils import _packaged_native_platform_error, probe_library_path
 
 
 _LEGACY_HASHES = {
@@ -114,9 +114,17 @@ class StandardBackend:
             capabilities=capabilities)
 
     def _check_runtime(self):
+        if self.library is None:
+            reason = _packaged_native_platform_error()
+            if reason:
+                raise SessionError(NativeFailure(stage='load', code=None, message=reason))
         path, _ = self._selection()
         if not path or not Path(path).is_file():
-            raise SessionError(NativeFailure(stage='load', code=None, message='Native SWMM library is absent'))
+            reason = (f'Selected native library is absent or not a regular file: {path}' if self.library else
+                      'Native SWMM library is absent from this package. The pure package does not '
+                      'include a solver; install the native package on a supported platform or '
+                      'select a compatible library explicitly')
+            raise SessionError(NativeFailure(stage='load', code=None, message=reason))
         if sys.platform in ('emscripten', 'wasi') or getattr(sys, 'frozen', False):
             raise SessionError(NativeFailure(stage='launch', code=None,
                 message='This runtime cannot launch the Python SWMM worker'))
@@ -147,9 +155,29 @@ class StandardBackend:
                 raise
             raise SessionError(NativeFailure(stage='launch', code=None,
                 message='The process backend is not included in this package profile')) from error
-        return ProcessSession(self, path, working_directory=working_directory,
-                              call_timeout=call_timeout, cancel_event=cancel_event, poll_interval=poll_interval,
-                              _execution_guard=_execution_guard)
+        try:
+            return ProcessSession(self, path, working_directory=working_directory,
+                                  call_timeout=call_timeout, cancel_event=cancel_event, poll_interval=poll_interval,
+                                  _execution_guard=_execution_guard)
+        except SessionError as error:
+            # Keep the original loader evidence. These requirements belong to
+            # bundled Linux bytes, not arbitrary compatible user libraries.
+            hint = None
+            if self.library is None and platform.system() == 'Linux' and type(error) is SessionError and error.failure.stage == 'load':
+                message = error.failure.message
+                if 'libgomp.so.1' in message and 'cannot open shared object file' in message:
+                    hint = ('Packaged Linux solvers require the OpenMP runtime libgomp.so.1 '
+                            '(libgomp1 on Debian/Ubuntu, libgomp on Fedora/RHEL)')
+                elif re.search(r'GLIBC_\d+\.\d+', message) and 'not found' in message:
+                    hint = ('Packaged Linux solvers require glibc 2.33 or newer; use a compatible '
+                            'runtime or rebuild a solver for the target system')
+            if hint is None:
+                raise
+            failure = replace(error.failure, message=f'{error.failure.message}. {hint}')
+            enriched = SessionError(failure, cleanup=error.cleanup, stderr=error.stderr, returncode=error.returncode)
+            if hasattr(error, 'backend_metadata'):
+                enriched.backend_metadata = error.backend_metadata
+            raise enriched from error
 
 
 # Capture the participating implementation, not a subsequently overridden factory.

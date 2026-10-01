@@ -7,6 +7,12 @@ files after CRLF-to-LF normalization. The source is available from the
 The original checkout stays unchanged. This is a separately identified EasySewer
 build of the standard equations, with the corrections below.
 
+The bundled libraries target x86-64 Windows/Linux with 64-bit Python. The
+current Linux solver imports `libm.so.6`, `libc.so.6` (including `GLIBC_2.33`)
+and `libgomp.so.1` (including `GOMP_4.0`/`OMP_1.0`). A glibc 2.33+ runtime and
+OpenMP runtime are therefore required; the Python wheel's `any` tag does not
+establish native compatibility. See [installation and backend probing](../../docs/2.0-installation.md).
+
 `prepare.py` checks every source digest and patch anchor before writing a separate
 empty destination. The prepared manifest records the original identity, recipe
 digests, patch `easysewer:standard:5.2.4:16`, and all resulting source digests.
