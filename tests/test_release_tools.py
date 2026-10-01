@@ -26,6 +26,40 @@ qualify = load_tool('qualify_release')
 pure = load_tool('build_pure')
 
 
+class QualificationSelectionTests(unittest.TestCase):
+    def test_native_defaults_include_directory_publication_and_checkpoint_regressions(self):
+        required = ('test_native_output_containment_v2',
+                    'test_native_public_directory_checkpoint_v2',
+                    'test_native_output_directory_checkpoint_v2')
+        for platform in ('linux', 'win32'):
+            with self.subTest(platform=platform):
+                names = qualify.default_test_names(platform=platform)
+                for name in required:
+                    self.assertEqual(names.count(name), 1, name)
+                self.assertEqual(len(names), len(set(names)))
+
+    def test_pure_defaults_remain_unchanged_on_windows_and_linux(self):
+        expected = ['test_public_api_v2', 'test_edit_workflow_v2', 'test_scenario_v2',
+                    'test_project_v2', 'test_json_v2', 'test_runner_v2', 'test_output_v2', 'test_report_v2']
+        for platform in ('linux', 'win32'):
+            with self.subTest(platform=platform):
+                self.assertEqual(qualify.default_test_names(pure=True, platform=platform), expected)
+
+    def test_windows_error_mode_is_only_selected_for_native_windows(self):
+        for platform in ('linux', 'win32'):
+            for pure in (False, True):
+                with self.subTest(platform=platform, pure=pure):
+                    names = qualify.default_test_names(pure=pure, platform=platform)
+                    self.assertEqual('test_native_windows_error_mode' in names,
+                                     platform == 'win32' and not pure)
+
+    def test_default_test_selections_do_not_share_mutable_state(self):
+        first = qualify.default_test_names(platform='linux')
+        expected = list(first)
+        first.clear()
+        self.assertEqual(qualify.default_test_names(platform='linux'), expected)
+
+
 class ReleaseGateTests(unittest.TestCase):
     def assert_optimized_cli_is_rejected(self, options=(), **environment):
         with tempfile.TemporaryDirectory() as directory:

@@ -8,6 +8,23 @@ import sys
 import unittest
 
 
+def default_test_names(*, pure=False, platform=None):
+    """Select release regressions without importing a backend or its tests."""
+    names = ['test_public_api_v2', 'test_edit_workflow_v2', 'test_scenario_v2',
+             'test_project_v2', 'test_json_v2', 'test_runner_v2', 'test_output_v2', 'test_report_v2']
+    if not pure:
+        names += ['test_native_platform_diagnostics', 'test_backend_identity_v2',
+                  'test_native_edit_workflow_v2', 'test_native_v2_runner',
+                  'test_native_v2_flexible', 'test_native_v2_result_archive',
+                  'test_native_v2_scenario', 'test_native_v2_project',
+                  'test_native_output_containment_v2',
+                  'test_native_public_directory_checkpoint_v2',
+                  'test_native_output_directory_checkpoint_v2']
+        if (sys.platform if platform is None else platform) == 'win32':
+            names += ['test_native_windows_error_mode']
+    return names
+
+
 def check_test_result(result, summary):
     """Reject empty, skipped and unsuccessful runs, including under python -O."""
     if not result.testsRun or not result.wasSuccessful() or result.skipped:
@@ -45,16 +62,7 @@ def main():
                 'Options', 'Rain', 'SolverAPI', 'OutputAPI', 'compat'))
     sys.path.insert(1, str(root / 'tests'))
     sys.path.insert(2, str(root / 'examples'))
-    names = ['test_public_api_v2', 'test_edit_workflow_v2', 'test_scenario_v2',
-             'test_project_v2', 'test_json_v2', 'test_runner_v2', 'test_output_v2', 'test_report_v2']
-    if not args.pure:
-        names += ['test_native_platform_diagnostics', 'test_backend_identity_v2',
-                  'test_native_edit_workflow_v2', 'test_native_v2_runner',
-                  'test_native_v2_flexible', 'test_native_v2_result_archive',
-                  'test_native_v2_scenario', 'test_native_v2_project']
-        if sys.platform == 'win32':
-            names += ['test_native_windows_error_mode']
-    suite = unittest.defaultTestLoader.loadTestsFromNames(args.tests or names)
+    suite = unittest.defaultTestLoader.loadTestsFromNames(args.tests or default_test_names(pure=args.pure))
     excluded = []
     if args.pure:
         native_transport_test = 'test_runner_v2.RunnerPolicyTests.test_blocked_step_obeys_whole_run_deadline_and_external_cancellation'
