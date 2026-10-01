@@ -62,6 +62,7 @@ jobs:
             build/release/native/*.whl
             build/release/native/*.tar.gz
             build/release/pure/*.whl
+            build/release/extract_sdist.py
           if-no-files-found: error
           retention-days: 7
       - name: Save build evidence
@@ -100,12 +101,11 @@ jobs:
           name: release-packages
           path: packages
       - name: Extract shipped tests and tools
-        # Current patch releases of every supported Python have the data filter.
+        # Windows Python 3.10.11 predates tarfile's data filter. The shipped
+        # helper validates paths/types and safely copies files on older Python.
         run: >-
-          python -c "from pathlib import Path; import tarfile;
-          archive, = Path('packages/native').glob('*.tar.gz');
-          stream = tarfile.open(archive);
-          stream.extractall('source', filter='data'); stream.close()"
+          python packages/extract_sdist.py
+          --archive packages/native/*.tar.gz --output source
       - name: Install native and pure wheels in separate directories
         run: |
           python -m pip install --no-index --no-deps --no-compile --target installed-native packages/native/*.whl

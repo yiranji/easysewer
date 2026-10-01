@@ -11,6 +11,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,6 +40,130 @@ def load_tool(name):
 audit_sdist = load_tool('audit_sdist_tests')
 qualify = load_tool('qualify_release')
 pure = load_tool('build_pure')
+extractor = load_tool('extract_sdist')
+
+
+class SourceArchiveExtractionTests(unittest.TestCase):
+    filter_modes = (False, True) if hasattr(tarfile, 'data_filter') else (True,)
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.archive = self.root / 'release.tar.gz'
+
+    def write_archive(self, entries):
+        with tarfile.open(self.archive, 'w:gz') as stream:
+            for name, kind, raw in entries:
+                member = tarfile.TarInfo(name)
+                member.type = kind
+                member.mode = 0o6777
+                member.linkname = '../outside'
+                member.size = len(raw) if kind == tarfile.REGTYPE else 0
+                stream.addfile(member, io.BytesIO(raw) if kind == tarfile.REGTYPE else None)
+
+    def entries(self):
+        return [('release', tarfile.DIRTYPE, b''),
+                ('release/tests/input.bin', tarfile.REGTYPE, b'\x00\xff\r\n'),
+                ('release/empty', tarfile.DIRTYPE, b'')]
+
+    def test_current_and_legacy_paths_preserve_files_and_directories(self):
+        self.write_archive(self.entries())
+        original_extractall = tarfile.TarFile.extractall
+        for legacy in self.filter_modes:
+            with self.subTest(legacy=legacy):
+                output = self.root / str(legacy)
+                data_filter = None if legacy else tarfile.data_filter
+                with mock.patch.object(tarfile, 'data_filter', data_filter, create=True), \
+                        mock.patch.object(tarfile.TarFile, 'extractall', autospec=True,
+                                          side_effect=original_extractall) as extractall:
+                    extractor.extract_sdist(self.archive, output)
+                if legacy:
+                    extractall.assert_not_called()
+                    if os.name != 'nt':
+                        self.assertEqual((output / 'release/tests/input.bin').stat().st_mode & 0o6000, 0)
+                else:
+                    self.assertEqual(extractall.call_count, 1)
+                    self.assertEqual(extractall.call_args.kwargs['filter'], 'data')
+                self.assertEqual((output / 'release/tests/input.bin').read_bytes(), b'\x00\xff\r\n')
+                self.assertTrue((output / 'release/empty').is_dir())
+
+    def assert_rejected_before_extraction(self, entries):
+        self.write_archive(entries)
+        for legacy in self.filter_modes:
+            with self.subTest(legacy=legacy):
+                output = self.root / 'must-not-exist'
+                with mock.patch.object(tarfile, 'data_filter', None if legacy else tarfile.data_filter, create=True):
+                    with self.assertRaises(ValueError):
+                        extractor.extract_sdist(self.archive, output)
+                self.assertFalse(output.exists())
+
+    def test_traversal_absolute_and_windows_alias_paths_are_rejected(self):
+        names = ('../outside', '/outside', 'release/../../outside', 'release/./file',
+                 'release//file', 'C:/outside', 'C:outside', '\\\\server\\share\\file',
+                 'release\\..\\outside', 'release/file:stream', 'release/NUL',
+                 'release/CON.txt', 'release/file.', 'release/file ', 'release/a\nfile')
+        for name in names:
+            with self.subTest(name=name):
+                self.assert_rejected_before_extraction(self.entries() + [(name, tarfile.REGTYPE, b'bad')])
+
+    def test_links_devices_fifos_and_unknown_member_types_are_rejected(self):
+        for kind in (tarfile.SYMTYPE, tarfile.LNKTYPE, tarfile.CHRTYPE,
+                     tarfile.BLKTYPE, tarfile.FIFOTYPE, b'Z'):
+            with self.subTest(kind=kind):
+                self.assert_rejected_before_extraction(self.entries() + [('release/bad', kind, b'')])
+
+    def test_empty_duplicate_case_alias_and_file_parent_archives_are_rejected(self):
+        cases = [[], self.entries() + [self.entries()[1]],
+                 self.entries() + [('Release/extra', tarfile.REGTYPE, b'')],
+                 self.entries() + [('release/tests/input.bin/child', tarfile.REGTYPE, b'')],
+                 [('release/file/child', tarfile.REGTYPE, b''), ('release/file', tarfile.REGTYPE, b'')]]
+        for entries in cases:
+            with self.subTest(entries=entries):
+                self.assert_rejected_before_extraction(entries)
+
+    def test_existing_destination_is_never_reused(self):
+        self.write_archive(self.entries())
+        for kind in ('file', 'directory', 'dangling-symlink'):
+            with self.subTest(kind=kind):
+                output = self.root / kind
+                if kind == 'file':
+                    output.write_bytes(b'keep')
+                elif kind == 'directory':
+                    output.mkdir()
+                    (output / 'keep').write_bytes(b'keep')
+                with mock.patch.object(Path, 'is_symlink', return_value=kind == 'dangling-symlink'):
+                    with self.assertRaises(FileExistsError):
+                        extractor.extract_sdist(self.archive, output)
+                if kind == 'file':
+                    self.assertEqual(output.read_bytes(), b'keep')
+                elif kind == 'directory':
+                    self.assertEqual(list(output.iterdir()), [output / 'keep'])
+
+    def test_current_filter_errors_are_not_retried_without_a_filter(self):
+        self.write_archive(self.entries())
+        with mock.patch.object(tarfile, 'data_filter', lambda member, path: member, create=True), \
+                mock.patch.object(tarfile.TarFile, 'extractall', side_effect=TypeError('filter failure')) as extractall:
+            with self.assertRaisesRegex(TypeError, 'filter failure'):
+                extractor.extract_sdist(self.archive, self.root / 'output')
+        self.assertEqual(extractall.call_count, 1)
+        self.assertEqual(list((self.root / 'output').iterdir()), [])
+
+    def test_standalone_cli_works_without_checkout_or_installed_package(self):
+        self.write_archive(self.entries())
+        helper = self.root / 'extract_sdist.py'
+        helper.write_bytes((ROOT / 'tools/extract_sdist.py').read_bytes())
+        for legacy in (False, True):
+            with self.subTest(legacy=legacy):
+                output = self.root / ('cli-' + str(legacy))
+                command = [sys.executable, '-I', '-B']
+                if legacy:
+                    command += ['-c', 'import runpy, sys, tarfile; tarfile.data_filter = None; '
+                                'sys.argv = sys.argv[1:]; runpy.run_path(sys.argv[0], run_name="__main__")']
+                command += [str(helper), '--archive', str(self.archive), '--output', str(output)]
+                result = subprocess.run(command, cwd=self.root, capture_output=True, text=True, timeout=30)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((output / 'release/tests/input.bin').read_bytes(), b'\x00\xff\r\n')
 
 
 class QualificationSelectionTests(unittest.TestCase):
