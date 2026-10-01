@@ -8,6 +8,12 @@ import sys
 import unittest
 
 
+def check_test_result(result, summary):
+    """Reject empty, skipped and unsuccessful runs, including under python -O."""
+    if not result.testsRun or not result.wasSuccessful() or result.skipped:
+        raise RuntimeError('Release qualification failed; see tests.log: ' + json.dumps(summary))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--package', type=Path, required=True)
@@ -16,6 +22,9 @@ def main():
     parser.add_argument('--archive', type=Path)
     parser.add_argument('--tests', nargs='+', help='Explicit test names for a targeted recheck')
     args = parser.parse_args()
+    # The entry-point checks and shipped example contain assertions, too.
+    if sys.flags.optimize:
+        parser.error('Release validation requires assertions; run without -O, -OO or PYTHONOPTIMIZE.')
     root = Path(__file__).resolve().parents[1]
     package, output = args.package.resolve(), args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -39,7 +48,8 @@ def main():
     names = ['test_public_api_v2', 'test_edit_workflow_v2', 'test_scenario_v2',
              'test_project_v2', 'test_json_v2', 'test_runner_v2', 'test_output_v2', 'test_report_v2']
     if not args.pure:
-        names += ['test_native_edit_workflow_v2', 'test_native_v2_runner',
+        names += ['test_native_platform_diagnostics', 'test_backend_identity_v2',
+                  'test_native_edit_workflow_v2', 'test_native_v2_runner',
                   'test_native_v2_flexible', 'test_native_v2_result_archive',
                   'test_native_v2_scenario', 'test_native_v2_project']
         if sys.platform == 'win32':
@@ -63,7 +73,7 @@ def main():
                    tests=result.testsRun, failures=len(result.failures), errors=len(result.errors),
                    skips=result.skipped, pure=args.pure, excluded_by_profile=excluded)
     (output / 'tests.json').write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
-    assert result.wasSuccessful() and not result.skipped, summary
+    check_test_result(result, summary)
     # Execute the shipped example, including native solve and moved archive reads.
     sys.argv = [str(root / 'examples/v2_first_run.py'), str(output / 'first-run')]
     if args.pure:

@@ -19,6 +19,10 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--python', default=sys.executable)
     args = parser.parse_args()
+    # The documentation and archive auditors also use assertions. Fail before
+    # creating output rather than silently omitting release gates under -O.
+    if sys.flags.optimize:
+        parser.error('Release validation requires assertions; run without -O, -OO or PYTHONOPTIMIZE.')
     root = Path(__file__).resolve().parents[1]
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)

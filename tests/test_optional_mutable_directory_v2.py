@@ -1,7 +1,7 @@
 """Initial absence, later creation/deletion, and lossless nullable directory state."""
 from pathlib import Path
 from dataclasses import replace
-import json,os,subprocess,sys,tempfile,unittest
+import json,subprocess,sys,tempfile,unittest
 from unittest.mock import patch
 from easysewer.runtime import _preparation as prep
 from easysewer.runtime import _checkpoint_container as storage
@@ -12,6 +12,7 @@ from easysewer.runtime.results import DirectoryArtifact,RunResult
 from easysewer.runtime._result_codec import Codec
 from easysewer.runtime._checkpoint_context import write,read
 from easysewer.io.interface_inspection import InterfaceInspection
+from directory_history_fixture import historical_package
 from directory_roundtrip_fixture import prepared,row,schema
 from test_checkpoint_container_v2 import snapshot,native_prefix,rewrite
 import test_mutable_directory_v2 as mutable_fixture
@@ -136,7 +137,7 @@ class OptionalMutableDirectoryTests(unittest.TestCase):
     with self.assertRaises(ValueError):prep.stage(model,plans,work,'assets',checkpoint=change)
     self.assertEqual(fired,[True]);self.assertEqual(source.exists(),not existed)
     if not existed:self.assertEqual((source/'external').read_bytes(),b'external')
- def test_new_versions_reject_silent_legacy_absence_and_actual_old_readers(self):
+ def test_new_versions_reject_silent_legacy_absence(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);_,work,value,_=self.setup(root);r=value.resources[0];digest,_=write(root/'context',value);self.assertEqual(read(root/'context',digest),value);self.assertEqual(json.loads((root/'context/context.json').read_bytes())['version'],4);self.assertEqual(json.loads(record(root/'record',value))['schema_version'],'1.4')
    artifact=self.artifacts(work,value)[0]
@@ -146,11 +147,15 @@ class OptionalMutableDirectoryTests(unittest.TestCase):
      with self.assertRaises(ValueError):Codec(object(),result_version=version).encode(item)
      with self.assertRaises(ValueError):Codec(object(),result_version=version).decode(encoded)
    self.failed(work,value).save(root/'archive');self.save(root/'checkpoint',value)
-   previous=Path(os.environ.get('EASYSEWER_DIRECTORY_HISTORY_ROOT',Path(__file__).resolve().parent.parent))/'candidate-v14'
-   code="import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime import RunResult;from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[2]);\nfor f in (lambda:RunResult.load(root/'archive'),lambda:read(root/'context',sys.argv[3]),lambda:load(root/'checkpoint')):\n try:f()\n except ValueError:pass\n else:raise AssertionError('Old reader accepted directory absence')"
-   child=subprocess.run([sys.executable,'-I','-B','-c',code,str(previous),str(root),digest],capture_output=True,text=True);self.assertEqual(child.returncode,0,child.stdout+child.stderr)
    rewrite(root/'checkpoint',lambda d:d.update(schema_version='1.2'))
    with self.assertRaises((ValueError,TypeError)):storage.load(root/'checkpoint')
+ def test_historical_candidate_v14_readers_reject_directory_absence(self):
+  previous=historical_package('candidate-v14')
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp);_,work,value,_=self.setup(root);digest,_=write(root/'context',value)
+   self.failed(work,value).save(root/'archive');self.save(root/'checkpoint',value)
+   code="import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime import RunResult;from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[2]);\nfor f in (lambda:RunResult.load(root/'archive'),lambda:read(root/'context',sys.argv[3]),lambda:load(root/'checkpoint')):\n try:f()\n except ValueError:pass\n else:raise AssertionError('Old reader accepted directory absence')"
+   child=subprocess.run([sys.executable,'-I','-B','-c',code,str(previous),str(root),digest],capture_output=True,text=True,timeout=45);self.assertEqual(child.returncode,0,child.stdout+child.stderr)
  def test_absence_changes_during_output_capture_refuse_commit_and_retry(self):
   from types import SimpleNamespace
   with tempfile.TemporaryDirectory() as tmp:
