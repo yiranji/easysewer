@@ -116,6 +116,19 @@ jobs:
         run: >-
           python source/*/tools/qualify_release.py --package installed-pure --pure
           --output checks/pure --archive checks/native/first-run/archive-moved
+      - name: Check Windows file sharing and directory recovery
+        if: runner.os == 'Windows'
+        run: >-
+          python source/*/tools/qualify_release.py --package installed-native
+          --output checks/windows-files --tests
+          test_recovery_journal_readers_v2.WindowsJournalReaders.test_nonsharing_reader_preserves_destination_and_retry
+          test_recovery_journal_readers_v2.WindowsJournalReaders.test_readonly_destination_preserved
+          test_recovery_journal_readers_v2.WindowsJournalReaders.test_extended_path_and_unicode_replacement
+          test_recovery_journal_readers_v2.WindowsJournalReaders.test_native_replace_missing_target_and_source_sharing_denial
+          test_recovery_journal_readers_v2.WindowsPathCodeUnits.test_existing_windows_surrogate_path_retains_exact_name
+          test_windows_directory_handles_v2.WindowsDirectoryHandleTests.test_archive_moves_fail_with_nonsharing_handle_and_succeed_after_release
+          test_windows_directory_handles_v2.WindowsDirectoryHandleTests.test_existing_directory_lock_rolls_back_prior_output_and_allows_fresh_retry
+          test_windows_directory_handles_v2.WindowsDirectoryHandleTests.test_prepared_directory_lock_retains_recovery_then_cleans_after_release
       - name: Save qualification evidence
         if: always()
         uses: actions/upload-artifact@v7

@@ -1,5 +1,6 @@
 """Release gates must fail closed and preserve the authored archive inputs."""
 
+import ast
 import importlib.util
 import io
 import json
@@ -13,6 +14,19 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# The workflow selects these exact methods with --tests. Keep this inventory
+# independent of .github: the source distribution ships tests, not workflows.
+WINDOWS_FILE_TESTS = (
+    'test_recovery_journal_readers_v2.WindowsJournalReaders.test_nonsharing_reader_preserves_destination_and_retry',
+    'test_recovery_journal_readers_v2.WindowsJournalReaders.test_readonly_destination_preserved',
+    'test_recovery_journal_readers_v2.WindowsJournalReaders.test_extended_path_and_unicode_replacement',
+    'test_recovery_journal_readers_v2.WindowsJournalReaders.test_native_replace_missing_target_and_source_sharing_denial',
+    'test_recovery_journal_readers_v2.WindowsPathCodeUnits.test_existing_windows_surrogate_path_retains_exact_name',
+    'test_windows_directory_handles_v2.WindowsDirectoryHandleTests.test_archive_moves_fail_with_nonsharing_handle_and_succeed_after_release',
+    'test_windows_directory_handles_v2.WindowsDirectoryHandleTests.test_existing_directory_lock_rolls_back_prior_output_and_allows_fresh_retry',
+    'test_windows_directory_handles_v2.WindowsDirectoryHandleTests.test_prepared_directory_lock_retains_recovery_then_cleans_after_release',
+)
 
 
 def load_tool(name):
@@ -28,6 +42,36 @@ pure = load_tool('build_pure')
 
 
 class QualificationSelectionTests(unittest.TestCase):
+    def test_windows_file_gate_has_exactly_eight_existing_platform_guarded_methods(self):
+        self.assertEqual(len(WINDOWS_FILE_TESTS), 8)
+        self.assertEqual(len(set(WINDOWS_FILE_TESTS)), 8)
+        selected = {}
+        for name in WINDOWS_FILE_TESTS:
+            module, cls, method = name.split('.')
+            selected.setdefault((module, cls), set()).add(method)
+        self.assertEqual({cls: len(methods) for (_, cls), methods in selected.items()},
+                         {'WindowsJournalReaders': 4, 'WindowsPathCodeUnits': 1,
+                          'WindowsDirectoryHandleTests': 3})
+        expected_guard = ast.dump(ast.parse("os.name == 'nt'", mode='eval').body)
+        for (module, cls), methods in selected.items():
+            with self.subTest(module=module, cls=cls):
+                tree = ast.parse((ROOT / 'tests' / (module + '.py')).read_text(encoding='utf-8'))
+                definition, = (node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == cls)
+                actual = {node.name for node in definition.body
+                          if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith('test')}
+                self.assertEqual(actual, methods)
+                self.assertTrue(any(isinstance(decorator, ast.Call) and
+                                    ast.unparse(decorator.func) == 'unittest.skipUnless' and
+                                    decorator.args and ast.dump(decorator.args[0]) == expected_guard
+                                    for decorator in definition.decorator_list))
+
+    def test_windows_file_gate_remains_separate_from_default_profiles(self):
+        modules = {name.split('.')[0] for name in WINDOWS_FILE_TESTS}
+        for platform in ('linux', 'win32'):
+            for pure in (False, True):
+                with self.subTest(platform=platform, pure=pure):
+                    self.assertFalse(modules.intersection(qualify.default_test_names(pure=pure, platform=platform)))
+
     def test_native_defaults_include_directory_publication_and_checkpoint_regressions(self):
         required = ('test_native_output_containment_v2',
                     'test_native_public_directory_checkpoint_v2',
