@@ -29,6 +29,27 @@ class DirectoryHistoryFixtureTests(unittest.TestCase):
         )
         return package
 
+    def directory_link(self, link, target):
+        """Use real links when supported; emulate them without requiring privileges."""
+        try:
+            link.symlink_to(target, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            # Windows may lack symlink privileges. Keep fixture-selection
+            # coverage without adding a platform-dependent test skip.
+            lexists = os.path.lexists
+            is_dir, is_file = Path.is_dir, Path.is_file
+            def mapped(path):
+                return target / path.relative_to(link) if path.is_relative_to(link) else path
+            patches = (
+                patch("directory_history_fixture.os.path.lexists",
+                      side_effect=lambda path: path == link or lexists(path)),
+                patch.object(Path, "is_dir", lambda path: is_dir(mapped(path))),
+                patch.object(Path, "is_file", lambda path: is_file(mapped(path))),
+            )
+            for replacement in patches:
+                replacement.start()
+                self.addCleanup(replacement.stop)
+
     def test_absent_default_root_skips_with_candidate_and_setup_reason(self):
         with self.assertRaises(unittest.SkipTest) as caught:
             historical_package("candidate-v12", default_root=self.root / "missing")
@@ -76,6 +97,35 @@ class DirectoryHistoryFixtureTests(unittest.TestCase):
         (self.root / "candidate-v12").write_text("not a package", encoding="utf-8")
         with self.assertRaisesRegex(AssertionError, "candidate-v12.*not a directory"):
             historical_package("candidate-v12", default_root=self.root)
+
+    def test_dangling_candidate_link_fails_instead_of_skipping(self):
+        self.directory_link(self.root / "candidate-v12", self.root / "missing")
+        for explicit in (False, True):
+            with self.subTest(explicit=explicit):
+                if explicit:
+                    os.environ[HISTORY_ROOT_ENV] = str(self.root)
+                with self.assertRaisesRegex(AssertionError, "candidate-v12.*not a directory"):
+                    historical_package("candidate-v12", default_root=self.root)
+
+    def test_dangling_root_link_fails_instead_of_skipping(self):
+        link = self.root / "history"
+        self.directory_link(link, self.root / "missing")
+        for explicit in (False, True):
+            with self.subTest(explicit=explicit):
+                if explicit:
+                    os.environ[HISTORY_ROOT_ENV] = str(link)
+                with self.assertRaisesRegex(AssertionError, "root:.*not a directory"):
+                    historical_package("candidate-v12", default_root=link)
+
+    def test_valid_candidate_link_is_supported(self):
+        target = self.fixture(self.root / "preserved")
+        link = self.root / "candidate-v12"
+        self.directory_link(link, target)
+        for explicit in (False, True):
+            with self.subTest(explicit=explicit):
+                if explicit:
+                    os.environ[HISTORY_ROOT_ENV] = str(self.root)
+                self.assertEqual(historical_package("candidate-v12", default_root=self.root), link)
 
     def test_incomplete_default_candidate_fails_instead_of_skipping(self):
         (self.root / "candidate-v12").mkdir()

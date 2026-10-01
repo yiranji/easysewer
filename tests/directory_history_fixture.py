@@ -25,10 +25,10 @@ def historical_package(candidate, *, default_root=None):
         configured = os.environ[HISTORY_ROOT_ENV]
         if not configured.strip():
             raise AssertionError(f"{HISTORY_ROOT_ENV} is explicitly set but empty")
-        root = Path(configured).expanduser().resolve()
+        root = Path(configured).expanduser().absolute()
     else:
         root = (Path(default_root) if default_root is not None
-                else Path(__file__).resolve().parent.parent).resolve()
+                else Path(__file__).resolve().parent.parent).absolute()
 
     def missing(path):
         detail = f"historical reader {candidate} is unavailable: {path} does not exist"
@@ -38,12 +38,15 @@ def historical_package(candidate, *, default_root=None):
             f"Optional {detail}; set {HISTORY_ROOT_ENV} to preserved candidate installations"
         )
 
-    if not root.exists():
+    # Check the directory entry before following links: a dangling fixture link
+    # is a malformed installation, not an absent optional fixture.
+    if not os.path.lexists(root):
         missing(root)
     if not root.is_dir():
         raise AssertionError(f"Invalid {HISTORY_ROOT_ENV} root: {root} is not a directory")
+    root = root.resolve()
     package = root / candidate
-    if not package.exists():
+    if not os.path.lexists(package):
         missing(package)
     if not package.is_dir():
         raise AssertionError(f"Invalid historical reader {candidate}: {package} is not a directory")
