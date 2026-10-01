@@ -10,6 +10,7 @@ import os
 import sys
 import platform
 import struct
+import sysconfig
 
 
 class NativeCapabilityError(RuntimeError):
@@ -27,9 +28,19 @@ def _packaged_native_platform_error() -> str | None:
     if system not in ('Windows', 'Linux'):
         return (f'Packaged native libraries support Windows and Linux only; '
                 f'current runtime is {system} {machine} ({bits}-bit Python)')
-    if machine.lower() not in ('x86_64', 'amd64') or bits != 64:
+    if system == 'Windows':
+        # platform.machine() can describe the physical ARM64 CPU even when
+        # x64 Python runs under Windows emulation. DLL loading follows the
+        # interpreter ABI, which sysconfig reports independently of that CPU.
+        python_platform = sysconfig.get_platform()
+        compatible = python_platform == 'win-amd64'
+        runtime = f'{system} {machine} ({python_platform}, {bits}-bit Python)'
+    else:
+        compatible = machine.lower() in ('x86_64', 'amd64')
+        runtime = f'{system} {machine} ({bits}-bit Python)'
+    if not compatible or bits != 64:
         return (f'Packaged native libraries require x86-64 and 64-bit Python; '
-                f'current runtime is {system} {machine} ({bits}-bit Python)')
+                f'current runtime is {runtime}')
     return None
 
 

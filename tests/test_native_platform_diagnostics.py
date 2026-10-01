@@ -14,11 +14,15 @@ from easysewer.utils import find_library_path, probe_library_path
 
 
 @contextmanager
-def host(system='Linux', machine='x86_64', bits=64):
+def host(system='Linux', machine='x86_64', bits=64, python_platform=None):
+    if python_platform is None:
+        python_platform = ('win-amd64' if machine.lower() in ('amd64', 'x86_64') and bits == 64 else
+                           'win-arm64' if machine.lower() == 'arm64' and bits == 64 else 'win32')
     with ExitStack() as stack:
         stack.enter_context(patch('platform.system', return_value=system))
         stack.enter_context(patch('platform.machine', return_value=machine))
         stack.enter_context(patch('struct.calcsize', return_value=bits // 8))
+        stack.enter_context(patch('sysconfig.get_platform', return_value=python_platform))
         yield
 
 
@@ -40,6 +44,34 @@ class NativePlatformDiagnosticsTests(unittest.TestCase):
             with self.subTest(system=system, machine=machine), host(system, machine), \
                     patch('easysewer.utils.os.path.isfile', return_value=True):
                 self.assertIsNotNone(probe_library_path('swmm5'))
+
+    def test_windows_x64_python_on_arm_host_reaches_real_loader_check(self):
+        with tempfile.TemporaryDirectory() as directory:
+            library = Path(directory) / 'solver.dll'
+            library.write_bytes(b'fixture')
+            for backend in (StandardBackend(), FlexiblePondingBackend()):
+                with self.subTest(backend=backend.key), host('Windows', 'ARM64', python_platform='win-amd64'), \
+                        patch('easysewer.utils.os.path.isfile', return_value=True), \
+                        patch('easysewer.runtime.native.probe_library_path', return_value=str(library)), \
+                        patch('easysewer.runtime.flexible.probe_library_path', return_value=str(library)), \
+                        patch('easysewer.runtime._process_session.ProcessSession') as launch:
+                    self.assertTrue(all(get_native_capabilities().values()))
+                    backend.session(working_directory=Path(directory))
+                    launch.assert_called_once()
+
+    def test_windows_native_arm_and_32_bit_interpreters_remain_unavailable(self):
+        for machine, bits, python_platform in (
+            ('ARM64', 64, 'win-arm64'), ('AMD64', 64, 'win-arm64'),
+            ('ARM64', 32, 'win32'), ('ARM64', 32, 'win-amd64'),
+        ):
+            with self.subTest(machine=machine, bits=bits, python_platform=python_platform), \
+                    host('Windows', machine, bits, python_platform), \
+                    patch('easysewer.runtime._process_session.ProcessSession') as launch:
+                self.assertFalse(any(get_native_capabilities().values()))
+                info = StandardBackend().probe()
+                self.assertFalse(info.available)
+                self.assertIn(python_platform, info.reason)
+                launch.assert_not_called()
 
     def test_directory_named_like_library_is_not_a_capability(self):
         with tempfile.TemporaryDirectory() as directory, host():
