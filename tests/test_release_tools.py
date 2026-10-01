@@ -2,6 +2,7 @@
 
 import importlib.util
 import io
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -109,7 +110,7 @@ class ReleaseGateTests(unittest.TestCase):
             self.assertFalse((output / 'result.json').exists())
 
     def test_empty_failure_error_skip_and_unexpected_success_are_rejected(self):
-        for kind in ('empty', 'failure', 'error', 'skip', 'unexpected success'):
+        for kind in ('empty', 'failure', 'error', 'skip', 'expected failure', 'unexpected success'):
             with self.subTest(kind=kind):
                 result = unittest.TestResult()
                 result.testsRun = 0 if kind == 'empty' else 1
@@ -119,10 +120,46 @@ class ReleaseGateTests(unittest.TestCase):
                     result.errors.append(('fixture', 'injected error'))
                 elif kind == 'skip':
                     result.skipped.append(('fixture', 'injected skip'))
+                elif kind == 'expected failure':
+                    result.expectedFailures.append(('fixture', 'known failure'))
                 elif kind == 'unexpected success':
                     result.unexpectedSuccesses.append('fixture')
                 with self.assertRaisesRegex(RuntimeError, 'Release qualification failed'):
                     qualify.check_test_result(result, {'tests': result.testsRun})
+
+    def test_nonpassing_cli_outcomes_retain_serializable_evidence(self):
+        for outcome in ('skip', 'expected failure', 'unexpected success'):
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / 'qualification'
+                decorator = ("@unittest.skip('injected skip')" if outcome == 'skip' else
+                             '@unittest.expectedFailure')
+                body = "self.fail('injected failure')" if outcome == 'expected failure' else 'pass'
+                code = (
+                    'import runpy, sys, unittest\n'
+                    'class SelectedCase(unittest.TestCase):\n'
+                    f'    {decorator}\n'
+                    '    def test_selected(self):\n'
+                    f'        {body}\n'
+                    'unittest.defaultTestLoader.loadTestsFromNames = lambda names: '
+                    'unittest.defaultTestLoader.loadTestsFromTestCase(SelectedCase)\n'
+                    'sys.argv = sys.argv[1:]\n'
+                    'runpy.run_path(sys.argv[0], run_name="__main__")\n'
+                )
+                result = subprocess.run(
+                    [sys.executable, '-B', '-c', code, str(ROOT / 'tools/qualify_release.py'),
+                     '--package', str(ROOT / 'src'), '--output', str(output)],
+                    capture_output=True, text=True, timeout=30,
+                )
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn('Release qualification failed', result.stderr)
+                summary = json.loads((output / 'tests.json').read_text(encoding='utf-8'))
+                self.assertEqual(summary['tests'], 1)
+                field = {'skip': 'skips', 'expected failure': 'expected_failures',
+                         'unexpected success': 'unexpected_successes'}[outcome]
+                self.assertEqual(len(summary[field]), 1)
+                self.assertIn('test_selected', str(summary[field][0]))
+                self.assertFalse((output / 'first-run').exists())
+                self.assertFalse((output / 'result.json').exists())
 
 
 class SourceArchiveAuditTests(unittest.TestCase):

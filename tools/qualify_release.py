@@ -26,8 +26,9 @@ def default_test_names(*, pure=False, platform=None):
 
 
 def check_test_result(result, summary):
-    """Reject empty, skipped and unsuccessful runs, including under python -O."""
-    if not result.testsRun or not result.wasSuccessful() or result.skipped:
+    """Every selected release check must actually pass, including under -O."""
+    if (not result.testsRun or not result.wasSuccessful() or result.skipped or
+            result.expectedFailures):
         raise RuntimeError('Release qualification failed; see tests.log: ' + json.dumps(summary))
 
 
@@ -79,7 +80,10 @@ def main():
         result = unittest.TextTestRunner(stream=stream, verbosity=2).run(suite)
     summary = dict(version=easysewer.__version__, package=str(package),
                    tests=result.testsRun, failures=len(result.failures), errors=len(result.errors),
-                   skips=result.skipped, pure=args.pure, excluded_by_profile=excluded)
+                   skips=[(str(test), reason) for test, reason in result.skipped],
+                   expected_failures=[str(test) for test, _ in result.expectedFailures],
+                   unexpected_successes=[str(test) for test in result.unexpectedSuccesses],
+                   pure=args.pure, excluded_by_profile=excluded)
     (output / 'tests.json').write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
     check_test_result(result, summary)
     # Execute the shipped example, including native solve and moved archive reads.
