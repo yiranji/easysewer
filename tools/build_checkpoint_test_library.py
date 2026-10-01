@@ -2,8 +2,9 @@
 
 This tool never produces a production prepared-source.json for instrumented
 sources, qualifies a release binary, downloads sources, or installs anything.
-The output-writes-v1 profile supports the two historical OUT/writes test suites;
-their inherited Engine APIs require the preceding owner test fragments too.
+The default checkpoint profile supports the historical OUT/writes test suites.
+The separate lid-report-faults profile instruments only LID report call sites
+and also builds a clean, current-source control for no-fault equivalence checks.
 """
 
 import argparse
@@ -17,6 +18,19 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = "easysewer:test-only:checkpoint-output-writes:1"
+DEFAULT_PROFILE = "checkpoint-output-writes"
+LID_PROFILE = "lid-report-faults"
+PROFILES = {
+    DEFAULT_PROFILE: (PROFILE, "checkpoint-test"),
+    LID_PROFILE: ("easysewer:test-only:lid-report-faults:1", "lid-report-test"),
+}
+
+
+def profile_details(profile):
+    if profile not in PROFILES:
+        raise ValueError("Unknown test-only profile: " + str(profile))
+    return PROFILES[profile]
+
 FAMILIES = {"standard": "standard", "custom": "flexible_ponding"}
 BUNDLES = (
     "clocks", "hydraulics", "network_bundle", "inlet_bundle",
@@ -176,6 +190,58 @@ def instrument(contents, family, *, repo=ROOT):
     return contents, helpers
 
 
+
+LID_REPLACEMENTS = (
+    (b"LidGroups = (TLidGroup *) calloc(", b"LidGroups = (TLidGroup *) es_test_lid_model_calloc("),
+    (b"LidProcs = (TLidProc *) calloc(", b"LidProcs = (TLidProc *) es_test_lid_model_calloc("),
+    (b"calloc(Nobjects[POLLUT], sizeof(double))", b"es_test_lid_model_calloc(Nobjects[POLLUT], sizeof(double))"),
+    (b"lidGroup = (struct LidGroup *) malloc(", b"lidGroup = (struct LidGroup *) es_test_lid_model_malloc("),
+    (b"lidUnit = (TLidUnit *) malloc(", b"lidUnit = (TLidUnit *) es_test_lid_model_malloc("),
+    (b"lidList = (TLidList *) malloc(", b"lidList = (TLidList *) es_test_lid_model_malloc("),
+    (b"rptFile = (TLidRptFile *) calloc(", b"rptFile = (TLidRptFile *) es_test_lid_calloc("),
+    (b"rptFile->name = malloc(", b"rptFile->name = es_test_lid_malloc("),
+    (b'rptFile->file = fopen(fname, "wt")', b'rptFile->file = es_test_lid_fopen(fname, "wt")'),
+    (b"n = vfprintf(r->file, format, args)", b"n = es_test_lid_vfprintf(r->file, format, args)"),
+    (b"n = vsnprintf(r->results, sizeof(r->results), format, args)",
+     b"n = es_test_lid_vsnprintf(r->results, sizeof(r->results), format, args)"),
+    (b"(fflush(r->file) != 0 || ferror(r->file))", b"(es_test_lid_fflush(r->file) != 0 || ferror(r->file))"),
+    (b"if (fclose(file) != 0) lid_failReport(r)", b"if (es_test_lid_fclose(file) != 0) lid_failReport(r)"),
+)
+LID_PROTOTYPES = b"""
+#include <stdarg.h>
+int es_test_lid_vfprintf(FILE *, const char *, va_list);
+int es_test_lid_fflush(FILE *);
+int es_test_lid_fclose(FILE *);
+int es_test_lid_vsnprintf(char *, size_t, const char *, va_list);
+void *es_test_lid_calloc(size_t, size_t);
+void *es_test_lid_malloc(size_t);
+void *es_test_lid_model_calloc(size_t, size_t);
+void *es_test_lid_model_malloc(size_t);
+FILE *es_test_lid_fopen(const char *, const char *);
+"""
+
+
+def instrument_lid(contents, family, *, repo=ROOT):
+    """Wrap exact current LID call sites; never replay a production patch."""
+    if family not in FAMILIES:
+        raise ValueError("Unknown family")
+    if any(b"es_test_" in raw for raw in contents.values()):
+        raise ValueError("Sources already contain test instrumentation")
+    contents = dict(contents)
+    name = "src/solver/lid.c"
+    raw = contents[name]
+    for before, after in LID_REPLACEMENTS:
+        raw = replace_once(raw, before, after)
+    raw = replace_once(raw, b'#include "lid.h"', b'#include "lid.h"\n' + LID_PROTOTYPES)
+    helper = "tests/native_lid_report_faults.inc"
+    fragment = (repo / helper).read_bytes()
+    # Append after replacement so wrapper bodies retain actual libc operations.
+    contents[name] = raw + b"\n" + fragment + (
+        b"\n/* Explicit test-only identity; never register this as a backend. */\n"
+        b"int DLLEXPORT es_test_lid_report_profile(void) { return 1; }\n")
+    return contents, {helper: digest(fragment)}
+
+
 def recipe_hashes(record, family, *, repo=ROOT):
     """Check every recorded preparation input, including shared nested recipes."""
     recipes = {}
@@ -205,9 +271,10 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def build(source, destination, compiler, family):
+def build(source, destination, compiler, family, *, profile=DEFAULT_PROFILE):
     if not __debug__:
         raise RuntimeError("Do not run checkpoint qualification with optimized Python")
+    profile_id, prefix = profile_details(profile)
     if family not in FAMILIES:
         raise ValueError("Unknown family")
     if sys.platform != "linux":
@@ -251,13 +318,16 @@ def build(source, destination, compiler, family):
     baseline_hash = digest((baseline / "prepared-source.json").read_bytes())
     contents = verify_files(baseline, record["files"])
     verify_tree_inventory(baseline, record["files"], extra=("prepared-source.json",))
-    contents, helpers = instrument(contents, family)
+    if profile == LID_PROFILE:
+        contents, helpers = instrument_lid(contents, family)
+    else:
+        contents, helpers = instrument(contents, family)
     staged = destination / "instrumented-source"
     for name, raw in contents.items():
         path = source_path(staged, name)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(raw)
-    evidence = dict(profile=PROFILE, test_only=True, production_qualified=False,
+    evidence = dict(profile=profile_id, test_only=True, production_qualified=False,
         family=family, upstream=upstream,
         upstream_manifest_sha256=upstream_hash,
         baseline=record, prepare_command=prepare_command,
@@ -265,17 +335,17 @@ def build(source, destination, compiler, family):
         preparation_recipes=recipes, instrumentation_helpers=helpers,
         harness_sha256=harness_hash,
         files={name: digest(raw) for name, raw in contents.items()})
-    write_json(staged / "checkpoint-test-source.json", evidence)
+    write_json(staged / (prefix + "-source.json"), evidence)
     # Recheck all bytes and helper/recipe inputs immediately before compilation.
     verify_files(staged, evidence["files"])
-    verify_tree_inventory(staged, evidence["files"], extra=("checkpoint-test-source.json",))
+    verify_tree_inventory(staged, evidence["files"], extra=(prefix + "-source.json",))
     recipe_hashes(record, family)
     for name, expected in helpers.items():
         if digest((ROOT / name).read_bytes()) != expected:
             raise ValueError("Instrumentation helper changed: " + name)
     if digest(compiler.read_bytes()) != compiler_hash:
         raise ValueError("Compiler changed before build")
-    output = destination / ("checkpoint-test-" + family + ".so")
+    output = destination / (prefix + "-" + family + ".so")
     flags = ["-shared", "-O2", "-fno-fast-math", "-ffp-contract=off", "-fopenmp",
              "-fPIC", "-Wall", "-Wextra", "-Werror=implicit-function-declaration",
              "-Wl,--no-undefined"]
@@ -283,23 +353,39 @@ def build(source, destination, compiler, family):
     command = [str(compiler), *flags, "-I" + str(staged / "src/solver/include"),
                *(str(staged / name) for name in files), "-o", str(output), "-lm"]
     env["SOURCE_DATE_EPOCH"] = str(upstream.get("commit_timestamp", 0))
-    source_manifest_hash = digest((staged / "checkpoint-test-source.json").read_bytes())
+    source_manifest_hash = digest((staged / (prefix + "-source.json")).read_bytes())
+    control = None
+    if profile == LID_PROFILE:
+        control_output = destination / (prefix + "-control-" + family + ".so")
+        control_command = [str(compiler), *flags, "-I" + str(baseline / "src/solver/include"),
+            *(str(baseline / name) for name in files), "-o", str(control_output), "-lm"]
+        control_result = subprocess.run(control_command, cwd=destination, env=env, capture_output=True, text=True)
+        (destination / "control-build.log").write_text(control_result.stdout + control_result.stderr, encoding="utf-8")
+        control = dict(command=control_command, output=str(control_output), returncode=control_result.returncode)
+        if control_result.returncode == 0:
+            control.update(sha256=digest(control_output.read_bytes()), size=control_output.stat().st_size)
     completed = subprocess.run(command, cwd=destination, env=env, capture_output=True, text=True)
     (destination / "build.log").write_text(completed.stdout + completed.stderr, encoding="utf-8")
-    build_record = dict(profile=PROFILE, test_only=True, production_qualified=False,
+    build_record = dict(profile=profile_id, test_only=True, production_qualified=False,
         family=family, source_manifest_sha256=source_manifest_hash,
         compiler=dict(path=str(compiler), resolved_path=str(compiler.resolve()),
                       sha256=compiler_hash, version=compiler_version),
         command=command, environment={"SOURCE_DATE_EPOCH": env["SOURCE_DATE_EPOCH"]},
         returncode=completed.returncode, output=str(output))
+    if control is not None:
+        build_record["control"] = control
     # A concurrent edit while GCC reads the files must invalidate provenance,
     # even if compilation itself returned zero. Leave evidence, never success.
     try:
+        if control is not None and control["returncode"] == 0:
+            if (digest(control_output.read_bytes()) != control["sha256"] or
+                    control_output.stat().st_size != control["size"]):
+                raise ValueError("Clean control library changed during build")
         verify_files(source, upstream["files"], normalize=True)
         verify_files(baseline, record["files"])
         verify_files(staged, evidence["files"])
         verify_tree_inventory(baseline, record["files"], extra=("prepared-source.json",))
-        verify_tree_inventory(staged, evidence["files"], extra=("checkpoint-test-source.json",))
+        verify_tree_inventory(staged, evidence["files"], extra=(prefix + "-source.json",))
         recipe_hashes(record, family)
         for name, expected in helpers.items():
             if digest((ROOT / name).read_bytes()) != expected:
@@ -307,17 +393,19 @@ def build(source, destination, compiler, family):
         for path, expected in ((Path(__file__), harness_hash), (compiler, compiler_hash),
                 (upstream_path, upstream_hash),
                 (baseline / "prepared-source.json", baseline_hash),
-                (staged / "checkpoint-test-source.json", source_manifest_hash)):
+                (staged / (prefix + "-source.json"), source_manifest_hash)):
             if digest(path.read_bytes()) != expected:
                 raise ValueError("Build input changed: " + str(path))
     except (OSError, ValueError) as error:
         build_record.update(integrity_verified=False, integrity_error=str(error))
-        write_json(destination / "checkpoint-test-build.json", build_record)
+        write_json(destination / (prefix + "-build.json"), build_record)
         raise
     build_record["integrity_verified"] = True
     if completed.returncode == 0:
         build_record.update(sha256=digest(output.read_bytes()), size=output.stat().st_size)
-    write_json(destination / "checkpoint-test-build.json", build_record)
+    write_json(destination / (prefix + "-build.json"), build_record)
+    if control is not None:
+        control_result.check_returncode()
     completed.check_returncode()
     return build_record
 
@@ -328,8 +416,9 @@ def main():
     parser.add_argument("--destination", required=True, type=Path, help="New directory outside repo/source")
     parser.add_argument("--compiler", required=True, help="Absolute GCC-compatible compiler path")
     parser.add_argument("--family", choices=tuple(FAMILIES), required=True)
+    parser.add_argument("--profile", choices=tuple(PROFILES), default=DEFAULT_PROFILE)
     args = parser.parse_args()
-    record = build(args.source, args.destination, args.compiler, args.family)
+    record = build(args.source, args.destination, args.compiler, args.family, profile=args.profile)
     print(json.dumps({key: record[key] for key in ("profile", "family", "output", "sha256")}, indent=2))
 
 

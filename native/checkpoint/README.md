@@ -7,6 +7,11 @@ partial; a RunResult archive stores results rather than a live solver boundary.
 
 ## Reproducible test-only OUT/writes fault profile
 
+The tool's optional `--profile lid-report-faults` selects a separate current-source
+LID report fault/control contract, documented in [the LID guide](../lid_report/README.md).
+Omitting `--profile` retains the checkpoint profile described below; the two
+profiles' manifests, artifact names, test selections, and markers are distinct.
+
 `tools/build_checkpoint_test_library.py` builds the bounded
 `easysewer:test-only:checkpoint-output-writes:1` profile on Linux with an explicit
 GCC-compatible compiler. It accepts **unmodified upstream source trees**, not old

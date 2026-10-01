@@ -34,6 +34,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p test_release_tools.py -v
           python -m unittest discover -s tests -p test_checkpoint_test_build_tool.py -v
+          python -m unittest discover -s tests -p test_lid_report_test_build_tool.py -v
           python -m unittest discover -s tests -p test_support_matrix_audit.py -v
       - name: Check directory contracts and optional historical-reader fixtures
         env:
