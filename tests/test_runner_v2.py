@@ -39,22 +39,33 @@ class OutputTransactionTests(unittest.TestCase):
             self.assertFalse(list(root.glob('.easysewer-*')))
 
     def test_partial_publication_rolls_back_files_and_new_directories(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory);source=root/'source';source.write_bytes(b'new')
-            (root/'a').write_bytes(b'old-a');(root/'b').write_bytes(b'old-b')
-            real_replace=os.replace
-            def fail_second(source,target):
-                if Path(target)==root/'b' and Path(source).name.startswith('.easysewer-publish-'):
-                    raise OSError('injected publication failure')
-                return real_replace(source,target)
-            transaction=OutputTransaction('fixture',overwrite=True)
-            try:
-                transaction.reserve(((root/'a',False),(root/'b',False)))
-                with patch('easysewer.runtime._workspace.os.replace',side_effect=fail_second),self.assertRaises(OSError):
-                    transaction.publish({root/'a':source,root/'b':source})
-            finally:transaction.close()
-            self.assertEqual((root/'a').read_bytes(),b'old-a');self.assertEqual((root/'b').read_bytes(),b'old-b')
-            self.assertFalse(list(root.glob('.easysewer-*')))
+        for aliased in (False,True):
+            with self.subTest(aliased=aliased),tempfile.TemporaryDirectory() as directory:
+                root=Path(directory)
+                if aliased:
+                    # Exercise spelling changes on every host, including ones
+                    # without Windows short-name aliases or symlink privileges.
+                    (root/'alias').mkdir();root=root/'alias'/'..'
+                source=root/'source';source.write_bytes(b'new')
+                (root/'a').write_bytes(b'old-a');(root/'b').write_bytes(b'old-b')
+                new=root/'created'/'nested'/'c'
+                failed_target=(root/'b').resolve()
+                real_replace=os.replace
+                def fail_second(source,target):
+                    if Path(target).resolve()==failed_target and Path(source).name.startswith('.easysewer-publish-'):
+                        self.assertEqual((root/'a').read_bytes(),b'new')
+                        raise OSError('injected publication failure')
+                    return real_replace(source,target)
+                transaction=OutputTransaction('fixture',overwrite=True)
+                try:
+                    transaction.reserve(((root/'a',False),(root/'b',False),(new,False)))
+                    with patch('easysewer.runtime._workspace.os.replace',side_effect=fail_second),self.assertRaisesRegex(OSError,'injected publication failure'):
+                        transaction.publish({root/'a':source,root/'b':source,new:source})
+                    self.assertFalse(transaction.committed)
+                finally:transaction.close()
+                self.assertEqual((root/'a').read_bytes(),b'old-a');self.assertEqual((root/'b').read_bytes(),b'old-b')
+                self.assertFalse((root/'created').exists())
+                self.assertFalse(list(root.glob('.easysewer-*')))
 
     def test_preobserved_hashes_reject_changes_to_files_and_resource_trees(self):
         for tree in (False,True):

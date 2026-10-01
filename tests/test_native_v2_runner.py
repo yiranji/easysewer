@@ -52,8 +52,12 @@ class NativeRunnerTests(unittest.TestCase):
     def test_selected_out_identity_and_utf8_directory_match_direct_native_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);model=network();model.update_options(report_step=timedelta(seconds=30))
+            # Native Windows path resolution uses the process ANSI code page.
+            # Keep native scratch compatible while Python publishes Unicode paths.
+            model.update_options(temp_directory=FileReference(path=str(root/'scratch'),direction='output'))
             model.update_report(nodes=ReportSelection(mode='SELECTED',members=(Ref(collection='swmm:nodes',key='J'),)),links=ReportSelection(mode='ALL'))
             original=model.to_json_document().to_bytes()
+            (root/'scratch').mkdir()
             oracle=direct.NativeProjectTests().solve(root,'direct',model.to_document().text)
             def edit_original(progress):
                 if progress.phase=='opening':model.nodes.rename('J','ChangedAfterSnapshot')
@@ -67,6 +71,33 @@ class NativeRunnerTests(unittest.TestCase):
             self.assertEqual(result.output_metadata.names('swmm:nodes'),oracle['ids'][1])
             with self.assertRaises(NotRecordedError):result.output_metadata.index(Ref(collection='swmm:nodes',key='O'))
             self.assertEqual(result.output_metadata.index(Ref(collection='swmm:nodes',key='j')),0)
+
+    def test_explicit_unicode_scratch_preserves_native_path_failure_and_outputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);scratch=root/'中文😀';destination=root/'published';destination.mkdir()
+            for name in ('model.inp','model.rpt','model.out'):
+                (destination/name).write_bytes(b'previous-success')
+            model=network();model.update_options(temp_directory=FileReference(path=str(scratch),direction='output'))
+            compatible=True
+            if os.name=='nt':
+                try:
+                    text=str(scratch.resolve())
+                    compatible=text.encode('mbcs',errors='strict').decode('mbcs')==text
+                except UnicodeError:compatible=False
+            result=Runner().run(model,config(destination,overwrite=True,keep_failed_artifacts=False))
+            self.assertEqual(Path(result.snapshot.execution_directory).parent,scratch.resolve())
+            if compatible:
+                self.check_success(result)
+            else:
+                self.assertEqual(result.status,'failed')
+                self.assertEqual((result.failure.native.stage,result.failure.native.code),('open',303))
+                self.assertIn('input path cannot be resolved or exceeds native path buffer',result.failure.native.message)
+                self.assertIn('run.native_path',{d.code for d in result.diagnostics.diagnostics})
+                self.assertFalse(result.native_completed)
+                self.assertIsNone(result.retained_directory)
+                self.assertFalse(Path(result.snapshot.execution_directory).exists())
+                for name in ('model.inp','model.rpt','model.out'):
+                    self.assertEqual((destination/name).read_bytes(),b'previous-success')
 
     @unittest.skipUnless(get_native_capabilities()['swmm_output'],'Direct OUT oracle unavailable')
     def test_resource_capture_survives_source_edit_and_published_inp_can_run_again(self):
@@ -293,7 +324,7 @@ class NativeRunnerTests(unittest.TestCase):
             self.assertIn('run.incomplete_inspection',{d.code for d in result.diagnostics.errors})
             result=Runner().run(model,config(root/'good'))
             self.check_success(result)
-            self.assertEqual(Path(result.snapshot.execution_directory).parent,temporary)
+            self.assertEqual(Path(result.snapshot.execution_directory).parent,temporary.resolve())
 
     def test_out_metadata_rejects_corrupt_completion_counts_names_and_variable_layout(self):
         with tempfile.TemporaryDirectory() as directory:

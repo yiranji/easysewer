@@ -180,14 +180,15 @@ class ProjectTests(unittest.TestCase):
             path = old / 'model.inp'; path.write_text(source, encoding='utf-8')
             m = Model.from_inp(path, strict=True)
             original = m.map
-            self.assertEqual(m.backdrop.file.resolve(), old / 'a picture.png')
+            expected_backdrop = (old / 'a picture.png').resolve()
+            self.assertEqual(m.backdrop.file.resolve(), expected_backdrop)
             m.convert_units('CMS')
             self.assertEqual(m.map, original)
             m.to_inp(root / 'new' / 'model.inp')
             n = Model.from_inp(root / 'new' / 'model.inp', strict=True)
-            self.assertEqual(n.backdrop.file.resolve(), old / 'a picture.png')
+            self.assertEqual(n.backdrop.file.resolve(), expected_backdrop)
             self.assertEqual(n.map, original)
-            self.assertEqual(portable(n).backdrop.file.resolve(), old / 'a picture.png')
+            self.assertEqual(portable(n).backdrop.file.resolve(), expected_backdrop)
             for units in ('FEET', 'METERS', 'DEGREES', 'NONE'):
                 n.update_map(units=units)
                 self.assertEqual(load(n.to_document().text).map.units, units)

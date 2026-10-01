@@ -513,8 +513,9 @@ class ProcessSession:
                 if path.exists() and not overwrite:
                     raise FileExistsError(path)
             expected = tuple((collection, tuple(names)) for collection, names in expected)
-            # Relative ASCII staging names also work beneath Unicode working
-            # directories: do not pass their UTF-8 absolute prefix to fopen.
+            # Avoid passing UTF-8 absolute prefixes to the narrow fopen API.
+            # Windows native full-path resolution still requires the working
+            # directory to be representable by the process ANSI code page.
             native_paths = [str(path.relative_to(self.working_directory)) if path.is_relative_to(self.working_directory)
                             else str(path) for path in paths]
             # Context is evidence from these bytes, not a guess from native

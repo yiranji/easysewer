@@ -1,13 +1,14 @@
 """Packaged-library discovery is conservative and does not load native code."""
 
 from contextlib import ExitStack, contextmanager
+from dataclasses import replace
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
 from easysewer import get_native_capabilities
-from easysewer.runtime import (FlexiblePondingBackend, SessionCancelled, SessionError,
+from easysewer.runtime import (FlexiblePondingBackend, RunError, Runner, SessionCancelled, SessionError,
                               SessionTimeout, StandardBackend)
 from easysewer.runtime.backend import NativeFailure
 from easysewer.utils import find_library_path, probe_library_path
@@ -27,6 +28,57 @@ def host(system='Linux', machine='x86_64', bits=64, python_platform=None):
 
 
 class NativePlatformDiagnosticsTests(unittest.TestCase):
+    def run_path_failure(self, *, system='Windows', capable=True, stage='open', code=303,
+                         message='ERROR 303: input path cannot be resolved or exceeds native path buffer.'):
+        from test_backend_v2 import BackendContractTests
+        from test_options_v2 import network
+        from test_runner_v2 import config
+        loaded=StandardBackend._loaded
+        def metadata(backend,value):
+            info=loaded(backend,value)
+            return replace(info,platform=system,capabilities=info.capabilities+
+                (('easysewer:path-io:1',) if capable else ()))
+        failure=NativeFailure(stage=stage,code=code,message=message)
+        cleanup=(NativeFailure(stage='close',code=301,message='original cleanup failure'),)
+        error=SessionError(failure,cleanup=cleanup,stderr='original stderr',returncode=7)
+        with BackendContractTests().fixture() as (root,backend):
+            destination=root/'published';destination.mkdir()
+            (destination/'model.out').write_bytes(b'previous-success')
+            with patch.object(StandardBackend,'_loaded',metadata), \
+                    patch('easysewer.runtime._process_session.ProcessSession.open',side_effect=error):
+                with self.assertRaises(RunError) as caught:
+                    Runner(backends={backend.key:backend}).run(network(),
+                        config(destination,overwrite=True,keep_failed_artifacts=False),raise_on_error=True)
+            self.assertIs(caught.exception.__cause__,error)
+            result=caught.exception.result
+            self.assertEqual(result.status,'failed')
+            self.assertFalse(result.native_completed)
+            self.assertEqual(result.failure.native,failure)
+            self.assertEqual(result.failure.message,str(error))
+            self.assertEqual(result.failure.cleanup,cleanup)
+            self.assertEqual(result.failure.stderr,'original stderr')
+            self.assertEqual(result.failure.worker_returncode,7)
+            self.assertEqual((destination/'model.out').read_bytes(),b'previous-success')
+            self.assertIsNone(result.retained_directory)
+            return result
+
+    def test_windows_native_path_hint_preserves_primary_failure_and_cause(self):
+        result=self.run_path_failure()
+        hint,=[d for d in result.diagnostics.diagnostics if d.code=='run.native_path']
+        self.assertEqual(hint.severity.value,'warning')
+        self.assertIn('ANSI code page',hint.message)
+        self.assertIn('4095-byte',hint.message)
+        self.assertIn('Options.temp_directory (TEMPDIR)',hint.message)
+        self.assertIn('output_directory can remain Unicode',hint.message)
+        self.assertIn('never relocated',hint.message)
+
+    def test_other_native_failures_do_not_inherit_windows_path_hint(self):
+        for changes in ({'system':'Linux'},{'capable':False},{'stage':'start'},
+                        {'code':302},{'message':'ERROR 303: unrelated input failure'}):
+            with self.subTest(**changes):
+                result=self.run_path_failure(**changes)
+                self.assertNotIn('run.native_path',{d.code for d in result.diagnostics.diagnostics})
+
     def test_unsupported_architecture_cannot_advertise_bundled_libraries(self):
         for system, machine, bits in (
             ('Linux', 'aarch64', 64), ('Windows', 'ARM64', 64),
