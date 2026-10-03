@@ -1,7 +1,7 @@
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
-import hashlib,json,os,shutil,subprocess,sys,tempfile,unittest
+import hashlib,json,shutil,subprocess,sys,tempfile,unittest
 from unittest.mock import patch
 from easysewer.model import Ref
 from easysewer.runtime import Runner,CheckpointOutput
@@ -11,6 +11,7 @@ from easysewer.runtime._checkpoint_directory_outputs import decode,roots
 from easysewer.runtime._checkpoint_directory_restore import DirectoryRestore
 from easysewer.runtime._checkpoint_lifecycle import CheckpointLifecycle
 from easysewer.runtime._directory_tree import inspect_tree
+from directory_history_fixture import historical_package
 from test_checkpoint_container_v2 import snapshot,native_prefix,rewrite
 from test_checkpoint_directory_inputs_v2 import Solver,working
 
@@ -96,10 +97,15 @@ class OutputDirectoryCheckpointTests(unittest.TestCase):
     elif mode=='duplicate':items=(item,item)
     else:(root/'tree').rename(root/'retired');(root/'tree').mkdir();target.hardlink_to(source)
     with self.assertRaises(ValueError):Runner._adopt_checkpoint_outputs(items,{target:stamp},root,lambda:None)
- def test_old_reader_rejects_extended_format_and_no_output_tree_keeps_old_format(self):
+ def test_no_output_tree_keeps_old_format(self):
   with tempfile.TemporaryDirectory() as tmp:
-   root=Path(tmp).resolve();_,_,value,outputs,locations=self.fixture(root);saved=self.save(root/'saved',value,outputs,locations);old=Path(os.environ.get('EASYSEWER_DIRECTORY_HISTORY_ROOT',Path(__file__).resolve().parent.parent))/'candidate-v36';code="import sys;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime._checkpoint_container import load;\ntry:load(sys.argv[2])\nexcept ValueError:pass\nelse:raise AssertionError('old reader accepted new format')";p=subprocess.run([sys.executable,'-I','-B','-c',code,str(old),str(saved.directory)],capture_output=True,text=True);self.assertEqual(p.returncode,0,p.stdout+p.stderr);plain=snapshot(root)
+   root=Path(tmp).resolve();plain=snapshot(root)
    with Builder(root/'plain',plain) as b:result=b.finish(native_prefix(plain,b.binding),())
    self.assertEqual(result.data['schema_version'],'1.0');self.assertNotIn('output_directory_states',result.data)
+ def test_historical_candidate_v36_reader_rejects_output_directory_format(self):
+  old=historical_package('candidate-v36')
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp).resolve();_,_,value,outputs,locations=self.fixture(root);saved=self.save(root/'saved',value,outputs,locations)
+   code="import sys;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime._checkpoint_container import load;\ntry:load(sys.argv[2])\nexcept ValueError:pass\nelse:raise AssertionError('old reader accepted new format')";p=subprocess.run([sys.executable,'-I','-B','-c',code,str(old),str(saved.directory)],capture_output=True,text=True,timeout=45);self.assertEqual(p.returncode,0,p.stdout+p.stderr)
 
 if __name__=='__main__':unittest.main()

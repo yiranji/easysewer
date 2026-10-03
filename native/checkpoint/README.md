@@ -5,6 +5,100 @@ verified input/output containers, Python policy state and the Session/Runner
 contracts in [the runtime guide](../../docs/checkpoint-runner.md). HOTSTART remains
 partial; a RunResult archive stores results rather than a live solver boundary.
 
+## Reproducible test-only OUT/writes fault profile
+
+The tool's optional `--profile lid-report-faults` selects a separate current-source
+LID report fault/control contract, documented in [the LID guide](../lid_report/README.md).
+Omitting `--profile` retains the checkpoint profile described below; the two
+profiles' manifests, artifact names, test selections, and markers are distinct.
+
+`tools/build_checkpoint_test_library.py` builds the bounded
+`easysewer:test-only:checkpoint-output-writes:1` profile on Linux with an explicit
+GCC-compatible compiler. It accepts **unmodified upstream source trees**, not old
+prepared checkpoint trees. Supply the commits and normalized file bytes pinned
+by `native/standard/source.json` and `native/flexible_ponding/source.json` through
+an authorized source checkout. The tool does not download code, install a compiler,
+change credentials, or copy private source into this repository.
+
+Each build verifies every pinned upstream file, runs the current family preparation
+(standard16 or custom native-I/O14), verifies all prepared bytes and recorded shared
+recipes, then instruments a separate copy. Both the original checkout and current
+production recipes remain unchanged. The output directory must be new and outside
+the repository and upstream tree, including their resolved symlink locations.
+An existing destination, including a dangling symlink, is rejected.
+
+```sh
+python -B tools/build_checkpoint_test_library.py \
+  --family standard --source /path/to/pinned-epa-source \
+  --compiler /usr/bin/gcc --destination /tmp/checkpoint-test-standard
+python -B tools/build_checkpoint_test_library.py \
+  --family custom --source /path/to/authorized-pinned-custom-source \
+  --compiler /usr/bin/gcc --destination /tmp/checkpoint-test-custom
+
+python -B tools/qualify_checkpoint_test_libraries.py \
+  --standard-build /tmp/checkpoint-test-standard \
+  --custom-build /tmp/checkpoint-test-custom \
+  --destination /tmp/checkpoint-output-writes-results
+```
+
+Do not run either tool with `python -O`/`-OO` or `PYTHONOPTIMIZE`: fixture and
+fresh-process checks use assertions, so both entry points fail closed under
+optimized Python. Qualification fixes `OMP_NUM_THREADS=1`, requires
+`/proc/self/fd` for descriptor-leak checks, and supplies absolute test-library
+paths to child processes. Both independently built families are required; one
+family must never be passed under the other's name to bypass a skip.
+
+Build directories retain `verified-baseline/`, `instrumented-source/`, compiler
+logs, `checkpoint-test-build.json`, and explicitly named
+`checkpoint-test-standard.so` or `checkpoint-test-custom.so`. The instrumented
+tree has **only** `checkpoint-test-source.json`, never a production
+`prepared-source.json`. Evidence records the upstream identity, normalized source
+hashes, every preparation recipe and test fragment, generated source hashes,
+compiler command/version/binary hash, and final library hash. Inputs are checked
+again after compilation; concurrent changes invalidate the build even when GCC
+returns zero. The Linux linker rejects undefined hooks. Reproduction requires
+the same toolchain and source bytes; cross-toolchain/platform bit identity is
+not promised.
+
+The profile appends the existing historical owner/bundle fragments required by
+the OUT/writes Python Engine inheritance chain. Its only additional copied-source
+changes are private staging fault hooks and ODE call counters:
+
+- Controls allocation and table allocation/open/seek/tell/close failure hooks
+- Output-prefix allocation/open/flush/seek/close and file-identity failure hooks
+- Destructive numeric/scratch probes and ordered owner save/restore test exports
+
+The controls/table hooks target the checkpoint owner blocks only, leaving
+ordinary solver allocation and numerical expressions intact. The output identity
+hook models failed file metadata retrieval. Fault wrappers call the unwrapped
+operations when disarmed and do not recursively intercept themselves. No helper
+is added to packaged libraries or advertised as a supported backend API.
+
+Qualification runs the 8 OUT tests, 8 output-write tests, and the controls/table
+fault-activation tests. It rejects skips, expected failures, unexpected successes,
+or a changed 18-test inventory. This
+includes corrupt snapshots rejected before resource callbacks, precommit rollback,
+postcommit cleanup errors, malformed/digest-mismatched/aliased prefixes, preserved
+retired output files, complete future outputs and fresh-process owner continuation.
+`qualification.json` retains per-case evidence, counts, both library identities,
+test/runtime input hashes, and the controlled environment; `tests.log` retains the
+full unittest results. Build identities and all recorded inputs are checked again
+after tests before success is reported.
+
+This is an opt-in source-development qualification, not the default package suite
+or a release gate requiring access to custom sources. Compiler-free tool integrity
+regressions run with:
+
+```sh
+PYTHONPATH=src:tests python -B -m unittest test_checkpoint_test_build_tool
+```
+
+These historical owner probes intentionally retain their original path-bound
+encoding (`logical_resources=0`). They do not certify every earlier owner suite,
+the public ABI2 container/session contract, Windows, all coupled physics, or
+release compatibility. Do not install, publish, register, or copy these destructive
+test libraries into `src/easysewer/libs`.
+
 `patch.py` is the shared exact-source transformation used by formal standard13
 and custom11 preparation. It adds native owners and the six corrections below,
 rejects repeated application, and records all recipe hashes. Both formal build

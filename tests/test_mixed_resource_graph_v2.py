@@ -1,7 +1,7 @@
 """Mixed file/directory relationships through staging and portable recovery."""
 from dataclasses import replace
 from pathlib import Path
-import json,os,subprocess,sys,tempfile,unittest
+import json,subprocess,sys,tempfile,unittest
 from unittest.mock import patch
 from easysewer.runtime import _preparation as prep, _checkpoint_container as storage
 from easysewer.runtime import _directory_graph as graph
@@ -11,6 +11,7 @@ from easysewer.runtime.results import RunResult,FileArtifact
 from easysewer.runtime._result_codec import Codec
 from easysewer.runtime._checkpoint_context import write,read
 from easysewer.io.interface_inspection import InterfaceInspection
+from directory_history_fixture import historical_package
 from directory_roundtrip_fixture import prepared,row,schema
 from test_checkpoint_container_v2 import snapshot
 from test_directory_checkpoint_v2 import record
@@ -88,11 +89,17 @@ class MixedResourceGraphTests(unittest.TestCase):
    encoded=Codec(object(),result_version='1.9').encode(resource);self.assertEqual(Codec(object(),result_version='1.9').decode(encoded),resource)
    with self.assertRaises(ValueError):Codec(object(),result_version='1.8').encode(resource)
    with self.assertRaises(ValueError):Codec(object(),result_version='1.8').decode(encoded)
- def test_mixed_wire_versions_and_actual_previous_reader_rejection(self):
+ def test_mixed_wire_versions(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp).resolve();_,_,work,value,group=self.setup(root);h=self.helper();digest,_=write(root/'context',value);self.assertEqual(read(root/'context',digest),value);self.assertEqual(json.loads((root/'context/context.json').read_bytes())['version'],7)
    self.assertEqual(json.loads(record(root/'record',value))['schema_version'],'1.7');h.failed(work,value,group).save(root/'archive');self.assertEqual(json.loads((root/'archive/result.json').read_bytes())['schema_version'],'1.9');h.save(root/'saved',value)
-   old=Path(os.environ.get('EASYSEWER_DIRECTORY_HISTORY_ROOT',Path(__file__).resolve().parent.parent))/'candidate-v22';code="import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime import RunResult;from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[2]);\nfor action in (lambda:RunResult.load(root/'archive'),lambda:read(root/'context',sys.argv[3]),lambda:load(root/'saved')):\n try:action()\n except ValueError:pass\n else:raise AssertionError('Old reader accepted mixed views')"
+
+ def test_historical_candidate_v22_readers_reject_mixed_views(self):
+  old=historical_package('candidate-v22')
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp).resolve();_,_,work,value,group=self.setup(root);h=self.helper();digest,_=write(root/'context',value)
+   h.failed(work,value,group).save(root/'archive');h.save(root/'saved',value)
+   code="import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime import RunResult;from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[2]);\nfor action in (lambda:RunResult.load(root/'archive'),lambda:read(root/'context',sys.argv[3]),lambda:load(root/'saved')):\n try:action()\n except ValueError:pass\n else:raise AssertionError('Old reader accepted mixed views')"
    child=subprocess.run([sys.executable,'-I','-B','-c',code,str(old),str(root),digest],capture_output=True,text=True,timeout=45);self.assertEqual(child.returncode,0,child.stdout+child.stderr)
  def test_wrong_current_file_kind_rejects_checkpoint_without_removing_work(self):
   with tempfile.TemporaryDirectory() as tmp:

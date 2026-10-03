@@ -1,7 +1,7 @@
 """Separate original evidence from mutable trees; native tails here are synthetic."""
 from dataclasses import replace
 from pathlib import Path
-import hashlib,io,json,os,shutil,subprocess,sys,tempfile,unittest
+import hashlib,io,json,shutil,subprocess,sys,tempfile,unittest
 from unittest.mock import patch
 from easysewer.runtime import _preparation as prep
 from easysewer.runtime import _checkpoint_container as storage
@@ -11,6 +11,7 @@ from easysewer.runtime.results import DirectoryArtifact,RunResult,FileArtifact
 from easysewer.runtime._result_codec import Codec
 from easysewer.runtime._checkpoint_context import write,read
 from easysewer.io.interface_inspection import InterfaceInspection
+from directory_history_fixture import historical_package
 from directory_roundtrip_fixture import prepared,row,schema
 from test_checkpoint_container_v2 import snapshot,native_prefix,rewrite
 from test_directory_checkpoint_v2 import record
@@ -138,7 +139,7 @@ class MutableDirectoryTests(unittest.TestCase):
    with self.assertRaises(ValueError):
     with storage.Builder(root/'limited',value,limits=storage.Limits(total_bytes=1)):pass
    self.assertFalse((root/'limited').exists());self.assertEqual(inspect_tree(source),value.resources[0].tree)
- def test_context_record_codec_versions_and_actual_previous_readers_refuse_new_state(self):
+ def test_context_record_codec_versions_reject_older_mutable_state_formats(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);_,work,value=self.setup(root);digest,_=write(root/'context',value);self.assertEqual(read(root/'context',digest),value);self.assertEqual(json.loads((root/'context/context.json').read_bytes())['version'],3)
    self.assertEqual(json.loads(record(root/'record',value))['schema_version'],'1.3')
@@ -146,9 +147,15 @@ class MutableDirectoryTests(unittest.TestCase):
    for version in ('1.0','1.1','1.2','1.3','1.4'):
     with self.assertRaises(ValueError):Codec(object(),result_version=version).encode(resource)
     with self.assertRaises(ValueError):Codec(object(),result_version=version).decode(encoded)
-   old=Path(os.environ.get('EASYSEWER_DIRECTORY_HISTORY_ROOT',Path(__file__).resolve().parent.parent))/'candidate-v12';self.failed(work,value).save(root/'archive');self.save_checkpoint(root/'checkpoint',value)
+   self.failed(work,value).save(root/'archive');self.save_checkpoint(root/'checkpoint',value)
+
+ def test_historical_candidate_v12_readers_reject_mutable_state(self):
+  old=historical_package('candidate-v12')
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp);_,work,value=self.setup(root);digest,_=write(root/'context',value)
+   self.failed(work,value).save(root/'archive');self.save_checkpoint(root/'checkpoint',value)
    code="import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime import RunResult;from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[2]);\nfor action in (lambda:RunResult.load(root/'archive'),lambda:read(root/'context',sys.argv[3]),lambda:load(root/'checkpoint')):\n try:action()\n except ValueError:pass\n else:raise AssertionError('Previous reader accepted new mutable state')"
-   p=subprocess.run([sys.executable,'-I','-B','-c',code,str(old),str(root),digest],capture_output=True,text=True);self.assertEqual(p.returncode,0,p.stdout+p.stderr)
+   p=subprocess.run([sys.executable,'-I','-B','-c',code,str(old),str(root),digest],capture_output=True,text=True,timeout=45);self.assertEqual(p.returncode,0,p.stdout+p.stderr)
  def test_materialization_failure_cleans_only_new_root_and_retry_restores_both_trees(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);source,work,value=self.setup(root);_,manifest=self.mutate(work,value);saved=self.save_checkpoint(root/'saved',value);error=OSError('copy failed');error.__cause__=ValueError('primary');original=storage.Checkpoint.copy_blob;fired=[]

@@ -1,7 +1,7 @@
 """Internal hardlink identity, independent copies, durable reconstruction and failure."""
 from dataclasses import replace
 from pathlib import Path
-import hashlib,json,os,shutil,subprocess,sys,tempfile,unittest
+import hashlib,json,shutil,subprocess,sys,tempfile,unittest
 from unittest.mock import patch
 import easysewer
 from easysewer.runtime import _directory_tree as trees, _preparation as prep, _checkpoint_container as storage, _workspace as workspace
@@ -11,6 +11,7 @@ from easysewer.runtime.directory_resources import DirectoryAdapter
 from easysewer.runtime._result_codec import Codec
 from easysewer.runtime._checkpoint_context import write,read
 from easysewer.io.interface_inspection import InterfaceInspection
+from directory_history_fixture import historical_package
 from directory_roundtrip_fixture import prepared,row,schema
 from test_checkpoint_container_v2 import snapshot,native_prefix
 from test_directory_checkpoint_v2 import record
@@ -99,7 +100,7 @@ class HardlinkDirectoryTests(unittest.TestCase):
     restored=after.materialize(root/'restored',schema=schema());current=root/'restored'/r.relative_path;initial=root/'restored'/r.initial_relative_path
     self.assertEqual((current/'b').samefile(current/'nested/a'),not initially_linked);self.assertEqual((initial/'b').samefile(initial/'nested/a'),initially_linked)
     self.assertEqual(self.save(root/'again',restored).binding,after.binding)
- def test_older_codecs_and_actual_previous_readers_refuse_link_contract(self):
+ def test_older_codecs_refuse_link_contract(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);_,work,value=self.setup(root);r=value.resources[0];encoded=Codec(object(),result_version='1.7').encode(r)
    self.assertEqual(Codec(object(),result_version='1.7').decode(encoded),r)
@@ -107,7 +108,12 @@ class HardlinkDirectoryTests(unittest.TestCase):
     with self.assertRaises(ValueError):Codec(object(),result_version=version).encode(r)
     with self.assertRaises(ValueError):Codec(object(),result_version=version).decode(encoded)
    mutable.MutableDirectoryTests().failed(work,value).save(root/'archive');self.save(root/'checkpoint',value);digest,_=write(root/'context',value)
-   old=Path(os.environ.get('EASYSEWER_DIRECTORY_HISTORY_ROOT',Path(__file__).resolve().parent.parent))/'candidate-v16'
+
+ def test_historical_candidate_v16_readers_reject_hardlink_topology(self):
+  old=historical_package('candidate-v16')
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp);_,work,value=self.setup(root)
+   mutable.MutableDirectoryTests().failed(work,value).save(root/'archive');self.save(root/'checkpoint',value);digest,_=write(root/'context',value)
    code="import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime import RunResult;from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[2]);\nfor action in (lambda:RunResult.load(root/'archive'),lambda:read(root/'context',sys.argv[3]),lambda:load(root/'checkpoint')):\n try:action()\n except ValueError:pass\n else:raise AssertionError('Old reader accepted hardlink topology')"
    p=subprocess.run([sys.executable,'-I','-B','-c',code,str(old),str(root),digest],capture_output=True,text=True,timeout=45);self.assertEqual(p.returncode,0,p.stdout+p.stderr)
  def test_link_failure_has_no_copy_fallback_and_preserves_original_error(self):

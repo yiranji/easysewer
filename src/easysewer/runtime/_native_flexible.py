@@ -89,7 +89,7 @@ class NativeFlexibleSolver(NativeSolver):
                 removed_volume=0.,active_steps=0))
         if parameters['trace'] is not None:
             target=Path(parameters['trace'])
-            if target.is_absolute() or '..' in target.parts or not target.resolve().is_relative_to(Path.cwd()):
+            if target.is_absolute() or '..' in target.parts or not target.resolve().is_relative_to(Path.cwd().resolve()):
                 raise ValueError('Trace must be inside the private working directory')
             if target.exists() or not target.parent.is_dir():raise ValueError('Trace target must be an unused reserved file')
         self.parameters=parameters
