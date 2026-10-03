@@ -13,7 +13,9 @@ import sys
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 
+import easysewer
 from easysewer import get_native_capabilities
 from easysewer.io.inp import InpDocument
 from easysewer.io.output_metadata import NotRecordedError, OutputMetadata
@@ -84,7 +86,10 @@ class NativeRunnerTests(unittest.TestCase):
                     text=str(scratch.resolve())
                     compatible=text.encode('mbcs',errors='strict').decode('mbcs')==text
                 except UnicodeError:compatible=False
-            result=Runner().run(model,config(destination,overwrite=True,keep_failed_artifacts=False))
+            # Exercise the unsupported-volume path even on NTFS hosts that
+            # provide a usable short alias for this directory.
+            with patch('easysewer.runtime._native_paths._short_path', return_value=None):
+                result=Runner().run(model,config(destination,overwrite=True,keep_failed_artifacts=False))
             self.assertEqual(Path(result.snapshot.execution_directory).parent,scratch.resolve())
             if compatible:
                 self.check_success(result)
@@ -111,9 +116,13 @@ class NativeRunnerTests(unittest.TestCase):
             oracle_source=root/'oracle-source.inp';oracle_source.write_text(oracle_model.to_document().text,encoding='utf-8')
             # The legacy direct ABI leaks climate FILE* for this no-catchment
             # fixture. Isolate the independent oracle, too.
-            package=str(Path(__file__).resolve().parents[1]/'src');tests=str(Path(__file__).resolve().parent)
-            code='import sys;sys.path[:0]='+repr([package,tests])+';from pathlib import Path;from test_native_v2_project import NativeProjectTests;NativeProjectTests().solve(sys.argv[1],"direct",Path(sys.argv[2]).read_text(encoding="utf-8"),report_encoding="cp1252")'
-            subprocess.run([sys.executable,'-I','-B','-c',code,str(root),str(oracle_source)],capture_output=True,check=True,timeout=30,
+            # Installed-package qualification must use the same package in
+            # the isolated oracle, without falling back to the shipped source.
+            package=str(Path(easysewer.__file__).resolve().parent.parent);tests=str(Path(__file__).resolve().parent)
+            code=('import sys;sys.path[:0]='+repr([package,tests])+';from pathlib import Path;import easysewer;'
+                'assert Path(easysewer.__file__).resolve()==Path(sys.argv[3]).resolve(), "Oracle imported a different package";'
+                'from test_native_v2_project import NativeProjectTests;NativeProjectTests().solve(sys.argv[1],"direct",Path(sys.argv[2]).read_text(encoding="utf-8"),report_encoding="cp1252")')
+            subprocess.run([sys.executable,'-I','-B','-c',code,str(root),str(oracle_source),easysewer.__file__],capture_output=True,check=True,timeout=30,
                 creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
             original=model.to_json_document().to_bytes()
             def mutate(progress):

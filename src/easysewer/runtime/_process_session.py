@@ -15,6 +15,7 @@ import uuid
 from .backend import (CheckpointRejected, EngineObjects, MassBalance, NativeFailure, SessionCancelled,
                       SessionError, SessionStateError, SessionTimeout, StepResult)
 from ..results.applicability import ResultContext, context_from_input
+from ._native_paths import worker_directory
 
 MAX_FRAME = 16 * 1024 * 1024
 STDERR_LIMIT = 64 * 1024
@@ -41,7 +42,7 @@ class _WorkerConnection:
         self._stderr_lock = threading.Lock()
         self._sequence = 0
         self._disposed = False
-        self.process = subprocess.Popen(_worker_command(), cwd=str(directory),
+        self.process = subprocess.Popen(_worker_command(), cwd=worker_directory(directory),
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             bufsize=0, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
         self._threads = [threading.Thread(target=target, daemon=True, name='easysewer-worker-'+name)
@@ -514,8 +515,8 @@ class ProcessSession:
                     raise FileExistsError(path)
             expected = tuple((collection, tuple(names)) for collection, names in expected)
             # Avoid passing UTF-8 absolute prefixes to the narrow fopen API.
-            # Windows native full-path resolution still requires the working
-            # directory to be representable by the process ANSI code page.
+            # The child may use a verified ASCII short-name spelling of this
+            # same directory; ownership and public paths remain canonical.
             native_paths = [str(path.relative_to(self.working_directory)) if path.is_relative_to(self.working_directory)
                             else str(path) for path in paths]
             # Context is evidence from these bytes, not a guess from native

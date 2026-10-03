@@ -729,7 +729,8 @@ class Runner:
                 issues.append(Diagnostic(code='run.native_path',severity=Severity.WARNING,
                     message='Windows native path resolution requires a working-directory path representable '
                     'by the process ANSI code page and within the 4095-byte native path limit. '
-                    'For Runner.run, set Model Options.temp_directory (TEMPDIR) to a shorter compatible writable '
+                    'If a verified existing ASCII short-name alias is unavailable, '
+                    'for Runner.run set Model Options.temp_directory (TEMPDIR) to a shorter compatible writable '
                     'directory; output_directory can remain Unicode. Explicit TEMPDIR is never relocated.'))
             artifacts=[];produced=[]
             directory_artifacts=directory_group_artifacts=()

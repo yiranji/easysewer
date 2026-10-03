@@ -215,13 +215,14 @@ class QualificationSelectionTests(unittest.TestCase):
             with self.subTest(platform=platform):
                 self.assertEqual(qualify.default_test_names(pure=True, platform=platform), expected)
 
-    def test_windows_error_mode_is_only_selected_for_native_windows(self):
+    def test_windows_platform_checks_are_only_selected_for_native_windows(self):
         for platform in ('linux', 'win32'):
             for pure in (False, True):
                 with self.subTest(platform=platform, pure=pure):
                     names = qualify.default_test_names(pure=pure, platform=platform)
-                    self.assertEqual('test_native_windows_error_mode' in names,
-                                     platform == 'win32' and not pure)
+                    for name in ('test_native_windows_error_mode', 'test_native_windows_paths'):
+                        self.assertEqual(name in names, platform == 'win32' and not pure)
+                    self.assertEqual('test_native_path_aliases' in names, not pure)
 
     def test_default_test_selections_do_not_share_mutable_state(self):
         first = qualify.default_test_names(platform='linux')

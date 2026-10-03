@@ -13,7 +13,7 @@ def default_test_names(*, pure=False, platform=None):
     names = ['test_public_api_v2', 'test_edit_workflow_v2', 'test_scenario_v2',
              'test_project_v2', 'test_json_v2', 'test_runner_v2', 'test_output_v2', 'test_report_v2']
     if not pure:
-        names += ['test_native_platform_diagnostics', 'test_backend_identity_v2',
+        names += ['test_native_platform_diagnostics', 'test_native_path_aliases', 'test_backend_identity_v2',
                   'test_native_edit_workflow_v2', 'test_native_v2_runner',
                   'test_native_v2_flexible', 'test_native_v2_result_archive',
                   'test_native_v2_scenario', 'test_native_v2_project',
@@ -21,7 +21,7 @@ def default_test_names(*, pure=False, platform=None):
                   'test_native_public_directory_checkpoint_v2',
                   'test_native_output_directory_checkpoint_v2']
         if (sys.platform if platform is None else platform) == 'win32':
-            names += ['test_native_windows_error_mode']
+            names += ['test_native_windows_error_mode', 'test_native_windows_paths']
     return names
 
 
