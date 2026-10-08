@@ -723,6 +723,15 @@ class Runner:
                 except Exception as journal_error:
                     transaction.issues.append(f'Cannot record primary failure in {transaction.journal.path}: {journal_error}')
             issues.append(Diagnostic(code='run.'+status,message=f'{phase}: {error}'))
+            if (isinstance(error,SessionError) and error.failure.stage=='open' and error.failure.code==303
+                    and 'input path cannot be resolved or exceeds native path buffer' in error.failure.message
+                    and info is not None and info.platform=='Windows' and 'easysewer:path-io:1' in info.capabilities):
+                issues.append(Diagnostic(code='run.native_path',severity=Severity.WARNING,
+                    message='Windows native path resolution requires a working-directory path representable '
+                    'by the process ANSI code page and within the 4095-byte native path limit. '
+                    'If a verified existing ASCII short-name alias is unavailable, '
+                    'for Runner.run set Model Options.temp_directory (TEMPDIR) to a shorter compatible writable '
+                    'directory; output_directory can remain Unicode. Explicit TEMPDIR is never relocated.'))
             artifacts=[];produced=[]
             directory_artifacts=directory_group_artifacts=()
             output_metadata=report_document=None

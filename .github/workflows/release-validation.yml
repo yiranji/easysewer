@@ -1,0 +1,146 @@
+name: Release validation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Audit and rebuild release artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install build tools
+        run: python -m pip install 'setuptools>=77.0.3' wheel twine
+      - name: Check documentation and result schemas
+        run: |
+          python tools/audit_docs.py
+          python tools/build_result_schemas.py --check
+      - name: Test release validation gates
+        run: |
+          python -m unittest discover -s tests -p test_release_tools.py -v
+          python -m unittest discover -s tests -p test_checkpoint_test_build_tool.py -v
+          python -m unittest discover -s tests -p test_lid_report_test_build_tool.py -v
+          python -m unittest discover -s tests -p test_support_matrix_audit.py -v
+      - name: Check current directory format contracts
+        env:
+          PYTHONPATH: src:tests
+        run: >-
+          python -m unittest -v
+          test_directory_artifact_v2
+          test_directory_checkpoint_v2
+          test_directory_group_integration_v2
+          test_hardlink_directory_v2
+          test_mixed_resource_graph_v2
+          test_mutable_directory_v2
+          test_optional_mutable_directory_v2
+          test_output_directory_checkpoint_v2
+      - name: Rebuild both wheel profiles from the source archive
+        run: python tools/build_release.py --output build/release
+      - name: Check distribution metadata
+        run: python -m twine check --strict build/release/native/*.whl build/release/native/*.tar.gz build/release/pure/*.whl
+      - name: Save wheels and source archive for runtime checks
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-packages
+          path: |
+            build/release/native/*.whl
+            build/release/native/*.tar.gz
+            build/release/pure/*.whl
+            build/release/extract_sdist.py
+          if-no-files-found: error
+          retention-days: 7
+      - name: Save build evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-build-evidence
+          path: |
+            build/release/*.json
+            build/release/*.log
+            build/release/pure/*.json
+            build/release/pure/*.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+  qualify:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }} / x64
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: x64
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-packages
+          path: packages
+      - name: Extract shipped tests and tools
+        # Windows Python 3.10.11 predates tarfile's data filter. The shipped
+        # helper validates paths/types and safely copies files on older Python.
+        run: >-
+          python packages/extract_sdist.py
+          --archive packages/native/*.tar.gz --output source
+      - name: Install native and pure wheels in separate directories
+        run: |
+          python -m pip install --no-index --no-deps --no-compile --target installed-native packages/native/*.whl
+          python -m pip install --no-index --no-deps --no-compile --target installed-pure packages/pure/*.whl
+      - name: Check the native installed package
+        run: python source/*/tools/qualify_release.py --package installed-native --output checks/native
+      - name: Check current Horton physics and continuation contracts
+        run: >-
+          python source/*/tools/qualify_release.py --package installed-native
+          --output checks/horton --tests
+          test_native_horton_integration_v2 test_native_horton_outfall_v2
+      - name: Check the pure installed package and read the native archive
+        run: >-
+          python source/*/tools/qualify_release.py --package installed-pure --pure
+          --output checks/pure --archive checks/native/first-run/archive-moved
+      - name: Check Windows file sharing and directory recovery
+        if: runner.os == 'Windows'
+        run: >-
+          python source/*/tools/qualify_release.py --package installed-native
+          --output checks/windows-files --tests
+          test_recovery_journal_readers_v2.WindowsJournalReaders.test_nonsharing_reader_preserves_destination_and_retry
+          test_recovery_journal_readers_v2.WindowsJournalReaders.test_readonly_destination_preserved
+          test_recovery_journal_readers_v2.WindowsJournalReaders.test_extended_path_and_unicode_replacement
+          test_recovery_journal_readers_v2.WindowsJournalReaders.test_native_replace_missing_target_and_source_sharing_denial
+          test_recovery_journal_readers_v2.WindowsPathCodeUnits.test_existing_windows_surrogate_path_retains_exact_name
+          test_windows_directory_handles_v2.WindowsDirectoryHandleTests.test_archive_moves_fail_with_nonsharing_handle_and_succeed_after_release
+          test_windows_directory_handles_v2.WindowsDirectoryHandleTests.test_existing_directory_lock_rolls_back_prior_output_and_allows_fresh_retry
+          test_windows_directory_handles_v2.WindowsDirectoryHandleTests.test_prepared_directory_lock_retains_recovery_then_cleans_after_release
+      - name: Save qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-checks-${{ matrix.os }}-py${{ matrix.python }}
+          path: |
+            checks/*/*.json
+            checks/*/*.log
+            checks/*/first-run/summary.json
+          if-no-files-found: ignore
+          retention-days: 14

@@ -16,9 +16,10 @@ python -m pip install easysewer==2.0.0
 python -c "from easysewer import Model; print(Model())"
 ```
 
-Python 3.10+ is required. The PyPI distribution includes Windows/Linux native
-solver libraries. Simulation requires a compatible native backend; package
-installation alone does not establish solver availability on every platform.
+Python 3.10+ is required. The PyPI distribution includes x86-64 Windows/Linux
+native solver libraries for 64-bit Python. Bundled Linux solvers require glibc
+2.33+ and `libgomp.so.1`. Simulation requires a compatible native backend;
+package installation alone does not establish solver availability on every platform.
 Modeling, conversion and pure result reading do not require a native solver.
 See [installation and backend checks](https://github.com/yiranji/easysewer/blob/master/docs/2.0-installation.md).
 

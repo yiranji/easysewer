@@ -1,7 +1,7 @@
 """Internal hardlink identity, independent copies, durable reconstruction and failure."""
 from dataclasses import replace
 from pathlib import Path
-import hashlib,json,os,shutil,subprocess,sys,tempfile,unittest
+import hashlib,json,shutil,subprocess,sys,tempfile,unittest
 from unittest.mock import patch
 import easysewer
 from easysewer.runtime import _directory_tree as trees, _preparation as prep, _checkpoint_container as storage, _workspace as workspace
@@ -12,7 +12,7 @@ from easysewer.runtime._result_codec import Codec
 from easysewer.runtime._checkpoint_context import write,read
 from easysewer.io.interface_inspection import InterfaceInspection
 from directory_roundtrip_fixture import prepared,row,schema
-from test_checkpoint_container_v2 import snapshot,native_prefix
+from test_checkpoint_container_v2 import snapshot,native_prefix,rewrite
 from test_directory_checkpoint_v2 import record
 from test_result_archive_v2 import failure_result
 from test_run_recovery_v2 import CHILD
@@ -99,7 +99,7 @@ class HardlinkDirectoryTests(unittest.TestCase):
     restored=after.materialize(root/'restored',schema=schema());current=root/'restored'/r.relative_path;initial=root/'restored'/r.initial_relative_path
     self.assertEqual((current/'b').samefile(current/'nested/a'),not initially_linked);self.assertEqual((initial/'b').samefile(initial/'nested/a'),initially_linked)
     self.assertEqual(self.save(root/'again',restored).binding,after.binding)
- def test_older_codecs_and_actual_previous_readers_refuse_link_contract(self):
+ def test_older_codecs_refuse_link_contract(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);_,work,value=self.setup(root);r=value.resources[0];encoded=Codec(object(),result_version='1.7').encode(r)
    self.assertEqual(Codec(object(),result_version='1.7').decode(encoded),r)
@@ -107,9 +107,32 @@ class HardlinkDirectoryTests(unittest.TestCase):
     with self.assertRaises(ValueError):Codec(object(),result_version=version).encode(r)
     with self.assertRaises(ValueError):Codec(object(),result_version=version).decode(encoded)
    mutable.MutableDirectoryTests().failed(work,value).save(root/'archive');self.save(root/'checkpoint',value);digest,_=write(root/'context',value)
-   old=Path(os.environ.get('EASYSEWER_DIRECTORY_HISTORY_ROOT',Path(__file__).resolve().parent.parent))/'candidate-v16'
-   code="import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime import RunResult;from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[2]);\nfor action in (lambda:RunResult.load(root/'archive'),lambda:read(root/'context',sys.argv[3]),lambda:load(root/'checkpoint')):\n try:action()\n except ValueError:pass\n else:raise AssertionError('Old reader accepted hardlink topology')"
-   p=subprocess.run([sys.executable,'-I','-B','-c',code,str(old),str(root),digest],capture_output=True,text=True,timeout=45);self.assertEqual(p.returncode,0,p.stdout+p.stderr)
+
+ def test_current_readers_reject_mislabeled_hardlink_topology_formats(self):
+  # Synthetic edits of current output exercise current readers, not old releases.
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp);_,work,value=self.setup(root);digest,_=write(root/'context',value)
+   mutable.MutableDirectoryTests().failed(work,value).save(root/'archive');self.save(root/'checkpoint',value)
+   with patch('ctypes.CDLL',side_effect=AssertionError('Format checks must stay offline')):
+    self.assertEqual(RunResult.load(root/'archive').snapshot,value)
+    self.assertEqual(read(root/'context',digest),value)
+    self.assertEqual(storage.load(root/'checkpoint').snapshot,value)
+    formats=(
+     ('archive','result.json','schema_version','1.7','1.6',RunResult.load),
+     ('context','context.json','version',5,4,lambda path:read(path,hashlib.sha256((path/'context.json').read_bytes()).hexdigest())),
+     ('checkpoint','checkpoint.json','schema_version','1.4','1.3',storage.load))
+    for name,filename,key,version,older,load in formats:
+     data=json.loads((root/name/filename).read_bytes());self.assertEqual(data[key],version)
+     for label in (older,99 if name=='context' else '99.0'):
+      with self.subTest(format=name,label=label):
+       altered=root/(name+'-'+str(label));shutil.copytree(root/name,altered)
+       if name=='checkpoint':rewrite(altered,lambda data:data.update(schema_version=label))
+       else:
+        changed=dict(data);changed[key]=label;(altered/filename).write_text(json.dumps(changed),encoding='utf-8')
+       # The context digest/checkpoint commit matches the edited bytes, so the
+       # reader must reject the format rather than merely a stale checksum.
+       with self.assertRaises(ValueError):load(altered)
+
  def test_link_failure_has_no_copy_fallback_and_preserves_original_error(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);source,work,value=self.setup(root);manifest=trees.inspect_tree(source);saved=self.save(root/'saved',value);artifact=mutable.MutableDirectoryTests().artifacts(work,value)[0]

@@ -9,10 +9,39 @@ It also includes utility functions for finding library paths across different op
 import os
 import sys
 import platform
+import struct
+import sysconfig
 
 
 class NativeCapabilityError(RuntimeError):
     pass
+
+
+def _packaged_native_platform_error() -> str | None:
+    """Explain known packaged ABI mismatches without loading a library.
+
+    This is only a static check. A matching host still needs the system loader
+    and its dependencies; explicit user libraries have their own requirements.
+    """
+    system, machine = platform.system(), platform.machine()
+    bits = struct.calcsize('P') * 8
+    if system not in ('Windows', 'Linux'):
+        return (f'Packaged native libraries support Windows and Linux only; '
+                f'current runtime is {system} {machine} ({bits}-bit Python)')
+    if system == 'Windows':
+        # platform.machine() can describe the physical ARM64 CPU even when
+        # x64 Python runs under Windows emulation. DLL loading follows the
+        # interpreter ABI, which sysconfig reports independently of that CPU.
+        python_platform = sysconfig.get_platform()
+        compatible = python_platform == 'win-amd64'
+        runtime = f'{system} {machine} ({python_platform}, {bits}-bit Python)'
+    else:
+        compatible = machine.lower() in ('x86_64', 'amd64')
+        runtime = f'{system} {machine} ({bits}-bit Python)'
+    if not compatible or bits != 64:
+        return (f'Packaged native libraries require x86-64 and 64-bit Python; '
+                f'current runtime is {runtime}')
+    return None
 
 
 def _get_library_path_candidates(lib_name: str) -> tuple[str, list[str]]:
@@ -26,8 +55,11 @@ def _get_library_path_candidates(lib_name: str) -> tuple[str, list[str]]:
         tuple[str, list[str]]: (library extension, candidate absolute paths)
 
     Raises:
-        OSError: If current operating system is not supported
+        OSError: If the packaged libraries do not support this runtime ABI
     """
+    reason = _packaged_native_platform_error()
+    if reason:
+        raise OSError(reason)
     # Determine base path based on execution environment
     if getattr(sys, 'frozen', False):
         if hasattr(sys, '_MEIPASS'):
@@ -67,7 +99,8 @@ def probe_library_path(lib_name: str) -> str | None:
     """
     Probe native library path without loading it.
 
-    This function only checks file existence and never calls ctypes.CDLL.
+    This function checks the packaged platform/ABI and regular-file existence.
+    It never calls ctypes.CDLL or verifies system-library dependencies.
 
     Args:
         lib_name: The name of the library file to find
@@ -80,7 +113,7 @@ def probe_library_path(lib_name: str) -> str | None:
     except OSError:
         return None
     for path in possible_paths:
-        if os.path.exists(path):
+        if os.path.isfile(path):
             return os.path.realpath(path)
     return None
 
@@ -97,7 +130,7 @@ def find_library_path(lib_name: str) -> str:
         
     Raises:
         FileNotFoundError: If the library file cannot be found
-        OSError: If the operating system is not supported
+        OSError: If the packaged libraries do not support this runtime ABI
     """
     lib_ext, possible_paths = _get_library_path_candidates(lib_name)
     lib_path = probe_library_path(lib_name)
@@ -110,7 +143,11 @@ def find_library_path(lib_name: str) -> str:
 
 def get_native_capabilities() -> dict[str, bool]:
     """
-    Detect availability of packaged native capabilities without loading any CDLL.
+    Detect packaged native files for this platform/ABI without loading a CDLL.
+
+    True means that a candidate file exists, not that the system can load it.
+    Use StandardBackend().probe() or FlexiblePondingBackend().probe() to check
+    real solver availability, including native system-library dependencies.
 
     Returns:
         dict[str, bool]: Capability flags keyed by feature name

@@ -6,12 +6,12 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import tarfile
 import zipfile
 
 from audit_sdist_tests import audit
 from audit_docs import audit as audit_docs, published_files
 from build_pure import build
+from extract_sdist import extract_sdist
 
 
 def main():
@@ -19,6 +19,10 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--python', default=sys.executable)
     args = parser.parse_args()
+    # The documentation and archive auditors also use assertions. Fail before
+    # creating output rather than silently omitting release gates under -O.
+    if sys.flags.optimize:
+        parser.error('Release validation requires assertions; run without -O, -OO or PYTHONOPTIMIZE.')
     root = Path(__file__).resolve().parents[1]
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -58,9 +62,9 @@ def main():
     assert test_audit['passed'], test_audit
     (output / 'test-audit.json').write_text(json.dumps(test_audit, indent=2) + '\n', encoding='utf-8')
     extracted = output / 'extracted'
-    extracted.mkdir()
-    with tarfile.open(sdist) as archive:
-        archive.extractall(extracted, filter='data')
+    extract_sdist(sdist, extracted)
+    # Runtime jobs need this helper before they can read tools from the sdist.
+    shutil.copyfile(source / 'tools/extract_sdist.py', output / 'extract_sdist.py')
     rebuilt, = extracted.iterdir()
     run('wheel', [args.python, '-B', '-c', 'import sys;from setuptools.build_meta import build_wheel;build_wheel(sys.argv[1])', str(dist)], rebuilt)
     pure = build(rebuilt, output / 'pure', python=args.python)

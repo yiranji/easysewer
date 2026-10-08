@@ -16,6 +16,7 @@ from ._checkpoint_native import NativeCheckpoint, RestoreResult
 from . import _checkpoint_worker as worker
 from ._native_flexible import NativeFlexibleSolver
 from ._workspace import fingerprint, remove_owned_tree
+from ._native_paths import restore_path
 from .backend import NativeFailure
 from .results import RunSnapshot
 from ..io.json import JsonDocument
@@ -233,13 +234,13 @@ class CheckpointLifecycle:
                         forbidden_files=[*outputs.values(), *(item.path for item in current_outputs)])
                 def provide_input(key):
                     checkpoint(); inputs[key].check()
-                    return inputs[key].path
+                    return restore_path(inputs[key].path, self.root)
                 def provide_output(role, index, text, size):
                     checkpoint()
                     item = data['outputs'][index]
                     if (role, text, size) != (item['role'], item['text'], item['blob']['size']):
                         raise ValueError('Native output roles differ from checkpoint')
-                    return outputs[index]
+                    return restore_path(outputs[index], self.root)
                 self._check_inputs(); checkpoint()
                 if directories:directories.check(checkpoint=checkpoint)
                 result = self.api.restore(archive.native_state, input_provider=provide_input, output_provider=provide_output)

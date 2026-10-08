@@ -103,7 +103,7 @@ specific SHA-256. These records are provenance evidence, not signatures or a
 claim of bit-for-bit reproduction across compilers/platforms.
 
 The candidate Linux build was exercised on Ubuntu 24.04 under WSL x86_64. Its
-imports require `libm.so.6`, `libc.so.6` (including `GLIBC_2.29`) and `libgomp.so.1`
+imports require `libm.so.6`, `libc.so.6` (including `GLIBC_2.33`) and `libgomp.so.1`
 (including `GOMP_4.0`/`OMP_1.0`). The Windows x86_64 build imports `KERNEL32.dll`
 and `msvcrt.dll`. These observations do not replace the remaining supported
 platform and older-runtime release matrix.

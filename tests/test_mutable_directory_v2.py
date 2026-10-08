@@ -1,7 +1,7 @@
 """Separate original evidence from mutable trees; native tails here are synthetic."""
 from dataclasses import replace
 from pathlib import Path
-import hashlib,io,json,os,shutil,subprocess,sys,tempfile,unittest
+import hashlib,io,json,shutil,tempfile,unittest
 from unittest.mock import patch
 from easysewer.runtime import _preparation as prep
 from easysewer.runtime import _checkpoint_container as storage
@@ -138,7 +138,7 @@ class MutableDirectoryTests(unittest.TestCase):
    with self.assertRaises(ValueError):
     with storage.Builder(root/'limited',value,limits=storage.Limits(total_bytes=1)):pass
    self.assertFalse((root/'limited').exists());self.assertEqual(inspect_tree(source),value.resources[0].tree)
- def test_context_record_codec_versions_and_actual_previous_readers_refuse_new_state(self):
+ def test_context_record_codec_versions_reject_older_mutable_state_formats(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);_,work,value=self.setup(root);digest,_=write(root/'context',value);self.assertEqual(read(root/'context',digest),value);self.assertEqual(json.loads((root/'context/context.json').read_bytes())['version'],3)
    self.assertEqual(json.loads(record(root/'record',value))['schema_version'],'1.3')
@@ -146,9 +146,33 @@ class MutableDirectoryTests(unittest.TestCase):
    for version in ('1.0','1.1','1.2','1.3','1.4'):
     with self.assertRaises(ValueError):Codec(object(),result_version=version).encode(resource)
     with self.assertRaises(ValueError):Codec(object(),result_version=version).decode(encoded)
-   old=Path(os.environ.get('EASYSEWER_DIRECTORY_HISTORY_ROOT',Path(__file__).resolve().parent.parent))/'candidate-v12';self.failed(work,value).save(root/'archive');self.save_checkpoint(root/'checkpoint',value)
-   code="import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime import RunResult;from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[2]);\nfor action in (lambda:RunResult.load(root/'archive'),lambda:read(root/'context',sys.argv[3]),lambda:load(root/'checkpoint')):\n try:action()\n except ValueError:pass\n else:raise AssertionError('Previous reader accepted new mutable state')"
-   p=subprocess.run([sys.executable,'-I','-B','-c',code,str(old),str(root),digest],capture_output=True,text=True);self.assertEqual(p.returncode,0,p.stdout+p.stderr)
+   self.failed(work,value).save(root/'archive');self.save_checkpoint(root/'checkpoint',value)
+
+ def test_current_readers_reject_mislabeled_mutable_state_formats(self):
+  # Synthetic edits of current output exercise current readers, not old releases.
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp);_,work,value=self.setup(root);digest,_=write(root/'context',value)
+   self.failed(work,value).save(root/'archive');self.save_checkpoint(root/'checkpoint',value)
+   with patch('ctypes.CDLL',side_effect=AssertionError('Format checks must stay offline')):
+    self.assertEqual(RunResult.load(root/'archive').snapshot,value)
+    self.assertEqual(read(root/'context',digest),value)
+    self.assertEqual(storage.load(root/'checkpoint').snapshot,value)
+    formats=(
+     ('archive','result.json','schema_version','1.5','1.4',RunResult.load),
+     ('context','context.json','version',3,2,lambda path:read(path,hashlib.sha256((path/'context.json').read_bytes()).hexdigest())),
+     ('checkpoint','checkpoint.json','schema_version','1.2','1.1',storage.load))
+    for name,filename,key,version,older,load in formats:
+     data=json.loads((root/name/filename).read_bytes());self.assertEqual(data[key],version)
+     for label in (older,99 if name=='context' else '99.0'):
+      with self.subTest(format=name,label=label):
+       altered=root/(name+'-'+str(label));shutil.copytree(root/name,altered)
+       if name=='checkpoint':rewrite(altered,lambda data:data.update(schema_version=label))
+       else:
+        changed=dict(data);changed[key]=label;(altered/filename).write_text(json.dumps(changed),encoding='utf-8')
+       # The context digest/checkpoint commit matches the edited bytes, so the
+       # reader must reject the format rather than merely a stale checksum.
+       with self.assertRaises(ValueError):load(altered)
+
  def test_materialization_failure_cleans_only_new_root_and_retry_restores_both_trees(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);source,work,value=self.setup(root);_,manifest=self.mutate(work,value);saved=self.save_checkpoint(root/'saved',value);error=OSError('copy failed');error.__cause__=ValueError('primary');original=storage.Checkpoint.copy_blob;fired=[]
