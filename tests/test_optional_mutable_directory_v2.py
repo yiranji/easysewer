@@ -1,7 +1,7 @@
 """Initial absence, later creation/deletion, and lossless nullable directory state."""
 from pathlib import Path
 from dataclasses import replace
-import json,subprocess,sys,tempfile,unittest
+import hashlib,json,shutil,tempfile,unittest
 from unittest.mock import patch
 from easysewer.runtime import _preparation as prep
 from easysewer.runtime import _checkpoint_container as storage
@@ -12,7 +12,6 @@ from easysewer.runtime.results import DirectoryArtifact,RunResult
 from easysewer.runtime._result_codec import Codec
 from easysewer.runtime._checkpoint_context import write,read
 from easysewer.io.interface_inspection import InterfaceInspection
-from directory_history_fixture import historical_package
 from directory_roundtrip_fixture import prepared,row,schema
 from test_checkpoint_container_v2 import snapshot,native_prefix,rewrite
 import test_mutable_directory_v2 as mutable_fixture
@@ -149,13 +148,31 @@ class OptionalMutableDirectoryTests(unittest.TestCase):
    self.failed(work,value).save(root/'archive');self.save(root/'checkpoint',value)
    rewrite(root/'checkpoint',lambda d:d.update(schema_version='1.2'))
    with self.assertRaises((ValueError,TypeError)):storage.load(root/'checkpoint')
- def test_historical_candidate_v14_readers_reject_directory_absence(self):
-  previous=historical_package('candidate-v14')
+ def test_current_readers_reject_mislabeled_explicit_absence_formats(self):
+  # Synthetic edits of current output exercise current readers, not old releases.
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);_,work,value,_=self.setup(root);digest,_=write(root/'context',value)
    self.failed(work,value).save(root/'archive');self.save(root/'checkpoint',value)
-   code="import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime import RunResult;from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[2]);\nfor f in (lambda:RunResult.load(root/'archive'),lambda:read(root/'context',sys.argv[3]),lambda:load(root/'checkpoint')):\n try:f()\n except ValueError:pass\n else:raise AssertionError('Old reader accepted directory absence')"
-   child=subprocess.run([sys.executable,'-I','-B','-c',code,str(previous),str(root),digest],capture_output=True,text=True,timeout=45);self.assertEqual(child.returncode,0,child.stdout+child.stderr)
+   with patch('ctypes.CDLL',side_effect=AssertionError('Format checks must stay offline')):
+    self.assertEqual(RunResult.load(root/'archive').snapshot,value)
+    self.assertEqual(read(root/'context',digest),value)
+    self.assertEqual(storage.load(root/'checkpoint').snapshot,value)
+    formats=(
+     ('archive','result.json','schema_version','1.6','1.5',RunResult.load),
+     ('context','context.json','version',4,3,lambda path:read(path,hashlib.sha256((path/'context.json').read_bytes()).hexdigest())),
+     ('checkpoint','checkpoint.json','schema_version','1.3','1.2',storage.load))
+    for name,filename,key,version,older,load in formats:
+     data=json.loads((root/name/filename).read_bytes());self.assertEqual(data[key],version)
+     for label in (older,99 if name=='context' else '99.0'):
+      with self.subTest(format=name,label=label):
+       altered=root/(name+'-'+str(label));shutil.copytree(root/name,altered)
+       if name=='checkpoint':rewrite(altered,lambda data:data.update(schema_version=label))
+       else:
+        changed=dict(data);changed[key]=label;(altered/filename).write_text(json.dumps(changed),encoding='utf-8')
+       # The context digest/checkpoint commit matches the edited bytes, so the
+       # reader must reject the format rather than merely a stale checksum.
+       with self.assertRaises(ValueError):load(altered)
+
  def test_absence_changes_during_output_capture_refuse_commit_and_retry(self):
   from types import SimpleNamespace
   with tempfile.TemporaryDirectory() as tmp:

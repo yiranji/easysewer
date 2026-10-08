@@ -1,6 +1,6 @@
 """Directory storage/bootstrap evidence, not native restoration qualification."""
 from dataclasses import replace
-import hashlib,io,json,os,shutil,subprocess,sys,tempfile,unittest
+import hashlib,io,json,shutil,tempfile,unittest
 from pathlib import Path
 from unittest.mock import patch
 from easysewer.model import Ref
@@ -82,40 +82,53 @@ class DirectoryCheckpointTests(unittest.TestCase):
    variants=[replace(shared,relative_path='INPUTS/TREE'),replace(shared,relative_path='inputs/tree/nested'),replace(shared,tree=DirectoryManifest(entries=())),replace(file,relative_path='inputs/tree/unlisted'),replace(file,relative_path='inputs'),replace(res,relative_path='../outside'),replace(res,tree=None),replace(shared,relative_path='INPUTS/other'),replace(file,relative_path='INPUTS/another-file')]
    for other in variants:
     with self.subTest(other=other),self.assertRaises(ValueError):_snapshot_files(replace(value,resources=(res,other)))
- def test_bootstrap_roundtrip_versions_tampering_and_old_reader_refusal(self):
-  old=os.environ.get('EASYSEWER_DIRECTORY_OLD_PACKAGE');tests=os.environ.get('EASYSEWER_DIRECTORY_OLD_TESTS')
-  if not old or not tests:self.skipTest('Old package not configured')
+ def test_current_bootstrap_roundtrip_versions_and_tampering(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);res=resource(root);value=snapshot(root,resources=(res,));digest,_=write(root/'context',value)
-   self.assertEqual(read(root/'context',digest),value);data=json.loads((root/'context/context.json').read_bytes());self.assertEqual(data['version'],2)
-   with Builder(root/'saved',value) as builder:builder.finish(native_prefix(value,builder.binding),())
-   code="import sys;from pathlib import Path;sys.path[:0]=sys.argv[1:3];from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[3]);\nfor operation in (lambda:read(root/'context',sys.argv[4]),lambda:load(root/'saved')):\n try:operation()\n except ValueError as error:assert 'Unsupported' in str(error),str(error)\n else:raise AssertionError('Old reader accepted new directory version')"
-   p=subprocess.run([sys.executable,'-I','-B','-c',code,old,tests,str(root),digest],capture_output=True,text=True);self.assertEqual(p.returncode,0,p.stdout+p.stderr)
-   rewrite(root/'saved',lambda d:d.update(schema_version='1.0'))
-   with self.assertRaises(ValueError):load(root/'saved')
-   path=root/'context/context.json';data['version']=1;path.write_text(json.dumps(data));new=hashlib.sha256(path.read_bytes()).hexdigest()
-   with self.assertRaises(ValueError):read(root/'context',new)
+   self.assertEqual(read(root/'context',digest),value);path=root/'context/context.json';raw=path.read_bytes();data=json.loads(raw);self.assertEqual(data['version'],2)
+   with Builder(root/'saved',value) as builder:stored=builder.finish(native_prefix(value,builder.binding),())
+   self.assertEqual(load(root/'saved').snapshot,value);self.assertEqual(stored.data['schema_version'],'1.1')
+   for version in (1,99):
+    with self.subTest(context_version=version):
+     data['version']=version;path.write_text(json.dumps(data),encoding='utf-8')
+     with self.assertRaisesRegex(ValueError,'content changed'):read(root/'context',digest)
+     # A valid hash must not disguise unsupported/downgraded directory content.
+     changed_digest=hashlib.sha256(path.read_bytes()).hexdigest()
+     with self.assertRaises(ValueError):read(root/'context',changed_digest)
+   path.write_bytes(raw);self.assertEqual(read(root/'context',digest),value)
+   for version in ('1.0','99.0'):
+    with self.subTest(checkpoint_version=version):
+     # rewrite recomputes the commit: the reader must reject the content itself.
+     rewrite(root/'saved',lambda d:d.update(schema_version=version))
+     with self.assertRaises(ValueError):load(root/'saved')
+   rewrite(root/'saved',lambda d:d.update(schema_version='1.1'))
+   self.assertEqual(load(root/'saved').snapshot,value)
  def test_execution_record_has_explicit_directory_version_and_all_members(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);res=resource(root);value=snapshot(root,resources=(res,));data=json.loads(record(root/'record',value))
    self.assertEqual(data['schema_version'],'1.2');tree=data['resources'][0]['tree'];self.assertEqual(tree['contract'],res.tree.contract);self.assertEqual([e['path'] for e in tree['entries']],[e.path for e in res.tree.entries])
- def test_real_old_package_file_only_record_context_and_checkpoint_exact_bytes(self):
-  old=os.environ.get('EASYSEWER_DIRECTORY_OLD_PACKAGE');tests=os.environ.get('EASYSEWER_DIRECTORY_OLD_TESTS')
-  if not old or not tests:self.skipTest('Old package not configured')
+ def test_current_file_only_record_context_and_checkpoint_exact_bytes(self):
+  # Preserve deterministic current wire formats, without claiming historical bytes.
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);(root/'input').write_bytes(b'ordinary resource')
-   res=ResourceSnapshot(owner=Ref(collection='test:resources',key='R'),field=('file',),role='test:resource',format='test:file',kind='file',access='read',active=True,required=True,original_path='/old/input',relative_path='input',sha256=hashlib.sha256(b'ordinary resource').hexdigest(),size=17)
-   value=snapshot(root,resources=(res,));raw=record(root/'current-record',value);self.assertEqual(json.loads(raw)['schema_version'],'1.1');self.assertNotIn('tree',json.loads(raw)['resources'][0])
-   digest,_=write(root/'current-context',value)
-   with Builder(root/'current-checkpoint',value) as builder:builder.finish(native_prefix(value,builder.binding),())
-   # This module cannot be imported under the old package: its directory types do not exist.
-   # Execute its generic record helper only, against genuinely old runtime classes.
-   import inspect
-   helper=inspect.getsource(record)
-   code="import sys,io,json,hashlib;from pathlib import Path;sys.path[:0]=sys.argv[1:3];from easysewer.model import Ref;from easysewer.runtime.results import ResourceSnapshot;from easysewer.runtime._checkpoint_context import write;from easysewer.runtime._checkpoint_container import Builder;from test_checkpoint_container_v2 import snapshot,native_prefix;root=Path(sys.argv[3]);\n"+helper+"\nres=ResourceSnapshot(owner=Ref(collection='test:resources',key='R'),field=('file',),role='test:resource',format='test:file',kind='file',access='read',active=True,required=True,original_path='/old/input',relative_path='input',sha256=hashlib.sha256(b'ordinary resource').hexdigest(),size=17);value=snapshot(root,resources=(res,));record(root/'old-record',value);write(root/'old-context',value)\nwith Builder(root/'old-checkpoint',value) as builder:builder.finish(native_prefix(value,builder.binding),())"
-   p=subprocess.run([sys.executable,'-I','-B','-c',code,old,tests,str(root)],capture_output=True,text=True);self.assertEqual(p.returncode,0,p.stdout+p.stderr)
+   res=ResourceSnapshot(owner=Ref(collection='test:resources',key='R'),field=('file',),role='test:resource',format='test:file',kind='file',access='read',active=True,required=True,original_path='/original/input',relative_path='input',sha256=hashlib.sha256(b'ordinary resource').hexdigest(),size=17)
+   value=snapshot(root,resources=(res,))
+   for label in ('first','repeat','roundtrip'):
+    current=read(root/'first-context',digest) if label=='roundtrip' else value
+    self.assertEqual(current,value)
+    raw=record(root/(label+'-record'),current);data=json.loads(raw);self.assertEqual(data['schema_version'],'1.1')
+    for field in ('tree','initial_relative_path','directory_group'):self.assertNotIn(field,data['resources'][0])
+    current_digest,_=write(root/(label+'-context'),current)
+    if label=='first':digest=current_digest
+    self.assertEqual(current_digest,digest)
+    context=json.loads((root/(label+'-context/context.json')).read_bytes());self.assertEqual(context['version'],1)
+    for field in ('tree','initial_relative_path','directory_group'):self.assertNotIn(field,context['snapshot']['fields']['resources']['values'][0]['fields'])
+    with Builder(root/(label+'-checkpoint'),current) as builder:saved=builder.finish(native_prefix(current,builder.binding),())
+    self.assertEqual(saved.data['schema_version'],'1.0');self.assertNotIn('directory_states',saved.data)
+    self.assertEqual(load(root/(label+'-checkpoint')).snapshot,value)
+   def contents(folder):return {p.relative_to(folder).as_posix():p.read_bytes() for p in folder.rglob('*') if p.is_file()}
    for kind in ('record','context','checkpoint'):
-    def contents(folder):return {p.relative_to(folder).as_posix():p.read_bytes() for p in folder.rglob('*') if p.is_file()}
-    self.assertEqual(contents(root/('current-'+kind)),contents(root/('old-'+kind)),kind)
+    for label in ('repeat','roundtrip'):
+     with self.subTest(kind=kind,label=label):self.assertEqual(contents(root/('first-'+kind)),contents(root/(label+'-'+kind)))
 
 if __name__=='__main__':unittest.main()

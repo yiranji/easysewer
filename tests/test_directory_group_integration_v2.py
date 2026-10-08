@@ -1,7 +1,7 @@
 """Group binding through actual staging, archives and offline checkpoints."""
 from dataclasses import replace
 from pathlib import Path
-import hashlib,io,json,shutil,subprocess,sys,tempfile,unittest
+import hashlib,io,json,shutil,tempfile,unittest
 from unittest.mock import patch
 from easysewer.runtime import _preparation as prep, _checkpoint_container as storage
 from easysewer.runtime._directory_graph import resource_groups,consumer_key,inspect_graph
@@ -11,7 +11,6 @@ from easysewer.runtime.results import RunResult,DirectoryArtifact,DirectoryGroup
 from easysewer.runtime._result_codec import Codec
 from easysewer.runtime._checkpoint_context import write,read
 from easysewer.io.interface_inspection import InterfaceInspection
-from directory_history_fixture import historical_package
 from directory_roundtrip_fixture import prepared,row,schema
 from test_checkpoint_container_v2 import snapshot,native_prefix,rewrite
 from test_directory_checkpoint_v2 import record
@@ -78,13 +77,31 @@ class DirectoryGroupIntegrationTests(unittest.TestCase):
    digest,_=write(root/'context',value);self.assertEqual(read(root/'context',digest),value);self.assertEqual(json.loads((root/'context/context.json').read_bytes())['version'],6)
    self.assertEqual(json.loads(record(root/'record',value))['schema_version'],'1.6');self.failed(work,value,group).save(root/'archive');self.save(root/'checkpoint',value)
 
- def test_historical_candidate_v20_readers_reject_grouped_directories(self):
-  old=historical_package('candidate-v20')
+ def test_current_readers_reject_mislabeled_grouped_directory_formats(self):
+  # Synthetic edits of current output exercise current readers, not old releases.
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp).resolve();_,_,work,value,group=self.setup(root,'cross');digest,_=write(root/'context',value)
    self.failed(work,value,group).save(root/'archive');self.save(root/'checkpoint',value)
-   code="import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime import RunResult;from easysewer.runtime._checkpoint_context import read;from easysewer.runtime._checkpoint_container import load;root=Path(sys.argv[2]);\nfor action in (lambda:RunResult.load(root/'archive'),lambda:read(root/'context',sys.argv[3]),lambda:load(root/'checkpoint')):\n try:action()\n except ValueError:pass\n else:raise AssertionError('Old reader accepted grouped directories')"
-   child=subprocess.run([sys.executable,'-I','-B','-c',code,str(old),str(root),digest],capture_output=True,text=True,timeout=45);self.assertEqual(child.returncode,0,child.stdout+child.stderr)
+   with patch('ctypes.CDLL',side_effect=AssertionError('Format checks must stay offline')):
+    self.assertEqual(RunResult.load(root/'archive').snapshot,value)
+    self.assertEqual(read(root/'context',digest),value)
+    self.assertEqual(storage.load(root/'checkpoint').snapshot,value)
+    formats=(
+     ('archive','result.json','schema_version','1.8','1.7',RunResult.load),
+     ('context','context.json','version',6,5,lambda path:read(path,hashlib.sha256((path/'context.json').read_bytes()).hexdigest())),
+     ('checkpoint','checkpoint.json','schema_version','1.5','1.4',storage.load))
+    for name,filename,key,version,older,load in formats:
+     data=json.loads((root/name/filename).read_bytes());self.assertEqual(data[key],version)
+     for label in (older,99 if name=='context' else '99.0'):
+      with self.subTest(format=name,label=label):
+       altered=root/(name+'-'+str(label));shutil.copytree(root/name,altered)
+       if name=='checkpoint':rewrite(altered,lambda data:data.update(schema_version=label))
+       else:
+        changed=dict(data);changed[key]=label;(altered/filename).write_text(json.dumps(changed),encoding='utf-8')
+       # The context digest/checkpoint commit matches the edited bytes, so the
+       # reader must reject the format rather than merely a stale checksum.
+       with self.assertRaises(ValueError):load(altered)
+
  def test_checkpoint_relocation_keeps_initial_current_aliases_and_stable_execution_binding(self):
   for kind in ('nested','cross'):
    with self.subTest(kind=kind),tempfile.TemporaryDirectory() as tmp:

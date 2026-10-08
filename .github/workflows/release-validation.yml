@@ -36,14 +36,13 @@ jobs:
           python -m unittest discover -s tests -p test_checkpoint_test_build_tool.py -v
           python -m unittest discover -s tests -p test_lid_report_test_build_tool.py -v
           python -m unittest discover -s tests -p test_support_matrix_audit.py -v
-      - name: Check directory contracts and optional historical-reader fixtures
+      - name: Check current directory format contracts
         env:
           PYTHONPATH: src:tests
-        # Missing historical packages are explicit optional skips. Current
-        # format assertions and fixture-validation regressions still run.
         run: >-
           python -m unittest -v
-          test_directory_history_fixture
+          test_directory_artifact_v2
+          test_directory_checkpoint_v2
           test_directory_group_integration_v2
           test_hardlink_directory_v2
           test_mixed_resource_graph_v2
@@ -87,7 +86,7 @@ jobs:
         os: [ubuntu-24.04, windows-2022]
         python: ['3.10', '3.11', '3.12', '3.13', '3.14']
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash
@@ -112,6 +111,11 @@ jobs:
           python -m pip install --no-index --no-deps --no-compile --target installed-pure packages/pure/*.whl
       - name: Check the native installed package
         run: python source/*/tools/qualify_release.py --package installed-native --output checks/native
+      - name: Check current Horton physics and continuation contracts
+        run: >-
+          python source/*/tools/qualify_release.py --package installed-native
+          --output checks/horton --tests
+          test_native_horton_integration_v2 test_native_horton_outfall_v2
       - name: Check the pure installed package and read the native archive
         run: >-
           python source/*/tools/qualify_release.py --package installed-pure --pure

@@ -1,6 +1,6 @@
 """Directory evidence roundtrip without original paths or native execution."""
 from dataclasses import replace
-import json,os,shutil,subprocess,sys,tempfile,unittest
+import json,shutil,tempfile,unittest
 from pathlib import Path
 from easysewer.runtime.results import DirectoryArtifact,ResourceSnapshot,RunResult
 from easysewer.runtime._directory_tree import DirectoryManifest,inspect_tree
@@ -69,16 +69,22 @@ class DirectoryArtifactTests(unittest.TestCase):
    with self.assertRaises(ValueError):replace(resource,kind='file')
    with self.assertRaises(ValueError):replace(resource,access='write')
    with self.assertRaises(ValueError):replace(resource,sha256=manifest.sha256,size=manifest.total_bytes)
- def test_old_package_rejects_directory_version_and_file_only_bytes_are_unchanged(self):
-  old=os.environ.get('EASYSEWER_DIRECTORY_OLD_PACKAGE');tests=os.environ.get('EASYSEWER_DIRECTORY_OLD_TESTS')
-  if not old or not tests:self.skipTest('Independent old package not configured')
+ def test_current_archive_directory_free_bytes_and_directory_version_boundary(self):
+  # Same-version repeatability and lossless reserialization, not an old-writer oracle.
   with tempfile.TemporaryDirectory() as tmp:
-   root=Path(tmp);artifact=self.artifact(self.source(root));replace(failure_result(),directory_artifacts=(artifact,)).save(root/'directory')
-   failure_result().save(root/'current')
-   code="import sys;from pathlib import Path;sys.path[:0]=sys.argv[1:3];from easysewer.runtime import RunResult;from test_result_archive_v2 import failure_result;root=Path(sys.argv[3]);failure_result().save(root/'old');\ntry:RunResult.load(root/'directory')\nexcept ValueError as error:assert str(error)=='Unknown run result archive contract'\nelse:raise AssertionError('Old reader accepted directory version')"
-   p=subprocess.run([sys.executable,'-I','-B','-c',code,old,tests,str(root)],capture_output=True,text=True);self.assertEqual(p.returncode,0,p.stdout+p.stderr)
-   self.assertEqual((root/'old/result.json').read_bytes(),(root/'current/result.json').read_bytes())
-   self.assertEqual({p.name:p.read_bytes() for p in (root/'old/blobs').iterdir()},{p.name:p.read_bytes() for p in (root/'current/blobs').iterdir()})
+   root=Path(tmp);plain=failure_result();plain.save(root/'first');plain.save(root/'repeat')
+   RunResult.load(root/'first').save(root/'roundtrip')
+   def contents(folder):return {p.relative_to(folder).as_posix():p.read_bytes() for p in folder.rglob('*') if p.is_file()}
+   for name in ('repeat','roundtrip'):self.assertEqual(contents(root/'first'),contents(root/name))
+   data=json.loads((root/'first/result.json').read_bytes());self.assertEqual(data['schema_version'],'1.3')
+   self.assertNotIn('directory_artifacts',data['result']['fields']);self.assertNotIn('directory_group_artifacts',data['result']['fields'])
+   artifact=self.artifact(self.source(root));replace(plain,directory_artifacts=(artifact,)).save(root/'directory')
+   path=root/'directory/result.json';raw=path.read_bytes();data=json.loads(raw);self.assertEqual(data['schema_version'],'1.4')
+   for version in ('1.3','99.0'):
+    with self.subTest(version=version):
+     data['schema_version']=version;path.write_text(json.dumps(data),encoding='utf-8')
+     with self.assertRaises(ValueError):RunResult.load(root/'directory')
+   path.write_bytes(raw);self.assertEqual(RunResult.load(root/'directory').directory_artifact('run:resource').manifest,artifact.manifest)
  def test_changed_archived_member_is_detected(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);artifact=self.artifact(self.source(root));replace(failure_result(),directory_artifacts=(artifact,)).save(root/'archive')

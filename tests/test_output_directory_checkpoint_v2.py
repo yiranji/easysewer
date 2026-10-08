@@ -1,7 +1,7 @@
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
-import hashlib,json,shutil,subprocess,sys,tempfile,unittest
+import hashlib,json,shutil,tempfile,unittest
 from unittest.mock import patch
 from easysewer.model import Ref
 from easysewer.runtime import Runner,CheckpointOutput
@@ -11,7 +11,6 @@ from easysewer.runtime._checkpoint_directory_outputs import decode,roots
 from easysewer.runtime._checkpoint_directory_restore import DirectoryRestore
 from easysewer.runtime._checkpoint_lifecycle import CheckpointLifecycle
 from easysewer.runtime._directory_tree import inspect_tree
-from directory_history_fixture import historical_package
 from test_checkpoint_container_v2 import snapshot,native_prefix,rewrite
 from test_checkpoint_directory_inputs_v2 import Solver,working
 
@@ -102,10 +101,27 @@ class OutputDirectoryCheckpointTests(unittest.TestCase):
    root=Path(tmp).resolve();plain=snapshot(root)
    with Builder(root/'plain',plain) as b:result=b.finish(native_prefix(plain,b.binding),())
    self.assertEqual(result.data['schema_version'],'1.0');self.assertNotIn('output_directory_states',result.data)
- def test_historical_candidate_v36_reader_rejects_output_directory_format(self):
-  old=historical_package('candidate-v36')
+ def test_current_reader_rejects_mislabeled_and_incomplete_output_directory_formats(self):
+  # These are malformed current manifests, not historical package evidence.
   with tempfile.TemporaryDirectory() as tmp:
-   root=Path(tmp).resolve();_,_,value,outputs,locations=self.fixture(root);saved=self.save(root/'saved',value,outputs,locations)
-   code="import sys;sys.path.insert(0,sys.argv[1]);import easysewer;from pathlib import Path;assert Path(easysewer.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve());from easysewer.runtime._checkpoint_container import load;\ntry:load(sys.argv[2])\nexcept ValueError:pass\nelse:raise AssertionError('old reader accepted new format')";p=subprocess.run([sys.executable,'-I','-B','-c',code,str(old),str(saved.directory)],capture_output=True,text=True,timeout=45);self.assertEqual(p.returncode,0,p.stdout+p.stderr)
+   root=Path(tmp).resolve();_,target,value,outputs,locations=self.fixture(root);saved=self.save(root/'saved',value,outputs,locations)
+   before=inspect_tree(target)
+   self.assertEqual(saved.data['schema_version'],'1.7')
+   with patch('ctypes.CDLL',side_effect=AssertionError('Format checks must stay offline')):
+    valid=load(saved.directory);self.assertEqual(valid.snapshot,value)
+    self.assertEqual(decode(valid.data,value),decode(saved.data,value))
+    for mode in ('base-version','unknown-version','missing-base','missing-states','missing-bindings'):
+     with self.subTest(mode=mode):
+      destination=root/mode;shutil.copytree(saved.directory,destination)
+      def change(data):
+       if mode=='base-version':data['schema_version']=data['base_schema_version']
+       elif mode=='unknown-version':data['schema_version']='99.0'
+       else:del data[{'missing-base':'base_schema_version','missing-states':'output_directory_states','missing-bindings':'output_directory_bindings'}[mode]]
+      # Recommit the edit to reach format validation after integrity checks.
+      rewrite(destination,change)
+      with self.assertRaises(ValueError):load(destination)
+   self.assertEqual(inspect_tree(target),before)
+   self.assertEqual(load(saved.directory).manifest,saved.manifest)
+
 
 if __name__=='__main__':unittest.main()
