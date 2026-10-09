@@ -12,7 +12,7 @@ Use the 2.0 model/runtime APIs and standard SWMM INP or current Model JSON.
 ## Installation
 
 ```console
-python -m pip install easysewer==2.0.0
+python -m pip install easysewer==2.0.1
 python -c "from easysewer import Model; print(Model())"
 ```
 

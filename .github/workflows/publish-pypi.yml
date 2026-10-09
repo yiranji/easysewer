@@ -1,0 +1,149 @@
+name: Publish to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Final version to publish, for example 2.0.1'
+        required: true
+        type: string
+      validation_run_id:
+        description: 'Successful Release validation push run for this master commit'
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: publish-pypi
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Select validated release artifacts
+    if: github.repository == 'yiranji/easysewer' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Require successful validation of this exact master commit
+        id: validation
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        with:
+          script: |
+            const rawId = process.env.VALIDATION_RUN_ID;
+            const version = process.env.RELEASE_VERSION;
+            if (!/^[1-9][0-9]*$/.test(rawId) || !Number.isSafeInteger(Number(rawId))) {
+              throw new Error('validation_run_id must be a positive integer');
+            }
+            if (!/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(version)) {
+              throw new Error('Only final major.minor.patch versions may be published');
+            }
+            const runId = Number(rawId);
+            const {data: run} = await github.rest.actions.getWorkflowRun({
+              ...context.repo, run_id: runId,
+            });
+            if (run.repository.full_name !== 'yiranji/easysewer' ||
+                run.head_repository.full_name !== 'yiranji/easysewer' ||
+                run.path !== '.github/workflows/release-validation.yml' ||
+                run.event !== 'push' || run.head_branch !== 'master' ||
+                run.head_sha !== context.sha || run.status !== 'completed' ||
+                run.conclusion !== 'success') {
+              throw new Error('Expected successful master push validation for ' + context.sha);
+            }
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              ...context.repo, run_id: runId, per_page: 100,
+            });
+            const packages = artifacts.filter(a => a.name === 'release-packages' && !a.expired);
+            if (packages.length !== 1) {
+              throw new Error('Expected exactly one unexpired release-packages artifact');
+            }
+            core.setOutput('artifact_id', String(packages[0].id));
+            await core.summary.addRaw('Source commit: ' + context.sha + '\n\n')
+              .addLink('Passing Windows/Linux Python 3.10–3.14 validation', run.html_url).write();
+      - name: Download only the checked run's release packages
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          artifact-ids: ${{ steps.validation.outputs.artifact_id }}
+          run-id: ${{ inputs.validation_run_id }}
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: packages
+      - name: Verify version and select the native wheel and source archive
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          python - <<'PY'
+          import email
+          import hashlib
+          import os
+          from pathlib import Path
+          import shutil
+          import tarfile
+          import tomllib
+          import zipfile
+
+          version = os.environ['RELEASE_VERSION']
+          native = Path('packages/native')
+          wheel_name = f'easysewer-{version}-py3-none-any.whl'
+          sdist_name = f'easysewer-{version}.tar.gz'
+          expected = {wheel_name, sdist_name}
+          if {p.name for p in native.iterdir()} != expected:
+              raise RuntimeError('Native artifact must contain exactly the expected wheel and sdist')
+          with zipfile.ZipFile(native / wheel_name) as wheel:
+              metadata = email.message_from_bytes(wheel.read(f'easysewer-{version}.dist-info/METADATA'))
+              if metadata['Name'] != 'easysewer' or metadata['Version'] != version:
+                  raise RuntimeError('Wheel metadata does not match the requested release')
+              names = wheel.namelist()
+              if not any(n.startswith('easysewer/libs/win/') and n.endswith('.esdll') for n in names):
+                  raise RuntimeError('Wheel has no bundled Windows backend')
+              if not any(n.startswith('easysewer/libs/linux/') and n.endswith('.esso') for n in names):
+                  raise RuntimeError('Wheel has no bundled Linux backend')
+          with tarfile.open(native / sdist_name, 'r:gz') as sdist:
+              metadata = tomllib.loads(sdist.extractfile(f'easysewer-{version}/pyproject.toml').read().decode())
+              if metadata['project']['name'] != 'easysewer' or metadata['project']['version'] != version:
+                  raise RuntimeError('Source archive metadata does not match the requested release')
+          output = Path('pypi-dist')
+          output.mkdir()
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('\n\nPublication files and SHA-256:\n\n')
+              for name in sorted(expected):
+                  source = native / name
+                  digest = hashlib.sha256(source.read_bytes()).hexdigest()
+                  shutil.copyfile(source, output / name)
+                  print(digest, name)
+                  summary.write(f'- {name}: {digest}\n')
+          PY
+      - name: Save the exact distributions for the isolated publish job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: pypi-distributions
+          path: pypi-dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish verified distributions to PyPI
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/easysewer/
+    permissions:
+      id-token: write
+    steps:
+      - name: Download the prepared distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: pypi-distributions
+          path: dist
+      - name: Publish with PyPI Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        with:
+          packages-dir: dist/

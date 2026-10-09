@@ -53,7 +53,7 @@ def main():
     assert Model is importlib.import_module('easysewer.model').Model
     assert 'easysewer.ModelAPI' not in sys.modules
     assert 'ctypes' not in sys.modules
-    assert easysewer.__version__ == '2.0.0'
+    assert easysewer.__version__ == '2.0.1'
     from importlib.util import find_spec
     retired = ('LegacyModel', 'UrbanDrainageModel', 'JsonHandler', 'ControlList', 'ControlRule',
                'SWMMSolverAPI', 'FlexiblePondingSolverAPI', 'SWMMOutputAPI')

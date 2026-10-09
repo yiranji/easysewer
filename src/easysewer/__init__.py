@@ -2,7 +2,7 @@
 EasySewer: An urban drainage modeling toolkit.
 """
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 from importlib import import_module
 from typing import TYPE_CHECKING, Any
