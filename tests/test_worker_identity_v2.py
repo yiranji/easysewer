@@ -3,7 +3,6 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -30,9 +29,14 @@ class WorkerIdentityTests(unittest.TestCase):
         self.assertFalse(identity.has_exited(original))
 
     def test_independent_child_identity_survives_exit(self):
-        code='import json,sys;sys.path.insert(0,sys.argv[1]);from easysewer.runtime._worker_identity import capture;print(json.dumps(capture()),flush=True);sys.stdin.readline()'
-        child=subprocess.Popen([sys.executable,'-I','-B','-c',code,
-            str(Path(easysewer.__file__).resolve().parent.parent)],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        from easysewer.runtime import _worker_launch as launch
+        from worker_command_hooks import before_worker_main
+        code=('import json,sys;from easysewer.runtime._worker_identity import capture;'
+              'print(json.dumps(capture()),flush=True);sys.stdin.readline();raise SystemExit(0)')
+        command=launch.command(str(Path(easysewer.__file__).resolve().parent.parent))
+        command=before_worker_main(command,code)
+        child=subprocess.Popen(command,env=launch.environment(),
+            stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         try:
             value=json.loads(child.stdout.readline());self.assertEqual(value['pid'],child.pid)
             self.assertFalse(identity.has_exited(value))

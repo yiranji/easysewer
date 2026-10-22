@@ -102,16 +102,25 @@ class WorkerLaunchTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'pyvenv.cfg'):
                 launch.command(PACKAGE)
 
-    def guarded(self, current, *, payload='print("verified", flush=True)'):
+    def guarded_command(self, current):
+        # Keep the real interpreter selection and its matching venv environment.
+        # Only the expected metadata is synthetic, so guard failures can also be
+        # exercised on non-Windows hosts without launching a venv redirector.
+        command = launch.command(PACKAGE)
+        environment = launch.environment()
         with patch.object(launch, 'sys', current), patch.object(launch, '_windows_venv', return_value=True), \
-                patch.object(launch, '_base_interpreter', return_value=sys.executable):
-            command = launch.command(PACKAGE)
+                patch.object(launch, '_base_interpreter', return_value=sys._base_executable):
+            command[-1] = launch.command(PACKAGE)[-1]
+        return command, environment
+
+    def guarded(self, current, *, payload='print("verified", flush=True)'):
+        command, environment = self.guarded_command(current)
         command[-1] = command[-1].replace('from easysewer.runtime._solver_worker import main\nmain()', payload)
-        return subprocess.run(command, capture_output=True, text=True, timeout=15)
+        return subprocess.run(command, env=environment, capture_output=True, text=True, timeout=15)
 
     def test_bootstrap_checks_version_word_size_abi_prefix_and_executable_before_import(self):
         good = self.guarded(runtime())
-        self.assertEqual(good.returncode, 0, good.stderr)
+        self.assertEqual(good.returncode, 0, good.stdout + good.stderr)
         self.assertEqual(good.stdout.strip(), 'verified')
         cases = (
             ('version', 'a different build', 'version, architecture, or ABI'),
@@ -149,10 +158,7 @@ class WorkerLaunchTests(unittest.TestCase):
             self.assertEqual((value['isolated'], value['bytecode'], value['unbuffered']), (1, True, True))
 
     def test_bootstrap_failure_is_an_actionable_session_error(self):
-        with patch.object(launch, 'sys', runtime(version='incompatible build')), \
-                patch.object(launch, '_windows_venv', return_value=True), \
-                patch.object(launch, '_base_interpreter', return_value=sys.executable):
-            command = launch.command(PACKAGE)
+        command, _ = self.guarded_command(runtime(version='incompatible build'))
         backend = SimpleNamespace(worker_kind='standard', _selection=lambda: ('fixture', None))
         with tempfile.TemporaryDirectory() as directory, \
                 patch.object(_process_session, '_worker_command', return_value=command):
