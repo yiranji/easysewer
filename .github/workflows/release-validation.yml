@@ -330,12 +330,7 @@ jobs:
             os: macos-26
             architecture: arm64
             python: '3.13'
-          # One-time native deployment-floor evidence before 2026-11-02 retirement.
-          # Remove this row only after recording the successful baseline artifact.
-          - platform: darwin-arm64
-            os: macos-14
-            architecture: arm64
-            python: '3.13'
+          # The observed macOS 14 baseline artifact is recorded in docs/2.0-testing.md.
     runs-on: ${{ matrix.os }}
     timeout-minutes: 35
     defaults:
