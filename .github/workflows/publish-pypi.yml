@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Final version to publish, for example 2.0.1'
+        description: 'Final version to publish, for example 2.1.0'
         required: true
         type: string
       validation_run_id:
@@ -113,3 +113,75 @@ jobs:
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           packages-dir: dist/
+
+  verify:
+    name: Verify PyPI installation / ${{ matrix.platform }}
+    needs: publish
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            os: ubuntu-24.04
+            architecture: x64
+          - platform: linux-aarch64
+            os: ubuntu-24.04-arm
+            architecture: arm64
+          - platform: darwin-arm64
+            os: macos-15
+            architecture: arm64
+          - platform: windows-x86_64
+            os: windows-2022
+            architecture: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.13'
+          architecture: ${{ matrix.architecture }}
+      - name: Download the exact prepared distributions for comparison
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: pypi-distributions
+          path: expected
+      - name: Verify all PyPI file hashes and download this native wheel
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_TARGET: ${{ matrix.platform }}
+        run: |
+          mkdir -p evidence
+          python tools/verify_pypi_release.py --expected expected --version "$RELEASE_VERSION" \
+            --target "$RELEASE_TARGET" --output downloaded > evidence/pypi-files.json
+      - name: Install only the downloaded PyPI wheel in a clean environment
+        run: |
+          python -m venv installed
+          if [ "$RUNNER_OS" = Windows ]; then venv_python="$PWD/installed/Scripts/python.exe"; else venv_python="$PWD/installed/bin/python"; fi
+          "$venv_python" -m pip install --no-index --no-deps --no-compile downloaded/*.whl
+          echo "VENV_PY=$venv_python" >> "$GITHUB_ENV"
+      - name: Check the installed version and native doctor smoke test
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          unset LD_LIBRARY_PATH LD_PRELOAD DYLD_LIBRARY_PATH DYLD_FALLBACK_LIBRARY_PATH DYLD_INSERT_LIBRARIES
+          "$VENV_PY" -I -c 'import os, easysewer, importlib.metadata as m; expected=os.environ["RELEASE_VERSION"]; assert easysewer.__version__ == m.version("easysewer") == expected'
+          "$VENV_PY" -I -m easysewer doctor --json > evidence/doctor-load.json
+          "$VENV_PY" -I -m easysewer doctor --json --smoke-test > evidence/doctor-smoke.json
+      - name: Save publication verification evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: pypi-install-${{ matrix.platform }}
+          path: evidence/*.json
+          if-no-files-found: ignore
+          retention-days: 14

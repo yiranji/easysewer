@@ -12,20 +12,33 @@ Use the 2.0 model/runtime APIs and standard SWMM INP or current Model JSON.
 ## Installation
 
 ```console
-python -m pip install easysewer==2.0.1
+python -m pip install --upgrade easysewer==2.1.0
 python -c "from easysewer import Model; print(Model())"
 ```
 
-Python 3.10+ is required. The already published PyPI `2.0.1` distribution includes
-x86-64 Windows/Linux solver libraries, not the new ARM artifacts described below.
-Its Linux libraries require glibc 2.33+ and a system `libgomp.so.1`.
+EasySewer 2.1.0 requires Python 3.10 or later; CPython 3.10–3.14 is tested.
+It provides platform-specific native wheels for:
 
-This development branch adds platform-specific native wheels for Windows x86-64,
-Linux x86-64, Linux aarch64 and macOS arm64, with standard SWMM 5.2.4 and the native
-OUT reader. Non-system native dependencies are bundled in the repaired wheels.
-These are branch build artifacts, not a new PyPI release or evidence that every
-native CI target has passed. Install a matching built wheel before using the new
-diagnostic command:
+| Platform | Native runtime baseline |
+| --- | --- |
+| Windows x86-64 | 64-bit x64 Python on compatible Windows x64 |
+| Linux x86-64 | glibc 2.33 or later |
+| Linux ARM64 (aarch64) | glibc 2.28 or later |
+| Apple Silicon macOS (arm64) | macOS 14 deployment target; release CI on macOS 15 and 26 |
+
+These wheels contain standard SWMM 5.2.4, the native OUT reader and their
+non-system native dependencies. A compiler or separate system OpenMP installation
+is not needed to use a supported wheel. Use a native 64-bit Python interpreter
+and a current pip so it can select the matching platform wheel.
+The [macOS 14.8.9 execution record](docs/2.0-testing.md#observed-macos-14-baseline)
+binds an earlier exact artifact, not the final 2.1.0 wheel or initial macOS 14.0.
+
+Version 2.1.0 also fixes the Windows virtual-environment worker launch failure
+reported in [issue #5](https://github.com/yiranji/easysewer/issues/5), while keeping
+worker identity and lifetime checks. Upgrade from 2.0.1 to obtain these changes;
+the immutable 2.0.1 files do not gain ARM support or the diagnostic command.
+
+Check the installed runtime before a simulation:
 
 ```console
 python -m easysewer doctor
@@ -40,8 +53,13 @@ numerical or scientific validity. FlexiblePonding remains an experimental,
 scientifically unvalidated example of a replaceable backend, preserved on x86-64
 and optional on ARM. A requested backend is never silently replaced.
 
+Intel macOS, Windows ARM64 Python, musl Linux, 32-bit Python and `universal2`
+are not supported native targets. Native checkpoint archives bind exact runtime
+bytes and ABI; keep the original runtime for older archives. Cross-architecture
+checkpoint continuation is not supported.
+
 Modeling, conversion and pure result reading do not require a native solver.
-See [installation, supported ABIs and doctor exit codes](docs/2.0-installation.md)
+See the [2.1.0 release notes](docs/2.0-delivery.md#210-release-notes), [installation, supported ABIs and doctor exit codes](docs/2.0-installation.md)
 and [native build and qualification instructions](docs/2.0-testing.md).
 
 See the [documentation index](https://github.com/yiranji/easysewer/blob/master/docs/README.md) for installation, the Quick Start notebook,

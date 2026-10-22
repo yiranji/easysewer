@@ -7,20 +7,20 @@ files after CRLF-to-LF normalization. The source is available from the
 The original checkout stays unchanged. This is a separately identified EasySewer
 build of the standard equations, with the corrections below.
 
-The branch's core native targets are Windows x86-64, Linux x86-64, Linux
+The 2.1.0 core native targets are Windows x86-64, Linux x86-64, Linux
 aarch64 and macOS arm64, all with 64-bit Python. Existing compiled x86-64
 libraries are preserved before dependency repair. ARM artifacts are built from
 the same public pinned EPA source and existing revision-16 corrections; no new
 solver equations or fast-math policy are introduced.
 
 Final wheels are platform-specific and bundle non-system dependencies. Linux
-x86-64 retains glibc 2.33 as its minimum and uses a generic `linux_x86_64` wheel
-tag; Linux aarch64 targets `manylinux_2_28_aarch64`. macOS arm64 targets macOS
+x86-64 retains glibc 2.33 as its minimum and uses the verified PEP 600
+`manylinux_2_33_x86_64` wheel tag; Linux aarch64 targets `manylinux_2_28_aarch64`. macOS arm64 targets macOS
 14.0 and bundles source-built, pinned LLVM OpenMP. The raw legacy Linux x86-64
 solver still imports `libgomp.so.1`, `libm.so.6` and `libc.so.6` (including
 `GLIBC_2.33`); final repair bundles the compatible OpenMP runtime rather than
-requiring users to install it separately. These branch artifacts are not the
-already published PyPI `2.0.1` release. See
+requiring users to install it separately. These 2.1.0 artifacts do not modify
+the immutable PyPI `2.0.1` release. See
 [installation and doctor](../../docs/2.0-installation.md) and
 [build/qualification gates](../../docs/2.0-testing.md).
 

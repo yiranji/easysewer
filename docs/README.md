@@ -1,4 +1,4 @@
-# EasySewer 2.0 documentation
+# EasySewer 2.x documentation
 
 The public entry point is `from easysewer import Model`. Version 2.0 provides no compatibility or migration support for EasySewer 1.x. Start with delivery scope, installation and the first runnable example. Earlier development batches are kept in a local archive; this directory contains current usage, contracts, limits and maintenance guidance.
 
@@ -6,7 +6,7 @@ Documentation in `docs/` is maintained in English, including titles, prose, tabl
 
 ## Getting started
 
-- [2.0 delivery scope](2.0-delivery.md)
+- [2.1.0 release notes and 2.x delivery scope](2.0-delivery.md)
 - [Installation, native platforms and doctor](2.0-installation.md)
 - [From an empty model to portable results](2.0-first-run.md)
 - [Quick Start](2.0-quick-start.md)

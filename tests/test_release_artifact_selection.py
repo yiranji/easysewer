@@ -48,7 +48,7 @@ def wheel(path, target, *, external=False, tag=None, corrupt=False):
 class ReleaseArtifactSelectionTests(unittest.TestCase):
     def test_requires_closed_dependencies_and_final_hashes(self):
         with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / 'easysewer-2.0.1-py3-none-linux_x86_64.whl'
+            path = Path(temporary) / 'easysewer-2.0.1-py3-none-manylinux_2_33_x86_64.whl'
             for options in ({'external': True}, {'corrupt': True}, {'tag': 'any'}):
                 with self.subTest(options=options):
                     wheel(path, 'linux-x86_64', **options)
@@ -56,6 +56,14 @@ class ReleaseArtifactSelectionTests(unittest.TestCase):
                         SELECT.verify_wheel(path, '2.0.1', 'linux-x86_64')
             wheel(path, 'linux-x86_64')
             SELECT.verify_wheel(path, '2.0.1', 'linux-x86_64')
+
+    def test_rejects_generic_linux_and_higher_or_unproven_lower_glibc_tags(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            for tag in ('linux_x86_64', 'manylinux_2_34_x86_64', 'manylinux_2_28_x86_64'):
+                path = Path(temporary) / f'easysewer-2.0.1-py3-none-{tag}.whl'
+                wheel(path, 'linux-x86_64', tag=tag)
+                with self.subTest(tag=tag), self.assertRaisesRegex(ValueError, 'wheel name'):
+                    SELECT.verify_wheel(path, '2.0.1', 'linux-x86_64')
 
     def test_selects_four_native_wheels_and_source_not_pure(self):
         with tempfile.TemporaryDirectory() as temporary:

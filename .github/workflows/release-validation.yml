@@ -40,6 +40,7 @@ jobs:
           python -m unittest discover -s tests -p test_native_wheel_repair.py -v
           python -m unittest discover -s tests -p test_native_wheel_build.py -v
           python -m unittest discover -s tests -p test_release_artifact_selection.py -v
+          python -m unittest discover -s tests -p test_pypi_release_verification.py -v
       - name: Check current directory format contracts
         env:
           PYTHONPATH: src:tests

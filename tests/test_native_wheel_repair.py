@@ -89,19 +89,79 @@ class NativeImageAuditTests(unittest.TestCase):
                 directory=package/'libs'/spec['directory']; deps=directory/'.libs'; deps.mkdir(parents=True)
                 for name in ('swmm5.so.esso','swmm-output.so.esso'):
                     (directory/name).write_bytes(b'\x7fELFfixture')
-                runtime=deps/'libgomp-test.so.1'; runtime.write_bytes(b'\x7fELFfixture')
+                runtime=deps/'libgomp-12345678.so.1'; runtime.write_bytes(b'\x7fELFfixture')
                 runtime_version=floor
+                runtime_soname=runtime.name; runtime_dependency='libc.so.6'
                 def inspect(path):
                     solver=path.name=='swmm5.so.esso'
                     return dict(format='ELF',architecture=spec['architecture'],
-                        needed=['libgomp-test.so.1'] if solver else ['libc.so.6'],
-                        rpaths=['$ORIGIN/.libs'] if solver else [],soname=path.name,
+                        needed=[runtime.name] if solver else [runtime_dependency if path==runtime else 'libc.so.6'],
+                        rpaths=['$ORIGIN/.libs'] if solver else [],
+                        soname=runtime_soname if path==runtime else path.name,
+                        version_needs={},relr=False,x86_isa_needed=[],
                         glibc_versions=[runtime_version if path==runtime else floor])
                 with mock.patch.object(repair,'inspect_image',side_effect=inspect):
                     repair.audit_native_tree(package,target)
+                    runtime_soname='libgomp.so.1'
+                    with self.assertRaisesRegex(ValueError,'collision-resistant SONAME'):
+                        repair.audit_native_tree(package,target)
+                    runtime_soname=runtime.name; runtime_dependency='libgcc_s.so.1'
+                    with self.assertRaisesRegex(ValueError,'Unresolved package-relative'):
+                        repair.audit_native_tree(package,target)
+                    runtime_dependency='libc.so.6'
                     runtime_version=rejected
                     with self.assertRaisesRegex(ValueError,'newer than '+floor):
                         repair.audit_native_tree(package,target)
+
+    def test_elf_import_versions_do_not_include_exported_definitions(self):
+        versions = ("Version definition section '.gnu.version_d' contains 1 entry:\n"
+                    '  Name: GLIBC_9.99\n'
+                    "Version needs section '.gnu.version_r' contains 1 entry:\n"
+                    '  File: libc.so.6  Cnt: 2\n'
+                    '    Name: GLIBC_2.2.5  Flags: none  Version: 2\n'
+                    '    Name: GLIBC_2.33  Flags: none  Version: 3\n')
+        self.assertEqual(repair.elf_version_needs(versions),
+                         {'libc.so.6': ['GLIBC_2.2.5', 'GLIBC_2.33']})
+        for bad in (versions.replace('Cnt: 2', 'Cnt: 3'),
+                    versions.replace("'.gnu.version_r' contains 1", "'.gnu.version_r' contains 2")):
+            with self.assertRaisesRegex(ValueError, 'Incomplete ELF'):
+                repair.elf_version_needs(bad)
+
+    def test_linux_abi_rejects_unknown_symbol_versions_relr_and_elevated_isa(self):
+        info = dict(architecture='x86_64', needed=['libc.so.6'], glibc_versions=['2.33'],
+                    version_needs={'libc.so.6': ['GLIBC_2.33']}, relr=False, x86_isa_needed=[])
+        spec = repair.TARGETS['linux-x86_64']
+        repair.audit_linux_abi(info, spec, Path('image'))
+        repair.audit_linux_abi(dict(info, x86_isa_needed=['x86-64-baseline']), spec, Path('image'))
+        cases = [dict(version_needs={'libc.so.6': [version]}) for version in (
+            'GLIBC_2.34', 'GLIBC_PRIVATE', 'GLIBC_ABI_DT_RELR', 'GCC_12.0.0')]
+        cases += [dict(relr=True), dict(x86_isa_needed=['x86-64-baseline, x86-64-v2']),
+                  dict(x86_isa_needed=['x86-64-v3']), dict(x86_isa_needed=['<unknown>']),
+                  dict(version_needs={'not-a-dependency': ['GLIBC_2.2.5']}),
+                  dict(needed=['libc.so.6', 'ld-linux-aarch64.so.1'])]
+        for change in cases:
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                repair.audit_linux_abi(dict(info, **change), spec, Path('image'))
+        self.assertNotIn('libgcc_s.so.1', repair.LINUX_SYSTEM)
+
+    def test_elf_inspection_records_imported_versions_and_isa_not_cet_features(self):
+        header = bytearray(64); header[:6] = b'\x7fELF\x02\x01'
+        struct.pack_into('<HH', header, 16, 3, 62)
+        versions = ("Version definition section '.gnu.version_d' contains 1 entry:\n"
+                    ' Name: GLIBC_9.99\n'
+                    "Version needs section '.gnu.version_r' contains 1 entry:\n"
+                    ' File: libc.so.6  Cnt: 1\n'
+                    ' Name: GLIBC_2.33  Flags: none  Version: 2\n')
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / 'native.so.esso'; path.write_bytes(header)
+            with mock.patch.object(repair, 'run', side_effect=[
+                '(NEEDED) Shared library: [libc.so.6]\n(RELR) 0x1234', versions,
+                ' Properties: x86 feature: IBT, SHSTK\n x86 ISA needed: x86-64-v3\n']):
+                info = repair.inspect_image(path)
+            self.assertEqual(info['glibc_versions'], ['2.33'])
+            self.assertEqual(info['x86_isa_needed'], ['x86-64-v3'])
+            self.assertTrue(info['relr'])
+            self.assertIsNone(info['soname'])
 
     def test_pinned_openmp_compile_bytes_are_checked_before_repair(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -211,13 +271,19 @@ class WheelFinalizationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'Unsafe'):
                 repair.safe_extract(wheel,root/'link-output')
 
-    def test_x64_conservative_retag_removes_manylinux_claim_not_runtime_floor(self):
+    def test_x64_pep600_tag_requires_final_abi_audit_and_preserves_runtime_floor(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);info=root/'easysewer-2.0.1.dist-info';info.mkdir()
             metadata=info/'WHEEL';metadata.write_text('Root-Is-Purelib: false\nTag: py3-none-manylinux_2_34_x86_64\n')
-            filename=repair.retag_final_tree(root,'easysewer-2.0.1-py3-none-manylinux_2_34_x86_64.whl','linux-x86_64')
-            self.assertEqual(filename,'easysewer-2.0.1-py3-none-linux_x86_64.whl')
-            self.assertNotIn('manylinux',metadata.read_text())
+            with mock.patch.object(repair, 'audit_native_tree', side_effect=ValueError('invalid ABI')):
+                with self.assertRaisesRegex(ValueError, 'invalid ABI'):
+                    repair.retag_final_tree(root,'easysewer-2.0.1-py3-none-manylinux_2_34_x86_64.whl','linux-x86_64')
+            self.assertIn('manylinux_2_34_x86_64', metadata.read_text())
+            with mock.patch.object(repair, 'audit_native_tree') as audit:
+                filename=repair.retag_final_tree(root,'easysewer-2.0.1-py3-none-manylinux_2_34_x86_64.whl','linux-x86_64')
+                audit.assert_called_once_with(root/'easysewer', 'linux-x86_64')
+            self.assertEqual(filename,'easysewer-2.0.1-py3-none-manylinux_2_33_x86_64.whl')
+            self.assertIn('Tag: py3-none-manylinux_2_33_x86_64',metadata.read_text())
             self.assertEqual(repair.TARGETS['linux-x86_64']['libc']['minimum_version'],'2.33')
             metadata.write_text('Root-Is-Purelib: false\nTag: py3-none-manylinux_2_28_x86_64\n')
             with self.assertRaisesRegex(ValueError,'Unexpected auditwheel'):

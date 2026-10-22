@@ -30,7 +30,7 @@ TARGETS = {
                           minimum_os=None, libc=None, tag='win_amd64', suffix='.dll.esdll'),
     'linux-x86_64': dict(system='Linux', architecture='x86_64', directory='linux',
                         minimum_os=None, libc={'name': 'glibc', 'minimum_version': '2.33'},
-                        tag='linux_x86_64', repair_tag='manylinux_2_34_x86_64', suffix='.so.esso'),
+                        tag='manylinux_2_33_x86_64', repair_tag='manylinux_2_34_x86_64', suffix='.so.esso'),
     'linux-aarch64': dict(system='Linux', architecture='aarch64', directory='linux-aarch64',
                          minimum_os=None, libc={'name': 'glibc', 'minimum_version': '2.28'},
                          tag='manylinux_2_28_aarch64', repair_tag='manylinux_2_28_aarch64', suffix='.so.esso'),
@@ -42,8 +42,10 @@ POLICIES = {
     'swmm-output': 'easysewer:output-io:1',
     'flexible_ponding': 'easysewer:flexible-ponding:incremental-volume:2:native:14',
 }
+# This C-only release permits only glibc itself as an external Linux runtime.
+# In particular, a newer libgcc/libstdc++ ABI must not escape the glibc audit.
 LINUX_SYSTEM = frozenset(('libc.so.6', 'libm.so.6', 'libpthread.so.0', 'libdl.so.2',
-    'librt.so.1', 'libutil.so.1', 'libresolv.so.2', 'libgcc_s.so.1',
+    'librt.so.1', 'libutil.so.1', 'libresolv.so.2',
     'ld-linux-x86-64.so.2', 'ld-linux-aarch64.so.1'))
 LICENSE_HASHES = {
     'GCC-COPYING3.txt': '8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903',
@@ -65,7 +67,8 @@ def file_record(path, package):
 
 
 def run(command, *, env=None):
-    result = subprocess.run([str(value) for value in command], env=env,
+    environment = dict(os.environ if env is None else env, LC_ALL='C')
+    result = subprocess.run([str(value) for value in command], env=environment,
                             capture_output=True, text=True)
     if result.returncode:
         raise RuntimeError('Native audit/repair failed: ' + repr(command) + '\n' + result.stdout + result.stderr)
@@ -202,6 +205,37 @@ def inspect_macho(path, raw):
                 soname=soname, minimum_os='.'.join(map(str, minimum)))
 
 
+def elf_version_needs(versions):
+    """Keep imported symbol versions separate from a library's own exports."""
+    needs, counts = {}, {}
+    active, provider, expected = False, None, None
+    for line in versions.splitlines():
+        if line.startswith('Version '):
+            active = line.startswith('Version needs section ')
+            if active:
+                count = re.search(r'contains (\d+) entr', line)
+                if count is None or expected is not None:
+                    raise ValueError('Invalid ELF symbol-version requirements section')
+                expected = int(count.group(1))
+        if not active:
+            continue
+        match = re.search(r'\bFile:\s+(\S+)\s+Cnt:\s+(\d+)', line)
+        if match:
+            provider, count = match.groups()
+            if provider in needs:
+                raise ValueError('Duplicate ELF symbol-version provider')
+            needs[provider], counts[provider] = [], int(count)
+        match = re.search(r'\bName:\s+(\S+)\s+Flags:', line)
+        if match:
+            if provider is None:
+                raise ValueError('ELF symbol version has no provider')
+            needs[provider].append(match.group(1))
+    if ((expected is not None and len(needs) != expected)
+            or any(len(needs[name]) != count for name, count in counts.items())):
+        raise ValueError('Incomplete ELF symbol-version requirements')
+    return needs
+
+
 def inspect_image(path):
     path = Path(path)
     raw = path.read_bytes()
@@ -213,16 +247,20 @@ def inspect_image(path):
             raise ValueError('Unsupported ELF shared object: ' + str(path))
         dynamic = run(['readelf', '--wide', '--dynamic', path])
         versions = run(['readelf', '--wide', '--version-info', path])
-        if 'GLIBC_PRIVATE' in versions:
-            raise ValueError('Native image imports private glibc symbols')
+        notes = run(['readelf', '--wide', '--notes', path])
+        requirements = elf_version_needs(versions)
         sonames = re.findall(r'\(SONAME\).*?\[([^\]]+)\]', dynamic)
         rpaths = []
         for value in re.findall(r'\((?:RPATH|RUNPATH)\).*?\[([^\]]*)\]', dynamic):
             rpaths.extend(value.split(':'))
         return dict(format='ELF', architecture={62: 'x86_64', 183: 'aarch64'}[machine],
                     needed=re.findall(r'\(NEEDED\).*?\[([^\]]+)\]', dynamic),
-                    rpaths=rpaths, soname=sonames[0] if sonames else path.name,
-                    glibc_versions=sorted(set(re.findall(r'\bGLIBC_(\d+(?:\.\d+)+)\b', versions))))
+                    rpaths=rpaths, soname=sonames[0] if sonames else None,
+                    version_needs=requirements,
+                    relr=bool(re.search(r'\((?:RELR|RELRSZ|RELRENT)\)', dynamic)),
+                    x86_isa_needed=re.findall(r'x86 ISA needed:\s*([^\n]+)', notes),
+                    glibc_versions=sorted({v[6:] for names in requirements.values() for v in names
+                                           if re.fullmatch(r'GLIBC_\d+(?:\.\d+)+', v)}))
     if raw[:2] == b'MZ':
         return inspect_pe(path, raw)
     if raw[:4] in MAGICS:
@@ -240,6 +278,37 @@ def _inside(path, package):
     if not resolved.is_relative_to(package.resolve()):
         raise ValueError('Native loader path escapes installed package: ' + str(path))
     return resolved
+
+
+def audit_linux_abi(info, spec, path):
+    """Check the final ELF ABI, including every bundled runtime, not its tag.
+
+    GNU ISA-needed notes catch declared CPU requirements. Their absence is not
+    disassembly proof; pinned baseline compiler inputs and native release tests
+    remain necessary. CET compatibility markers (IBT/SHSTK) are not ISA levels.
+    """
+    minimum = spec['libc']['minimum_version']
+    if any(_version(v) > _version(minimum) for v in info['glibc_versions']):
+        raise ValueError('Native image requires glibc newer than ' + minimum + ': ' + str(path))
+    if info['relr']:
+        raise ValueError('DT_RELR requires a newer glibc baseline: ' + str(path))
+    if info['architecture'] == 'x86_64':
+        for declaration in info['x86_isa_needed']:
+            if set(re.split(r'[, ]+', declaration.strip())) != {'x86-64-baseline'}:
+                raise ValueError('Native image requires a non-baseline x86 ISA: ' + str(path))
+    for provider, versions in info['version_needs'].items():
+        if provider not in info['needed']:
+            raise ValueError('ELF symbol-version provider is not a declared dependency: ' + provider)
+        if provider in LINUX_SYSTEM:
+            for version in versions:
+                match = re.fullmatch(r'GLIBC_(\d+(?:\.\d+)+)', version)
+                if not match:
+                    raise ValueError('Unrecognized external glibc symbol version: ' + version)
+                if _version(match.group(1)) > _version(minimum):
+                    raise ValueError('Native image requires glibc newer than ' + minimum + ': ' + str(path))
+    loader = {'x86_64': 'ld-linux-x86-64.so.2', 'aarch64': 'ld-linux-aarch64.so.1'}[spec['architecture']]
+    if any(name.startswith('ld-linux-') and name != loader for name in info['needed']):
+        raise ValueError('Native image requires the wrong ELF system loader')
 
 
 def _loader_directory(value, image, package, system):
@@ -286,9 +355,10 @@ def audit_native_tree(package, target):
         if info['format'] != expected_format:
             raise ValueError('Native image format differs from wheel target')
         if spec['system'] == 'Linux':
-            minimum = spec['libc']['minimum_version']
-            if any(_version(v) > _version(minimum) for v in info['glibc_versions']):
-                raise ValueError('Native image requires glibc newer than ' + minimum + ': ' + str(path))
+            audit_linux_abi(info, spec, path)
+            if path not in roots.values() and (info['soname'] != path.name or not
+                    re.fullmatch(r'.+-[0-9a-f]{8,}\.so(?:\.[0-9]+)*', path.name)):
+                raise ValueError('Bundled ELF runtime requires a collision-resistant SONAME: ' + str(path))
         if spec['system'] == 'Darwin':
             if _version(info['minimum_os']) > _version(spec['minimum_os']):
                 raise ValueError('Native image requires macOS newer than ' + spec['minimum_os'] + ': ' + str(path))
@@ -467,7 +537,13 @@ def finalize_tree(package, target, *, repair_evidence=None):
 
 
 def retag_final_tree(tree, filename, target):
-    """Use a generic Linux tag only after the stricter x64 GLIBC_2.33 audit."""
+    """Seal the PEP 600 tag only after independently auditing the final tree.
+
+    auditwheel has no 2.33 policy. Its 2.34 intermediate supplies dependency
+    bundling, not permission to promise 2.33 compatibility. PEP 600 permits a
+    producer's own policy: https://peps.python.org/pep-0600/#core-definition.
+    The native glibc 2.33 clean-install release job must also pass before upload.
+    """
     spec = TARGETS[target]
     if target != 'linux-x86_64':
         return filename
@@ -475,9 +551,10 @@ def retag_final_tree(tree, filename, target):
     metadata = wheel_info.read_text(encoding='utf-8')
     repaired_tag = 'py3-none-' + spec['repair_tag']
     if re.findall(r'^Tag: (.+)$', metadata, re.MULTILINE) != [repaired_tag]:
-        raise ValueError('Unexpected auditwheel tags before conservative x64 retag')
+        raise ValueError('Unexpected auditwheel tags before final x64 ABI audit')
     if not filename.endswith('-' + repaired_tag + '.whl'):
         raise ValueError('Repaired wheel filename/tag mismatch')
+    audit_native_tree(tree / 'easysewer', target)
     final_tag = 'py3-none-' + spec['tag']
     metadata = metadata.replace('Tag: ' + repaired_tag, 'Tag: ' + final_tag)
     wheel_info.write_text(metadata, encoding='utf-8')
@@ -581,8 +658,8 @@ def repair(wheel, target, output):
                                    tool_version=version,
                                    final_platform_tag=spec['tag']))
         # auditwheel has no glibc2.33 policy. Existing x64 binaries keep their
-        # real 2.33 floor: repair under 2.34, audit all bytes <=2.33 above, then
-        # explicitly remove the manylinux claim. Never retag to an older policy.
+        # real 2.33 floor: repair under 2.34, audit the complete final ABI and
+        # dependency closure, then seal the independently qualified PEP 600 tag.
         final_name = retag_final_tree(tree, repaired_wheel.name, target)
         destination = output / final_name
         if destination.exists():

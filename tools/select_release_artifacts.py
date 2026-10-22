@@ -19,7 +19,7 @@ import zipfile
 
 TAGS = {
     'windows-x86_64': 'win_amd64',
-    'linux-x86_64': 'linux_x86_64',
+    'linux-x86_64': 'manylinux_2_33_x86_64',
     'linux-aarch64': 'manylinux_2_28_aarch64',
     'darwin-arm64': 'macosx_14_0_arm64',
 }

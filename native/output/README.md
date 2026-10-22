@@ -13,8 +13,7 @@ aarch64 and macOS arm64. The standard solver and this native OUT reader are both
 required. The x86-64 artifacts are preserved before dependency repair; native
 ARM builds use the public pinned EPA source and this existing reader recipe.
 Final platform-specific wheels carry final-byte hashes in the runtime manifest.
-They are development-branch artifacts, not replacements for the already published
-PyPI `2.0.1` files. See [installation](../../docs/2.0-installation.md) for runtime
+They are 2.1.0 artifacts, not replacements for the immutable PyPI `2.0.1` files. See [installation](../../docs/2.0-installation.md) for runtime
 baselines and [build/qualification gates](../../docs/2.0-testing.md).
 
 ```powershell
