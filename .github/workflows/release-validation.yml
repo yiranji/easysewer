@@ -362,7 +362,7 @@ jobs:
           if [ "$RUNNER_OS" = Windows ]; then venv_python="$PWD/clean-venv/Scripts/python.exe"; else venv_python="$PWD/clean-venv/bin/python"; fi
           "$venv_python" -m pip install --no-index --no-deps --no-compile native-wheel/*.whl
           echo "VENV_PY=$venv_python" >> "$GITHUB_ENV"
-          "$venv_python" -c 'import sysconfig; print("NATIVE_SITE=" + sysconfig.get_paths()["purelib"])' >> "$GITHUB_ENV"
+          "$venv_python" -c 'import sysconfig; print("NATIVE_SITE=" + sysconfig.get_paths()["platlib"])' >> "$GITHUB_ENV"
           python -m pip install --no-index --no-deps --no-compile --target installed-pure packages/pure/*.whl
       - name: Diagnose then solve without loader overrides
         run: |
@@ -458,7 +458,7 @@ jobs:
             python3.12 -c "import platform; assert platform.libc_ver() == (\"glibc\", \"2.28\")"
             python3.12 -m pip install --no-index --no-deps --no-compile native-wheel/*.whl
             python3.12 -m easysewer doctor --json --smoke-test > checks/doctor.json
-            site=$(python3.12 -c "import sysconfig; print(sysconfig.get_paths()[\"purelib\"])")
+            site=$(python3.12 -c "import sysconfig; print(sysconfig.get_paths()[\"platlib\"])")
             python3.12 source/*/tools/qualify_release.py --package "$site" --core --output checks/core
           '
       - name: Save clean runtime evidence
@@ -502,7 +502,7 @@ jobs:
           docker run --rm --network none -v "$PWD:/work" -w /work easysewer-glibc233 /bin/bash -euc '
             python3.10 -m pip install --no-index --no-deps --no-compile native-wheel/*.whl
             python3.10 -m easysewer doctor --json --smoke-test > checks/doctor.json
-            site=$(python3.10 -c "import sysconfig; print(sysconfig.get_paths()[\"purelib\"])")
+            site=$(python3.10 -c "import sysconfig; print(sysconfig.get_paths()[\"platlib\"])")
             python3.10 source/*/tools/qualify_release.py --package "$site" --core --output checks/core
             python3.10 source/*/tools/qualify_release.py --package "$site" --experimental --output checks/experimental
           '
