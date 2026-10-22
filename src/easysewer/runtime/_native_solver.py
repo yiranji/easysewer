@@ -9,6 +9,7 @@ import struct
 
 from .backend import NativeFailure
 from ..model.identity import canonical_key
+from .._native_registry import backend_architecture
 
 OBJECTS = {'swmm:raingages': 0, 'swmm:subcatchments': 1, 'swmm:nodes': 2, 'swmm:links': 3}
 
@@ -47,7 +48,7 @@ class NativeSolver:
         if hashlib.sha256(path.read_bytes()).hexdigest() != before:
             raise ValueError('Native library changed while it was being loaded')
         self.metadata = dict(library=str(path), sha256=before, engine_version=self.version,
-            platform=platform.system(), architecture=platform.machine(), abi=f'cdecl:{struct.calcsize("P")*8}')
+            platform=platform.system(), architecture=backend_architecture(), abi=f'cdecl:{struct.calcsize("P")*8}')
 
     def check(self, stage, code):
         if code:

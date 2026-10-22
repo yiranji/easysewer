@@ -12,6 +12,7 @@ from easysewer.runtime import (FlexiblePondingBackend, RunError, Runner, Session
                               SessionTimeout, StandardBackend)
 from easysewer.runtime.backend import NativeFailure
 from easysewer.utils import find_library_path, probe_library_path
+from test_native_runtime_registry import write_manifest
 
 
 @contextmanager
@@ -20,10 +21,16 @@ def host(system='Linux', machine='x86_64', bits=64, python_platform=None):
         python_platform = ('win-amd64' if machine.lower() in ('amd64', 'x86_64') and bits == 64 else
                            'win-arm64' if machine.lower() == 'arm64' and bits == 64 else 'win32')
     with ExitStack() as stack:
+        directory = stack.enter_context(tempfile.TemporaryDirectory())
+        write_manifest(directory)
+        stack.enter_context(patch('easysewer._native_registry._package_roots', return_value=(Path(directory),)))
         stack.enter_context(patch('platform.system', return_value=system))
         stack.enter_context(patch('platform.machine', return_value=machine))
         stack.enter_context(patch('struct.calcsize', return_value=bits // 8))
         stack.enter_context(patch('sysconfig.get_platform', return_value=python_platform))
+        stack.enter_context(patch('sysconfig.get_config_var', return_value=''))
+        stack.enter_context(patch('platform.libc_ver', return_value=('glibc', '2.99')))
+        stack.enter_context(patch('platform.mac_ver', return_value=('15.0', (), 'arm64')))
         yield
 
 
@@ -81,14 +88,14 @@ class NativePlatformDiagnosticsTests(unittest.TestCase):
 
     def test_unsupported_architecture_cannot_advertise_bundled_libraries(self):
         for system, machine, bits in (
-            ('Linux', 'aarch64', 64), ('Windows', 'ARM64', 64),
+            ('Linux', 'riscv64', 64), ('Windows', 'ARM64', 64),
             ('Linux', 'x86_64', 32), ('Windows', 'x86', 32),
         ):
             with self.subTest(system=system, machine=machine, bits=bits), host(system, machine, bits):
                 self.assertEqual(get_native_capabilities(), {
                     'swmm_solver': False, 'swmm_output': False, 'flexible_ponding': False,
                 })
-                with self.assertRaisesRegex(OSError, 'x86-64.*64-bit'):
+                with self.assertRaisesRegex(OSError, 'supported 64-bit Python'):
                     find_library_path('swmm5')
 
     def test_supported_architecture_aliases_still_discover_files(self):
@@ -134,8 +141,8 @@ class NativePlatformDiagnosticsTests(unittest.TestCase):
     def test_packaged_probes_explain_unsupported_hosts_without_launching(self):
         for backend in (StandardBackend(), FlexiblePondingBackend()):
             for system, machine, text in (
-                ('Darwin', 'arm64', 'Windows and Linux'),
-                ('Linux', 'aarch64', 'x86-64'),
+                ('Darwin', 'arm64', 'No packaged native libraries'),
+                ('Linux', 'aarch64', 'No packaged native libraries'),
             ):
                 with self.subTest(backend=backend.key, system=system), host(system, machine), \
                         patch('easysewer.runtime._process_session.ProcessSession') as launch:

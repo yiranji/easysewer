@@ -19,6 +19,9 @@ classifiers = [
 
 dependencies = []
 
+[project.scripts]
+easysewer = "easysewer.doctor:main"
+
 [project.urls]
 Homepage = "https://github.com/yiranji/easysewer"
 Documentation = "https://github.com/yiranji/easysewer/blob/master/docs/README.md"

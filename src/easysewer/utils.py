@@ -7,10 +7,6 @@ It also includes utility functions for finding library paths across different op
 """
 
 import os
-import sys
-import platform
-import struct
-import sysconfig
 
 
 class NativeCapabilityError(RuntimeError):
@@ -18,81 +14,17 @@ class NativeCapabilityError(RuntimeError):
 
 
 def _packaged_native_platform_error() -> str | None:
-    """Explain known packaged ABI mismatches without loading a library.
-
-    This is only a static check. A matching host still needs the system loader
-    and its dependencies; explicit user libraries have their own requirements.
-    """
-    system, machine = platform.system(), platform.machine()
-    bits = struct.calcsize('P') * 8
-    if system not in ('Windows', 'Linux'):
-        return (f'Packaged native libraries support Windows and Linux only; '
-                f'current runtime is {system} {machine} ({bits}-bit Python)')
-    if system == 'Windows':
-        # platform.machine() can describe the physical ARM64 CPU even when
-        # x64 Python runs under Windows emulation. DLL loading follows the
-        # interpreter ABI, which sysconfig reports independently of that CPU.
-        python_platform = sysconfig.get_platform()
-        compatible = python_platform == 'win-amd64'
-        runtime = f'{system} {machine} ({python_platform}, {bits}-bit Python)'
-    else:
-        compatible = machine.lower() in ('x86_64', 'amd64')
-        runtime = f'{system} {machine} ({bits}-bit Python)'
-    if not compatible or bits != 64:
-        return (f'Packaged native libraries require x86-64 and 64-bit Python; '
-                f'current runtime is {runtime}')
-    return None
+    """Explain unsupported process ABIs without loading a library."""
+    from ._native_registry import platform_error
+    return platform_error()
 
 
 def _get_library_path_candidates(lib_name: str) -> tuple[str, list[str]]:
-    """
-    Build candidate library paths for current runtime platform.
-
-    Args:
-        lib_name: Base library name without extension
-
-    Returns:
-        tuple[str, list[str]]: (library extension, candidate absolute paths)
-
-    Raises:
-        OSError: If the packaged libraries do not support this runtime ABI
-    """
-    reason = _packaged_native_platform_error()
-    if reason:
-        raise OSError(reason)
-    # Determine base path based on execution environment
-    if getattr(sys, 'frozen', False):
-        if hasattr(sys, '_MEIPASS'):
-            # Use realpath to resolve short file names (8.3 format) to full paths
-            base_path = os.path.realpath(sys._MEIPASS)
-        else:
-            # Use realpath to resolve short file names (8.3 format) to full paths
-            base_path = os.path.realpath(os.path.dirname(sys.executable))
-    else:
-        # Development environment
-        base_path = os.path.dirname(os.path.abspath(__file__))
-
-    # Define library paths for different operating systems
-    lib_paths = {
-        'Windows': ('.dll.esdll', 'win'),
-        'Linux': ('.so.esso', 'linux')
-    }
-
-    # Get the current operating system
-    system = platform.system()
-    if system not in lib_paths:
-        raise OSError(f'Unsupported operating system: {system}')
-
-    # Get the file extension and directory for the current OS
-    lib_ext, lib_dir = lib_paths[system]
-
-    # Build possible paths to search for the library
-    possible_paths = [
-        os.path.join(base_path, 'libs', lib_dir, f'{lib_name}{lib_ext}'),
-        os.path.join(base_path, 'easysewer', 'libs', lib_dir, f'{lib_name}{lib_ext}'),
-        os.path.join(os.path.dirname(__file__), 'libs', lib_dir, f'{lib_name}{lib_ext}')
-    ]
-    return lib_ext, possible_paths
+    """Select only the current process ABI's manifest entry, without loading it."""
+    from ._native_registry import select_library
+    artifact = select_library(lib_name)
+    path = str(artifact.path)
+    return path[path.rfind(lib_name) + len(lib_name):], [path]
 
 
 def probe_library_path(lib_name: str) -> str | None:
