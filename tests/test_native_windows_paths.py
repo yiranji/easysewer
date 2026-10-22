@@ -21,8 +21,7 @@ from test_native_public_directory_checkpoint_v2 import finish as finish_inputs
 from test_native_output_directory_checkpoint_v2 import finish as finish_outputs
 
 
-@unittest.skipUnless(os.name == 'nt', 'Requires actual Windows short-path APIs')
-class WindowsNativePathTests(unittest.TestCase):
+class WindowsNativePathChecks:
     def require_alias(self, directory):
         directory = Path(directory).resolve()
         alias = str(worker_directory(directory))
@@ -52,9 +51,8 @@ class WindowsNativePathTests(unittest.TestCase):
             self.assertTrue(cwd.isascii(), cwd)
             self.assertTrue(absolute_input.isascii(), absolute_input)
             self.assertTrue(Path(cwd).samefile(unicode_root))
-            for family, model, settings in (
-                ('standard', network(), config), ('custom', ponding_model(), configuration),
-            ):
+            for family in self.families:
+                model, settings = (network(), config) if family == 'standard' else (ponding_model(), configuration)
                 with self.subTest(family=family):
                     baseline = Runner().run(model, settings(root/(family+'-ascii')))
                     result = Runner().run(model, settings(unicode_root/family))
@@ -70,9 +68,8 @@ class WindowsNativePathTests(unittest.TestCase):
     def test_explicit_unicode_scratch_stays_selected_and_cancellation_cleans_it(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
-            for family, model, settings in (
-                ('standard', network(), config), ('custom', ponding_model(), configuration),
-            ):
+            for family in self.families:
+                model, settings = (network(), config) if family == 'standard' else (ponding_model(), configuration)
                 with self.subTest(family=family):
                     scratch = root/(family+'-中文😀'); scratch.mkdir()
                     self.require_alias(scratch)
@@ -101,7 +98,7 @@ class WindowsNativePathTests(unittest.TestCase):
                     self.assertFalse(list(destination.glob('.easysewer-*')))
 
     def test_unicode_checkpoint_move_repeat_restore_and_output_bytes(self):
-        for family in ('standard', 'custom'):
+        for family in self.families:
             for kind in ('inputs', 'outputs'):
                 with self.subTest(family=family, kind=kind), tempfile.TemporaryDirectory() as temporary:
                     root = Path(temporary).resolve()
@@ -142,6 +139,26 @@ class WindowsNativePathTests(unittest.TestCase):
                     # Windows permits removing these directories only after
                     # the worker and its native file handles have been reaped.
                     shutil.rmtree(restored_root)
+
+
+@unittest.skipUnless(os.name == 'nt', 'Requires actual Windows short-path APIs')
+class WindowsNativePathTests(WindowsNativePathChecks, unittest.TestCase):
+    families = ('standard', 'custom')
+
+
+@unittest.skipUnless(os.name == 'nt', 'Requires actual Windows short-path APIs')
+class StandardWindowsNativePathTests(WindowsNativePathChecks, unittest.TestCase):
+    families = ('standard',)
+
+
+@unittest.skipUnless(os.name == 'nt', 'Requires actual Windows short-path APIs')
+class ExperimentalWindowsNativePathTests(WindowsNativePathChecks, unittest.TestCase):
+    families = ('custom',)
+
+
+def load_tests(loader, tests, pattern):
+    # Default module discovery retains the complete historical two-family gate.
+    return loader.loadTestsFromTestCase(WindowsNativePathTests)
 
 
 if __name__ == '__main__':

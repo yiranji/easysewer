@@ -19,8 +19,8 @@ def model(units, case):
     return routed_model(text)
 
 
-class HortonIntegrationTests(HortonAssertions,unittest.TestCase):
-    def test_fourteen_hydrology_cases_both_families_and_units(self):
+class HortonIntegrationChecks(HortonAssertions):
+    def test_fourteen_hydrology_cases_and_units(self):
         self.check_matrix(model,('CFS','GPM','MGD','CMS','LPS','MLD'),
             ('horton','green-ampt','modified-green-ampt','curve-number','unlimited',
              'constant-rate','zero-decay','finite-cap','small-cap','zero-decay-small-cap',
@@ -29,6 +29,24 @@ class HortonIntegrationTests(HortonAssertions,unittest.TestCase):
     def test_finite_capacity_fresh_parent_resume_and_revision_boundaries(self):
         self.check_continuation(model,('CFS','GPM','MGD','CMS','LPS','MLD'),
             'zero-decay-small-cap',EVIDENCE)
+
+
+class HortonIntegrationTests(HortonIntegrationChecks, unittest.TestCase):
+    families = ('standard',)
+
+
+class ExperimentalHortonIntegrationTests(HortonIntegrationChecks, unittest.TestCase):
+    families = ('custom',)
+
+
+class AllFamiliesHortonIntegrationTests(HortonIntegrationChecks, unittest.TestCase):
+    families = ('standard', 'custom')
+
+
+def load_tests(loader, tests, pattern):
+    # Historical module discovery retains cross-family numerical comparisons.
+    # Core/experimental release jobs select the family-specific class explicitly.
+    return loader.loadTestsFromTestCase(AllFamiliesHortonIntegrationTests)
 
 
 if __name__=='__main__':

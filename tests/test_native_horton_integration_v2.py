@@ -167,7 +167,7 @@ class HortonAssertions:
 
     def check_matrix(self, factory, units, cases, evidence):
         reference={}
-        for family in ('standard','custom'):
+        for family in self.families:
             backend,info=self.current_backend(family)
             for unit in units:
                 for case in cases:
@@ -210,7 +210,7 @@ class HortonAssertions:
         return destination
 
     def check_continuation(self, factory, units, case, evidence):
-        for family in ('standard','custom'):
+        for family in self.families:
             backend,info=self.current_backend(family)
             for unit in units:
                 with self.subTest(family=family,units=unit),tempfile.TemporaryDirectory() as temporary:
@@ -279,14 +279,32 @@ class HortonAssertions:
                         synthetic_runoff_identity_rejected_before_session=True,matching_runoff_reused=True))
 
 
-class HortonIntegrationTests(HortonAssertions,unittest.TestCase):
-    def test_nine_hydrology_cases_both_families_and_units(self):
+class HortonIntegrationChecks(HortonAssertions):
+    def test_nine_hydrology_cases_and_units(self):
         self.check_matrix(model,('CFS','CMS'),
             ('horton','green-ampt','modified-green-ampt','curve-number','unlimited',
              'constant-rate','zero-decay','finite-cap','small-cap'),EVIDENCE)
 
     def test_finite_capacity_fresh_parent_resume_and_revision_boundaries(self):
         self.check_continuation(model,('CFS','CMS'),'finite-cap',EVIDENCE)
+
+
+class HortonIntegrationTests(HortonIntegrationChecks, unittest.TestCase):
+    families = ('standard',)
+
+
+class ExperimentalHortonIntegrationTests(HortonIntegrationChecks, unittest.TestCase):
+    families = ('custom',)
+
+
+class AllFamiliesHortonIntegrationTests(HortonIntegrationChecks, unittest.TestCase):
+    families = ('standard', 'custom')
+
+
+def load_tests(loader, tests, pattern):
+    # Historical module discovery retains cross-family numerical comparisons.
+    # Core/experimental release jobs select the family-specific class explicitly.
+    return loader.loadTestsFromTestCase(AllFamiliesHortonIntegrationTests)
 
 
 if __name__=='__main__':

@@ -6,7 +6,6 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from easysewer import get_native_capabilities
 from easysewer.io.inp import InpDocument
 from easysewer.model import Model, Ref
 from easysewer.model.report import ReportSelection
@@ -16,8 +15,7 @@ from test_runner_v2 import config
 from test_files_v2 import bind
 
 
-@unittest.skipUnless(get_native_capabilities()['swmm_solver'] and get_native_capabilities()['flexible_ponding'], 'Both solvers required')
-class NativeResultArchiveTests(unittest.TestCase):
+class NativeResultArchiveChecks:
     def solve(self,root,family,*,cache=False):
         model=network();model.update_options(allow_ponding=True)
         model.update_report(nodes=ReportSelection(mode='ALL'),links=ReportSelection(mode='ALL'))
@@ -39,7 +37,7 @@ class NativeResultArchiveTests(unittest.TestCase):
             self.assertEqual(a,replace(b,artifact=a.artifact))
 
     def test_real_outputs_tables_snapshots_and_custom_results_survive_move(self):
-        for family in ('swmm:standard','easysewer:flexible-ponding'):
+        for family in self.families:
             with self.subTest(family=family),tempfile.TemporaryDirectory() as directory:
                 root=Path(directory);original=self.solve(root,family,cache=True)
                 original.save(root/'archive')
@@ -66,28 +64,10 @@ class NativeResultArchiveTests(unittest.TestCase):
                 loaded.save(root/'resaved')
                 self.assertEqual(RunResult.load(root/'resaved').snapshot,original.snapshot)
 
-    def test_changed_source_or_forged_out_metadata_cannot_be_archived_or_loaded(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory);original=self.solve(root,'swmm:standard')
-            with self.assertRaises(TypeError):
-                replace(original.snapshot,options=replace(original.snapshot.options,defaults_used={'mutable'}))
-            with self.assertRaises(ValueError):
-                replace(original,report_document=replace(original.report_document,text='invented report'))
-            with self.assertRaises(ValueError):
-                replace(original,mass_balance=replace(original.mass_balance,flow_percent=123))
-            original.save(root/'archive')
-            path=root/'archive'/'result.json';data=json.loads(path.read_bytes())
-            data['result']['fields']['output_metadata']['fields']['output_offset']+=4
-            path.write_text(json.dumps(data),encoding='utf-8')
-            with self.assertRaisesRegex(ValueError,'OUT metadata'):RunResult.load(root/'archive')
-            Path(original.output.path).write_bytes(b'changed')
-            with self.assertRaises(ValueError):original.save(root/'bad')
-            self.assertFalse((root/'bad').exists())
-
     def test_all_cache_kinds_restored_evidence_can_be_consumed_and_resaved(self):
         from test_quality_v2 import quality_model
         from test_rdii_v2 import rdii_model
-        for family in ('swmm:standard','easysewer:flexible-ponding'):
+        for family in self.families:
             for kind in ('HOTSTART','RUNOFF','RDII'):
                 with self.subTest(family=family,kind=kind),tempfile.TemporaryDirectory() as directory:
                     root=Path(directory);factory=rdii_model if kind=='RDII' else quality_model
@@ -107,7 +87,7 @@ class NativeResultArchiveTests(unittest.TestCase):
 
     def test_lid_detail_and_multi_pollutant_outputs_remain_queryable(self):
         from test_native_v2_lid import literal_source
-        for family in ('swmm:standard','easysewer:flexible-ponding'):
+        for family in self.families:
             with self.subTest(family=family),tempfile.TemporaryDirectory() as directory:
                 root=Path(directory);source=literal_source('BC',detail=str(root/'detail.txt'))
                 model=Model.from_document(InpDocument.from_text(source),strict=True)
@@ -123,6 +103,28 @@ class NativeResultArchiveTests(unittest.TestCase):
                     span=replace(cell.span,source=before.source.path) if cell.span else None)
                     for cell in row.cells)) for row in after.rows))
 
+
+class NativeResultArchiveTests(NativeResultArchiveChecks, unittest.TestCase):
+    families = ('swmm:standard',)
+
+    def test_changed_source_or_forged_out_metadata_cannot_be_archived_or_loaded(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);original=self.solve(root,'swmm:standard')
+            with self.assertRaises(TypeError):
+                replace(original.snapshot,options=replace(original.snapshot.options,defaults_used={'mutable'}))
+            with self.assertRaises(ValueError):
+                replace(original,report_document=replace(original.report_document,text='invented report'))
+            with self.assertRaises(ValueError):
+                replace(original,mass_balance=replace(original.mass_balance,flow_percent=123))
+            original.save(root/'archive')
+            path=root/'archive'/'result.json';data=json.loads(path.read_bytes())
+            data['result']['fields']['output_metadata']['fields']['output_offset']+=4
+            path.write_text(json.dumps(data),encoding='utf-8')
+            with self.assertRaisesRegex(ValueError,'OUT metadata'):RunResult.load(root/'archive')
+            Path(original.output.path).write_bytes(b'changed')
+            with self.assertRaises(ValueError):original.save(root/'bad')
+            self.assertFalse((root/'bad').exists())
+
     def test_post_native_failure_with_and_without_retained_files_roundtrips(self):
         for keep in (False,True):
             with self.subTest(keep=keep),tempfile.TemporaryDirectory() as directory:
@@ -135,3 +137,7 @@ class NativeResultArchiveTests(unittest.TestCase):
                 result.save(root/'archive')
                 loaded=RunResult.load(root/'archive');self.assert_same(result,loaded)
                 self.assertEqual(loaded.failure_report.document.raw,result.failure_report.document.raw)
+
+
+class ExperimentalNativeResultArchiveTests(NativeResultArchiveChecks, unittest.TestCase):
+    families = ('easysewer:flexible-ponding',)
