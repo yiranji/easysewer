@@ -1,7 +1,7 @@
 """Build, bundle and verify one native platform wheel from an audited source tree.
 
-Linux/macOS builds require the pinned public EPA source checkout. The existing
-Windows binaries and x64-only experimental example retain their recorded
+ARM builds require the pinned public EPA source checkout. Existing Windows and
+Linux x64 binaries, including the experimental example, retain their recorded
 provenance. No private FlexiblePonding source is fetched by this tool.
 """
 import argparse

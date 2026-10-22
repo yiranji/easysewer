@@ -34,6 +34,8 @@ def selected_target():
     if system == 'Windows':
         target = 'windows-x86_64' if sysconfig.get_platform() == 'win-amd64' else None
     elif system == 'Linux':
+        if platform.libc_ver()[0] != 'glibc':
+            raise RuntimeError('Native Linux source builds require glibc; musl is not supported')
         architecture = {'amd64': 'x86_64', 'x86_64': 'x86_64',
                         'aarch64': 'aarch64', 'arm64': 'aarch64'}.get(machine)
         target = 'linux-' + architecture if architecture else None
