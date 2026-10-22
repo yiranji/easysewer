@@ -10,6 +10,7 @@ import json
 import math
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 from . import __version__
@@ -122,6 +123,15 @@ def _timeout(value):
     return result
 
 
+def _print_line(text):
+    """Escape unencodable paths without reconfiguring the caller's stream."""
+    encoding = getattr(sys.stdout, 'encoding', None)
+    if encoding:
+        text = text.encode(encoding, errors='backslashreplace').decode(encoding)
+    # I/O failures still propagate; only representability is normalized.
+    print(text)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog='easysewer', description='EasySewer native runtime tools')
     commands = parser.add_subparsers(dest='command', required=True)
@@ -132,22 +142,22 @@ def main(argv=None):
     args = parser.parse_args(argv)
     report = diagnose(smoke_test=args.smoke_test, timeout=args.timeout)
     if args.json:
-        print(json.dumps(report, indent=2, sort_keys=True, allow_nan=False))
+        _print_line(json.dumps(report, indent=2, sort_keys=True, allow_nan=False))
     else:
         identity = report['runtime']
-        print(f"EasySewer {__version__}: {identity['system']} {identity['architecture']} "
+        _print_line(f"EasySewer {__version__}: {identity['system']} {identity['architecture']} "
               f"({identity['pointer_bits']}-bit Python)")
         for check in report['checks']:
             optional = ' (optional, experimental)' if not check['required'] else ''
-            print(f"{check['name']}{optional}: {check['status']}")
+            _print_line(f"{check['name']}{optional}: {check['status']}")
             if check.get('message'):
-                print('  ' + check['message'])
+                _print_line('  ' + check['message'])
             if check.get('artifact', {}).get('external_dependencies'):
-                print('  Legacy source artifacts require external dependencies: ' +
+                _print_line('  Legacy source artifacts require external dependencies: ' +
                       ', '.join(check['artifact']['external_dependencies']))
         if args.smoke_test:
-            print('Smoke test: ' + report['smoke_test']['status'])
+            _print_line('Smoke test: ' + report['smoke_test']['status'])
             if report['smoke_test'].get('message'):
-                print('  ' + report['smoke_test']['message'])
-        print('Standard solver/output ready' if report['ready'] else f"Not ready (exit {report['exit_code']})")
+                _print_line('  ' + report['smoke_test']['message'])
+        _print_line('Standard solver/output ready' if report['ready'] else f"Not ready (exit {report['exit_code']})")
     return report['exit_code']

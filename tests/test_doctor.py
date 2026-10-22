@@ -106,6 +106,38 @@ class DoctorTests(unittest.TestCase):
                 doctor.main(['doctor', '--timeout', value])
             self.assertEqual(caught.exception.code, 2)
 
+    def test_text_cli_preserves_unicode_diagnostics_and_exit_on_strict_streams(self):
+        report = dict(ready=False, exit_code=11,
+            runtime=dict(system='Windows', architecture='x86_64', pointer_bits=64),
+            checks=[dict(name='swmm5', required=True, status='error',
+                         message='Missing native file C:/Users/李/café/swmm5.dll')],
+            smoke_test=dict(status='not_run', message='Cannot use C:/Users/李'))
+        for encoding in ('ascii', 'cp1252', 'utf-8'):
+            for arguments in (['doctor', '--smoke-test'], ['doctor', '--json']):
+                with self.subTest(encoding=encoding, arguments=arguments):
+                    buffer = io.BytesIO()
+                    with io.TextIOWrapper(buffer, encoding=encoding, errors='strict') as stream:
+                        with patch.object(doctor, 'diagnose', return_value=report), patch('sys.stdout', stream):
+                            self.assertEqual(doctor.main(arguments), 11)
+                        stream.flush()
+                        text = buffer.getvalue().decode(encoding)
+                        if '--json' in arguments:
+                            self.assertEqual(json.loads(text), report)
+                        else:
+                            message = report['checks'][0]['message'].encode(encoding, errors='backslashreplace').decode(encoding)
+                            self.assertIn(message, text)
+                            self.assertIn('Not ready (exit 11)', text)
+                            self.assertEqual(stream.encoding, encoding)
+                            self.assertEqual(stream.errors, 'strict')
+
+    def test_text_cli_does_not_hide_stream_io_failures(self):
+        class FailedStream(io.StringIO):
+            def write(self, text):
+                raise OSError('Controlled output failure')
+        with patch.object(doctor, '_run_worker', return_value=dict(ok=True, evidence={})), \
+                patch('sys.stdout', FailedStream()), self.assertRaisesRegex(OSError, 'Controlled output failure'):
+            doctor.main(['doctor'])
+
     def test_worker_crash_timeout_and_invalid_protocol_are_contained(self):
         from easysewer.runtime import _worker_launch
         for script, code in (("import time; time.sleep(30)", 'worker_timeout'),
