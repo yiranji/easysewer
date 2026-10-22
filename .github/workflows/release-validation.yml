@@ -111,6 +111,11 @@ jobs:
           python -m pip install --no-index --no-deps --no-compile --target installed-pure packages/pure/*.whl
       - name: Check the native installed package
         run: python source/*/tools/qualify_release.py --package installed-native --output checks/native
+      - name: Check isolated virtualenv worker identity and lifecycle
+        run: >-
+          python source/*/tools/qualify_release.py --package installed-native
+          --output checks/venv --tests
+          test_worker_launch_v2 test_native_v2_venv_worker
       - name: Check current Horton physics and continuation contracts
         run: >-
           python source/*/tools/qualify_release.py --package installed-native
