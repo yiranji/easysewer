@@ -466,7 +466,12 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: baseline-linux-aarch64-glibc228
-          path: checks
+          path: |
+            checks/*.json
+            checks/*.log
+            checks/*/*.json
+            checks/*/*.log
+            checks/*/first-run/summary.json
           if-no-files-found: ignore
           retention-days: 14
 
@@ -511,6 +516,11 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: baseline-linux-x86_64-glibc233
-          path: checks
+          path: |
+            checks/*.json
+            checks/*.log
+            checks/*/*.json
+            checks/*/*.log
+            checks/*/first-run/summary.json
           if-no-files-found: ignore
           retention-days: 14
