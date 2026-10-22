@@ -95,10 +95,47 @@ class OpenMPSourceLockTests(unittest.TestCase):
     def test_official_release_and_license_are_pinned(self):
         record=json.loads((ROOT/'native/openmp/source.json').read_text())
         self.assertEqual(record['repository'],'https://github.com/llvm/llvm-project.git')
-        self.assertEqual(record['commit'],'3b5b5c1ec4a3095ab096dd780e84d7ab81f3d7ff')
-        self.assertEqual(set(record['trees']),{'openmp','cmake'})
+        self.assertEqual(record['tag'],'llvmorg-23.1.4')
+        self.assertEqual(record['commit'],'7a941dfb2877a0b8cf30323fefa85ad019e0b0f5')
+        self.assertEqual(set(record['trees']),{'openmp','cmake','runtimes','llvm/cmake','third-party/unittest'})
         self.assertEqual(record['minimum_os'],'14.0')
-        self.assertEqual(len(record['files']['openmp/LICENSE.TXT']),64)
+        license_bytes=(ROOT/'native/licenses/LLVM-OpenMP-LICENSE.txt').read_bytes()
+        self.assertEqual(record['files']['openmp/LICENSE.TXT'],hashlib.sha256(license_bytes).hexdigest())
+
+    def test_host_only_recipe_uses_locked_runtimes_entry_and_keeps_macos_floor(self):
+        # This inspects command construction, not native ARM execution.
+        lock=json.loads((ROOT/'native/openmp/source.json').read_text())
+        with tempfile.TemporaryDirectory() as temporary, host('Darwin','arm64'):
+            root=Path(temporary); source=root/'source'; prefix=root/'prefix'
+            (source/'openmp').mkdir(parents=True)
+            (source/'openmp/LICENSE.TXT').write_bytes((ROOT/'native/licenses/LLVM-OpenMP-LICENSE.txt').read_bytes())
+            def run(command, **kwargs):
+                self.assertEqual(kwargs['env']['MACOSX_DEPLOYMENT_TARGET'],'14.0')
+                self.assertEqual(kwargs['env']['SOURCE_DATE_EPOCH'],str(lock['commit_timestamp']))
+                self.assertEqual(kwargs['env']['PYTHONDONTWRITEBYTECODE'],'1')
+                if '--install' in command:
+                    (prefix/'lib').mkdir(); (prefix/'include').mkdir()
+                    (prefix/'lib/libomp.dylib').write_bytes(b'unit fixture, not native code')
+                    (prefix/'include/omp.h').write_bytes(b'unit fixture')
+            with mock.patch.object(openmp,'verify_source',return_value=(lock,lock['files'])), \
+                 mock.patch.object(openmp.subprocess,'run',side_effect=run), \
+                 mock.patch.object(openmp.subprocess,'check_output',return_value='test compiler'):
+                record=openmp.build(source,root/'build',prefix,jobs=2)
+            configure,compile_command,install=record['commands']
+            self.assertEqual(configure[configure.index('-S')+1],str(source/'runtimes'))
+            for flag in ('-DLLVM_ENABLE_RUNTIMES=openmp','-DLLVM_INCLUDE_TESTS=OFF',
+                         '-DLLVM_INCLUDE_DOCS=OFF','-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF',
+                         '-DRUNTIMES_FORTRAN_MODULES=OFF','-DOPENMP_ENABLE_LIBOMPTARGET=OFF',
+                         '-DOPENMP_ENABLE_OMPT_TOOLS=OFF','-DLIBOMP_OMPD_SUPPORT=OFF',
+                         '-DCMAKE_DISABLE_FIND_PACKAGE_LLVM=ON','-DCMAKE_DISABLE_FIND_PACKAGE_Clang=ON',
+                         '-DCMAKE_OSX_ARCHITECTURES=arm64','-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0',
+                         '-DCMAKE_C_FLAGS=-fno-fast-math -ffp-contract=off',
+                         '-DCMAKE_CXX_FLAGS=-fno-fast-math -ffp-contract=off'):
+                self.assertIn(flag,configure)
+            self.assertEqual(compile_command[compile_command.index('--target')+1],'omp')
+            self.assertEqual(record['source'],lock)
+            self.assertEqual(record['minimum_os'],'14.0')
+            self.assertEqual(record['runtime']['sha256'],hashlib.sha256((prefix/'lib/libomp.dylib').read_bytes()).hexdigest())
 
     def test_source_verification_rejects_dirty_or_untracked_input(self):
         with tempfile.TemporaryDirectory() as temporary:

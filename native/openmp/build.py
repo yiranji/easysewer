@@ -1,8 +1,9 @@
 """Build pinned, host-only LLVM libomp for the macOS arm64 release wheel.
 
 Use the official LLVM checkout at source.json's commit, with sparse-checkout
-paths ``openmp cmake``. No fetching, Homebrew bottles, or runtime installation
-is performed by this recipe. Outputs must be outside the verified source tree.
+paths ``openmp cmake runtimes llvm/cmake third-party/unittest``. No fetching,
+Homebrew bottles, or runtime installation is performed by this recipe.
+Outputs must be outside the verified source tree.
 """
 
 import argparse
@@ -79,21 +80,28 @@ def build(source, build_directory, prefix, *, cmake='cmake', compiler='clang', c
     build_directory.mkdir(parents=True, exist_ok=True)
     prefix.mkdir(parents=True, exist_ok=True)
     commands = [
-        [str(cmake), '-S', str(source / 'openmp'), '-B', str(build_directory),
+        [str(cmake), '-S', str(source / 'runtimes'), '-B', str(build_directory),
          '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX=' + str(prefix),
          '-DCMAKE_C_COMPILER=' + str(compiler), '-DCMAKE_CXX_COMPILER=' + str(cxx),
          '-DCMAKE_OSX_ARCHITECTURES=arm64', '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0',
          '-DCMAKE_C_FLAGS=-fno-fast-math -ffp-contract=off',
          '-DCMAKE_CXX_FLAGS=-fno-fast-math -ffp-contract=off',
+         '-DLLVM_ENABLE_RUNTIMES=openmp', '-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF',
+         '-DLLVM_INCLUDE_TESTS=OFF', '-DLLVM_INCLUDE_DOCS=OFF',
+         '-DRUNTIMES_FORTRAN_MODULES=OFF',
+         '-DCMAKE_DISABLE_FIND_PACKAGE_LLVM=ON', '-DCMAKE_DISABLE_FIND_PACKAGE_Clang=ON',
          '-DLIBOMP_ENABLE_SHARED=ON', '-DLIBOMP_INSTALL_ALIASES=OFF',
          '-DOPENMP_ENABLE_LIBOMPTARGET=OFF', '-DOPENMP_ENABLE_OMPT_TOOLS=OFF',
          '-DLIBOMP_OMPD_SUPPORT=OFF'],
-        [str(cmake), '--build', str(build_directory), '--parallel', str(jobs)],
+        # LLVM23 configures GoogleTest even with LLVM_INCLUDE_TESTS=OFF. Its
+        # sources are locked, but build only omp; do not build/install tests.
+        [str(cmake), '--build', str(build_directory), '--target', 'omp', '--parallel', str(jobs)],
         [str(cmake), '--install', str(build_directory)],
     ]
     environment = os.environ.copy()
     environment['SOURCE_DATE_EPOCH'] = str(lock['commit_timestamp'])
     environment['MACOSX_DEPLOYMENT_TARGET'] = '14.0'
+    environment['PYTHONDONTWRITEBYTECODE'] = '1'
     with (build_directory / 'build.log').open('w', encoding='utf-8') as log:
         for command in commands:
             log.write(repr(command) + '\n'); log.flush()
