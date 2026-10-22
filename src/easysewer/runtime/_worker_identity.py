@@ -1,16 +1,22 @@
 """Read-only process identity, captured in the worker and checked on recovery.
 
-Importing this module loads no native library. Windows APIs are used only by
-explicit observation; Linux identities are bound to the boot and PID namespace.
+Importing this module loads no native library. Windows/macOS APIs are used only
+by explicit observation; POSIX identities are bound to the current kernel boot.
 """
 import os
 from pathlib import Path
 import sys
 
 
+def _boot_id(value):
+    return (type(value) is str and len(value)==36
+            and all(c in '0123456789abcdef-' for c in value)
+            and {i for i,c in enumerate(value) if c=='-'}=={8,13,18,23})
+
+
 def validate(value, *, pid=None):
     if (type(value) is not dict or set(value) != {'platform','pid','started','boot_id','pid_namespace'}
-            or value['platform'] not in ('win32','linux')
+            or value['platform'] not in ('win32','linux','darwin')
             or type(value['pid']) is not int or not 0 < value['pid'] < 2**32
             or type(value['started']) is not int or not 0 < value['started'] < 2**64
             or (pid is not None and (value['pid'] != pid or value['platform'] != sys.platform))):
@@ -18,10 +24,12 @@ def validate(value, *, pid=None):
     if value['platform'] == 'win32':
         if value['boot_id'] is not None or value['pid_namespace'] is not None:
             raise ValueError('Invalid Windows worker identity')
+    elif value['platform'] == 'darwin':
+        if value['pid'] >= 2**31 or not _boot_id(value['boot_id']) or value['pid_namespace'] is not None:
+            raise ValueError('Invalid macOS worker environment')
     else:
         boot=value['boot_id'];namespace=value['pid_namespace']
-        if (type(boot) is not str or len(boot)!=36 or any(c not in '0123456789abcdef-' for c in boot)
-                or {i for i,c in enumerate(boot) if c=='-'}!={8,13,18,23}
+        if (not _boot_id(boot)
                 or type(namespace) is not list or len(namespace)!=2
                 or any(type(v) is not int or v<0 for v in namespace)):
             raise ValueError('Invalid Linux worker environment')
@@ -81,10 +89,25 @@ def _windows(pid):
         kernel.CloseHandle(handle)
 
 
+def _darwin_environment():
+    # Native observation is unavailable in a pure wheel. A missing helper must
+    # propagate as an error, never as evidence that a worker has exited.
+    from ._darwin_identity import environment
+    return environment()
+
+
+def _darwin(pid):
+    if type(pid) is not int or not 0<pid<2**31:
+        raise ValueError('Invalid macOS process ID')
+    from ._darwin_identity import observe
+    return observe(pid, boot=_darwin_environment())
+
+
 def _observe(pid):
     if sys.platform=='win32':return _windows(pid)
     if sys.platform=='linux':return _linux(pid)
-    raise NotImplementedError('Worker identity recovery requires Windows or Linux')
+    if sys.platform=='darwin':return _darwin(pid)
+    raise NotImplementedError('Worker identity recovery requires Windows, Linux, or macOS')
 
 
 def capture():
@@ -100,5 +123,7 @@ def has_exited(identity):
         boot,namespace=_linux_environment()
         if boot!=value['boot_id'] or namespace!=value['pid_namespace']:
             raise ValueError('Worker boot or PID namespace changed')
+    elif sys.platform=='darwin' and _darwin_environment()!=value['boot_id']:
+        raise ValueError('Worker boot changed')
     observation=_observe(value['pid'])
     return observation is None or observation[0]!=value or not observation[1]

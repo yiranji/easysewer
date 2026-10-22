@@ -26,11 +26,8 @@ CheckpointRequestRejected = CheckpointRejected
 
 
 def _worker_command():
-    # -I ignores PYTHONPATH and the working directory. Explicitly use this
-    # installation's package root, including when running from a src checkout.
-    root = str(Path(__file__).resolve().parents[2])
-    script = 'import sys; sys.path.insert(0, '+repr(root)+'); from easysewer.runtime._solver_worker import main; main()'
-    return [sys.executable, '-I', '-B', '-u', '-c', script]
+    from ._worker_launch import command
+    return command(str(Path(__file__).resolve().parents[2]))
 
 
 class _WorkerConnection:
@@ -42,9 +39,10 @@ class _WorkerConnection:
         self._stderr_lock = threading.Lock()
         self._sequence = 0
         self._disposed = False
+        from ._worker_launch import environment
         self.process = subprocess.Popen(_worker_command(), cwd=worker_directory(directory),
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            bufsize=0, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+            bufsize=0, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), env=environment())
         self._threads = [threading.Thread(target=target, daemon=True, name='easysewer-worker-'+name)
                          for name, target in (('reader', self._read), ('writer', self._write), ('stderr', self._drain))]
         try:

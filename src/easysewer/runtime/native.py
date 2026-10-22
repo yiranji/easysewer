@@ -2,13 +2,14 @@
 
 from dataclasses import dataclass, replace
 from pathlib import Path
-import platform
 import re
 import struct
 import sys
 
 from .backend import BackendInfo, NativeFailure, SessionError
 from ..utils import _packaged_native_platform_error, probe_library_path
+from .._native_registry import (NativeRegistryError, backend_architecture, policy_for_digest,
+                                runtime_identity, select_library)
 
 
 _LEGACY_HASHES = {
@@ -50,6 +51,7 @@ class StandardBackend:
     key = 'swmm:standard'
     worker_kind = 'standard'
     supported_extensions = ()
+    library_name = 'swmm5'
 
     def __post_init__(self):
         if self.library is not None:
@@ -59,8 +61,13 @@ class StandardBackend:
             raise ValueError('Expected a SHA-256 hex digest')
 
     def _selection(self):
-        path = self.library or probe_library_path('swmm5')
-        expected = self.expected_sha256 or (None if self.library else _PACKAGED_HASHES.get(platform.system()))
+        path = self.library or probe_library_path(self.library_name)
+        expected = self.expected_sha256
+        if expected is None and self.library is None:
+            try:
+                expected = select_library(self.library_name).record['sha256']
+            except NativeRegistryError:
+                expected = None
         return path, expected.lower() if expected else None
 
     def _unavailable(self, reason, *, metadata=None):
@@ -68,15 +75,17 @@ class StandardBackend:
         path, _ = self._selection()
         return BackendInfo(key=self.key, available=False, reason=reason,
             library=metadata.get('library', path), sha256=metadata.get('sha256'),
-            engine_version=metadata.get('engine_version'), platform=metadata.get('platform', platform.system()),
-            architecture=metadata.get('architecture', platform.machine()),
+            engine_version=metadata.get('engine_version'), platform=metadata.get('platform', runtime_identity()['system']),
+            architecture=metadata.get('architecture', backend_architecture()),
             abi=metadata.get('abi', f'cdecl:{struct.calcsize("P")*8}'), profiles=(), capabilities=(),
             isolation='process', origin='user-library' if self.library else 'packaged-bytes')
 
     def _loaded(self, metadata):
         path, expected = self._selection()
         reason = None
-        if Path(metadata['library']).resolve() != Path(path).resolve():
+        if not path:
+            reason = 'Selected native library is no longer available'
+        elif Path(metadata['library']).resolve() != Path(path).resolve():
             reason = 'Worker loaded a different library path'
         elif expected and metadata['sha256'] != expected:
             reason = 'Native library SHA-256 does not match the selected artifact'
@@ -92,7 +101,8 @@ class StandardBackend:
         # A version number (or user-provided expected digest) does not prove
         # which source corrections and compiler policy produced a library.
         capabilities = tuple(c for c in info.capabilities if not c.startswith(_CORRECTION_PREFIXES))
-        revision = (16 if info.sha256 in _HORTON_OUTFALL_HASHES.values() else
+        revision = (16 if (policy_for_digest(self.library_name, info.sha256) == STANDARD_BUILD_POLICY
+                           or info.sha256 in _HORTON_OUTFALL_HASHES.values()) else
                     15 if info.sha256 in _HORTON_HASHES.values() else
                     14 if info.sha256 in _PATH_HASHES.values() else
                     13 if info.sha256 in _CHECKPOINT_HASHES.values() else
@@ -118,6 +128,10 @@ class StandardBackend:
             reason = _packaged_native_platform_error()
             if reason:
                 raise SessionError(NativeFailure(stage='load', code=None, message=reason))
+            try:
+                select_library(self.library_name, verify=True)
+            except NativeRegistryError as error:
+                raise SessionError(NativeFailure(stage='load', code=None, message=str(error))) from error
         path, _ = self._selection()
         if not path or not Path(path).is_file():
             reason = (f'Selected native library is absent or not a regular file: {path}' if self.library else
@@ -163,13 +177,21 @@ class StandardBackend:
             # Keep the original loader evidence. These requirements belong to
             # bundled Linux bytes, not arbitrary compatible user libraries.
             hint = None
-            if self.library is None and platform.system() == 'Linux' and type(error) is SessionError and error.failure.stage == 'load':
+            if self.library is None and runtime_identity()['system'] == 'Linux' and type(error) is SessionError and error.failure.stage == 'load':
                 message = error.failure.message
-                if 'libgomp.so.1' in message and 'cannot open shared object file' in message:
-                    hint = ('Packaged Linux solvers require the OpenMP runtime libgomp.so.1 '
-                            '(libgomp1 on Debian/Ubuntu, libgomp on Fedora/RHEL)')
+                try:
+                    artifact = select_library(self.library_name)
+                except NativeRegistryError:
+                    raise error
+                if 'libgomp' in message and 'cannot open shared object file' in message:
+                    hint = ('Legacy source-checkout Linux solvers require the OpenMP runtime libgomp.so.1 '
+                            '(libgomp1 on Debian/Ubuntu, libgomp on Fedora/RHEL)'
+                            if 'libgomp.so.1' in artifact.record['external_dependencies'] else
+                            'A bundled OpenMP dependency could not be loaded; reinstall the native wheel '
+                            'for this Python platform and inspect easysewer doctor --json')
                 elif re.search(r'GLIBC_\d+\.\d+', message) and 'not found' in message:
-                    hint = ('Packaged Linux solvers require glibc 2.33 or newer; use a compatible '
+                    minimum = artifact.target['libc']['minimum_version']
+                    hint = (f'Packaged Linux solvers require glibc {minimum} or newer; use a compatible '
                             'runtime or rebuild a solver for the target system')
             if hint is None:
                 raise

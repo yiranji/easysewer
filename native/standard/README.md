@@ -7,11 +7,22 @@ files after CRLF-to-LF normalization. The source is available from the
 The original checkout stays unchanged. This is a separately identified EasySewer
 build of the standard equations, with the corrections below.
 
-The bundled libraries target x86-64 Windows/Linux with 64-bit Python. The
-current Linux solver imports `libm.so.6`, `libc.so.6` (including `GLIBC_2.33`)
-and `libgomp.so.1` (including `GOMP_4.0`/`OMP_1.0`). A glibc 2.33+ runtime and
-OpenMP runtime are therefore required; the Python wheel's `any` tag does not
-establish native compatibility. See [installation and backend probing](../../docs/2.0-installation.md).
+The 2.1.0 core native targets are Windows x86-64, Linux x86-64, Linux
+aarch64 and macOS arm64, all with 64-bit Python. Existing compiled x86-64
+libraries are preserved before dependency repair. ARM artifacts are built from
+the same public pinned EPA source and existing revision-16 corrections; no new
+solver equations or fast-math policy are introduced.
+
+Final wheels are platform-specific and bundle non-system dependencies. Linux
+x86-64 retains glibc 2.33 as its minimum and uses the verified PEP 600
+`manylinux_2_33_x86_64` wheel tag; Linux aarch64 targets `manylinux_2_28_aarch64`. macOS arm64 targets macOS
+14.0 and bundles source-built, pinned LLVM OpenMP. The raw legacy Linux x86-64
+solver still imports `libgomp.so.1`, `libm.so.6` and `libc.so.6` (including
+`GLIBC_2.33`); final repair bundles the compatible OpenMP runtime rather than
+requiring users to install it separately. These 2.1.0 artifacts do not modify
+the immutable PyPI `2.0.1` release. See
+[installation and doctor](../../docs/2.0-installation.md) and
+[build/qualification gates](../../docs/2.0-testing.md).
 
 `prepare.py` checks every source digest and patch anchor before writing a separate
 empty destination. The prepared manifest records the original identity, recipe
@@ -68,7 +79,7 @@ Build preparation pins all shared helper digests and refuses stale profiles.
   has parsed successfully.
 * POSIX `mkstemp` reservations are closed before reopening; absolute input paths
   are bounded before copying, including Linux `realpath` results.
-* `swmm_getEasySewerStandardFixes()` identifies patch revision 15. It is not a signature
+* `swmm_getEasySewerStandardFixes()` identifies patch revision 16. It is not a signature
   or proof that an arbitrary external binary matches the packaged source.
 * RUNOFF revision 3 checks the complete header and all frames, finite data and
   advancing time steps. Runtime reads commit state only after a complete valid
@@ -83,8 +94,9 @@ python -B native/standard/prepare.py `
   --destination D:/tmp/standard-build/source
 ```
 
-`build.py` verifies the prepared bytes and uses an explicitly selected GCC
-compiler. It does not download/install tools. All outputs, compiler logs and
+`build.py` verifies the prepared bytes and uses an explicitly selected
+GCC-compatible compiler on Linux/Windows or Apple Clang on macOS. It does not
+download/install tools. All outputs, compiler logs and
 JSON build evidence stay beside the requested output. The record includes the
 full command, compiler version, source/recipe hashes and binary hash.
 
@@ -100,16 +112,28 @@ python3 -B native/standard/build.py \
   --output /mnt/d/tmp/standard-build/windows/swmm5.dll
 ```
 
-Both targets use `-O2 -fno-fast-math -ffp-contract=off -fopenmp`. Windows also uses
+Native Linux aarch64 builds add `--architecture aarch64` on an actual aarch64
+host; macOS builds use `--target darwin --architecture arm64`,
+`--deployment-target 14.0` and `--openmp-prefix /path/to/pinned-libomp` on an actual
+macOS arm64 host. The macOS source/build host can be newer than the deployment
+target, but every bundled dependency must meet the same 14.0 floor. The pinned
+OpenMP preparation/build is documented in [testing](../../docs/2.0-testing.md).
+
+All targets use `-O2 -fno-fast-math -ffp-contract=off`. Linux/Windows add
+`-fopenmp`; Apple Clang uses its OpenMP preprocessing option and the explicitly
+selected pinned runtime. There is no architecture-native tuning that would
+silently narrow the advertised CPU baseline. Windows also uses
 static runtime linking, a zero PE timestamp and a fixed preferred image base
 (relocation/ASLR remain enabled). The fixed base avoids MinGW deriving different
 image addresses from different output directories. Bit-for-bit reproduction is
 only claimed when verified with the same toolchain and source; it is not promised
 across compiler versions or platforms.
 
-The package includes each platform's `swmm5.build.json`. `StandardBackend` pins
-the packaged hashes and reports `numerical_policy=easysewer:standard:5.2.4:13`
-only for those known bytes. Other explicit libraries report
+Each native wheel includes its platform's `swmm5.build.json` and final runtime
+manifest. Dependency repair runs before final hashes are sealed, so the manifest
+pins the bytes actually installed, not the pre-repair compiler output.
+`StandardBackend` reports `numerical_policy=easysewer:standard:5.2.4:16` only
+for those verified known builds. Other explicit libraries report
 `user-library:unverified` even if their version is 52004 and the caller supplied
 their hash. This policy changes cache provenance without changing Model schemas.
 
@@ -123,8 +147,12 @@ The regression suite includes direct C calls (bypassing Python file inspection),
 multi-catchment/land-use/pollutant SAVE/USE, independent buildup mass/byte oracles,
 damaged/readonly inputs, native descriptor counts, repeated close and climate
 failure paths. Full platform, coupled-physics and other native input audits remain
-part of the 2.0 release gates. These changes apply to the standard backend;
-the separately sourced FlexiblePonding backend has its own patch manifest.
+part of the 2.0 release gates. These changes apply to the standard backend.
+The separately sourced
+FlexiblePonding backend is an experimental, scientifically unvalidated
+replaceable-backend example with its own patch manifest; it is optional on ARM
+and not a core native gate. A platform manifest or successful doctor probe does
+not establish scientific validity or a completed native CI pass.
 
 Revision 4 adds `swmm_getEasySewerRunoffPhysics() == 1` and build-record
 `runoff_physics: 1`. It corrects cached evaporation dimensions, groundwater

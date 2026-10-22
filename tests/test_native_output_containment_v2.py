@@ -10,9 +10,9 @@ from test_native_public_directory_checkpoint_v2 import valid
 from directory_roundtrip_fixture import row
 import native_directory_lifecycle_fixture as nf
 EVIDENCE=[]
-class NativeOutputContainmentTests(unittest.TestCase):
+class NativeOutputContainmentChecks:
  def test_actual_native_lid_child_output_is_published_and_archived_in_its_declared_tree(self):
-  for family in ('standard','custom'):
+  for family in self.families:
    with self.subTest(family=family),tempfile.TemporaryDirectory() as tmp:
     root=Path(tmp).resolve();backend=nf.backend(family);raw=[]
     for nested in (False,True):
@@ -25,4 +25,10 @@ class NativeOutputContainmentTests(unittest.TestCase):
       records={v.owner.key:v for v in result.snapshot.resources if v.owner.collection=='test:directory'};child=next(v for v in result.snapshot.resources if v.role=='swmm:lid-detail');self.assertEqual(Path(child.relative_path),Path(records['D'].relative_path)/'sub/lid.txt');self.assertEqual(Path(records['N'].relative_path),Path(records['D'].relative_path)/'sub');dirs={v.owner.key:v for v in result.directory_artifacts};self.assertEqual(dirs['D'].file('sub/lid.txt').read_bytes(),report.read_bytes());self.assertEqual(dirs['N'].file('lid.txt').read_bytes(),report.read_bytes());result.save(parent/'archive');loaded=RunResult.load(parent/'archive');self.assertTrue(loaded.succeeded);self.assertEqual(loaded.output.read_bytes(),raw[-1]);self.assertEqual(next(a for a in loaded.directory_artifacts if a.owner.key=='D').file('sub/lid.txt').read_bytes(),report.read_bytes())
       EVIDENCE.append(dict(family=family,periods=result.output_metadata.periods,out_bytes=len(raw[-1]),lid_bytes=report.size,child_containment=True,published_equal=True,result_archive_equal=True,out_sha256=hashlib.sha256(raw[-1]).hexdigest()))
     self.assertEqual(raw[0],raw[1]);EVIDENCE[-1]['full_output_equal_without_directory_declaration']=True
+class NativeOutputContainmentTests(NativeOutputContainmentChecks,unittest.TestCase):
+ families=('standard',)
+
+class ExperimentalNativeOutputContainmentTests(NativeOutputContainmentChecks,unittest.TestCase):
+ families=('custom',)
+
 if __name__=='__main__':unittest.main()

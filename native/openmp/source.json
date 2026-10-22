@@ -1,0 +1,24 @@
+{
+  "repository": "https://github.com/llvm/llvm-project.git",
+  "tag": "llvmorg-23.1.4",
+  "commit": "7a941dfb2877a0b8cf30323fefa85ad019e0b0f5",
+  "commit_timestamp": 1792454232,
+  "trees": {
+    "openmp": "6891c6ba585e2a350f4dac335bcce4a10c802adf",
+    "cmake": "6db312a46280f9328bb09b3faf6132a9b44311bd",
+    "runtimes": "1be76d9acdc6bf3ac4ffba8d0533706b7af85981",
+    "llvm/cmake": "cc3d7ca1a98117b054a2f689d9e907c2c6da92c2",
+    "third-party/unittest": "a2e2c52a0e61c1bce8a04a0a6e57bef3891149d1"
+  },
+  "files": {
+    "openmp/LICENSE.TXT": "fdad1758a9e1f9d5a81e18879b3406772115edc92c24bfa36b70c654f325e8e4",
+    "openmp/CMakeLists.txt": "ada77c9a43d40a3c575df1b2c98649dd4d7d8cd884ec1c5b188d7a54d7a2f432",
+    "cmake/Modules/LLVMVersion.cmake": "f453685d075a58d1f16453b04bf681588d27d6c3517023c5a2b685ef56f33688",
+    "runtimes/CMakeLists.txt": "e7f82c5b5891e62e4dcb8a6eb53d6e158e56d6b482d00203c640ce0829ed2293",
+    "llvm/cmake/modules/AddLLVM.cmake": "863b6baab4f7f06534b0f0e07de27e7bbda698c81c3871eeec1ea0bcb4d6a26c",
+    "third-party/unittest/CMakeLists.txt": "d2e9e7556631ab3090c6aaa6abaed3e88df90ac2c185925dd58f812f35be5d84"
+  },
+  "target": "darwin-arm64",
+  "minimum_os": "14.0",
+  "license": "Apache-2.0 WITH LLVM-exception"
+}

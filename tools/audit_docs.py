@@ -43,6 +43,9 @@ def audit(root=ROOT, archive_root=None, sdist=None):
         prose = re.sub(r'(?ms)^```[^\n]*\n.*?^```[^\n]*', '', text)
         for destination in re.findall(r'\[[^\]]*\]\(([^)]+)\)', prose):
             reference = urlsplit(destination.strip('<>'))
+            if source == root / 'README.md' and reference.path:
+                assert reference.scheme and reference.netloc, (
+                    'README is also the PyPI description; use absolute web links', destination)
             if reference.scheme or reference.netloc or not reference.path:
                 continue
             target = (source.parent / unquote(reference.path)).resolve()

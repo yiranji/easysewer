@@ -14,6 +14,7 @@ from easysewer.runtime import StandardBackend, FlexiblePondingBackend, SessionEr
 from easysewer.runtime._checkpoint_container import load
 from easysewer.runtime._process_session import CheckpointRequestRejected
 import test_native_v2_checkpoint_lifecycle as fixture
+from worker_command_hooks import before_worker_main
 
 EVIDENCE=[]
 
@@ -54,7 +55,7 @@ class CheckpointRPCTests(unittest.TestCase):
                     lifecycle.open_start();lifecycle.step(3);archive=lifecycle.capture(root/'saved')
                 finally:lifecycle.cleanup()
             snapshot=archive.materialize(root/'second');command=_worker_command()
-            command[-1]=command[-1].removesuffix('; main()')+'''
+            command=before_worker_main(command, '''
 from dataclasses import replace
 from easysewer.runtime._checkpoint_native import NativeCheckpoint
 original_restore=NativeCheckpoint.restore
@@ -65,8 +66,7 @@ def failed_provider(self,payload,*,input_provider,output_provider):
  # The callback failure is real; this cleanup status is synthetic transport coverage.
  return replace(result,cleanup_error=991)
 NativeCheckpoint.restore=failed_provider
-main()
-'''
+''')
             with patch('easysewer.runtime._process_session._worker_command',return_value=command):
                 with backend('standard').session(working_directory=root/'second') as session:
                     session._open_checkpoint(snapshot);pid=session.pid
@@ -86,7 +86,7 @@ main()
             with fixture.fixture.working(root):
                 lifecycle=fixture.prepare(root,'standard','all');snapshot=lifecycle.snapshot;lifecycle.cleanup()
             command=_worker_command()
-            command[-1]=command[-1].removesuffix('; main()')+'''
+            command=before_worker_main(command, '''
 from unittest.mock import patch
 from easysewer.runtime._checkpoint_lifecycle import CheckpointLifecycle
 original_capture=CheckpointLifecycle.capture
@@ -95,8 +95,7 @@ def failed_capture(self,*args,**kwargs):
   with patch('easysewer.runtime._checkpoint_container.remove_owned_tree',side_effect=OSError('injected cleanup denied')):
    return original_capture(self,*args,**kwargs)
 CheckpointLifecycle.capture=failed_capture
-main()
-'''
+''')
             with patch('easysewer.runtime._process_session._worker_command',return_value=command):
                 with backend('standard').session(working_directory=root) as session:
                     session._open_checkpoint(snapshot);pid=session.pid
@@ -120,15 +119,14 @@ main()
                 finally:lifecycle.cleanup()
             snapshot=archive.materialize(root/'second')
             command=_worker_command()
-            command[-1]=command[-1].removesuffix('; main()')+'''
+            command=before_worker_main(command, '''
 from easysewer.runtime import _checkpoint_worker as owner
 original_apply=owner.PreparedWorker.apply
 def fail_after_commit(self):
  original_apply(self)
  raise OSError('injected failure after native and Python state commit')
 owner.PreparedWorker.apply=fail_after_commit
-main()
-'''
+''')
             with patch('easysewer.runtime._process_session._worker_command',return_value=command):
                 with backend('custom').session(working_directory=root/'second') as session:
                     session._open_checkpoint(snapshot)

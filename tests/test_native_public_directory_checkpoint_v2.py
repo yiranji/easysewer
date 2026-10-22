@@ -15,9 +15,9 @@ def finish(session):
   if session.step(max_steps=3).finished:break
  else:raise AssertionError('Did not finish native session')
  outputs=session.checkpoint_outputs;session.end();session.report();session.close();path=next(a.path for a in outputs if a.role=='run:output');meta=OutputMetadata.read(path);assert meta.periods==10 and meta.names('swmm:nodes')==('J','O') and meta.names('swmm:links')==('P',);return path.read_bytes()
-class NativePublicDirectoryCheckpointTests(unittest.TestCase):
+class NativePublicDirectoryCheckpointChecks:
  def test_public_native_session_moved_directory_checkpoint(self):
-  for family in ('standard','custom'):
+  for family in self.families:
    with self.subTest(family=family),tempfile.TemporaryDirectory() as tmp:
     root=Path(tmp).resolve();source,work,value=fixture.prepare(root,family);backend=fixture.backend(family)
     with backend.session(working_directory=work) as session:session.open_checkpoint(value,schema=fixture.schema());session.step(max_steps=30);saved=session.save_checkpoint(root/'saved');self.assertGreaterEqual(saved.simulation_seconds,120);expected=finish(session)
@@ -26,11 +26,17 @@ class NativePublicDirectoryCheckpointTests(unittest.TestCase):
     with backend.session(working_directory=root/'restored') as session:session.open_checkpoint(snapshot,schema=fixture.schema());restored=session.restore_checkpoint(saved);self.assertTrue(restored.committed);self.assertEqual(finish(session),expected)
     EVIDENCE.append(dict(kind='public-session',family=family,periods=10,bytes=len(expected),full_output_equal=True))
  def test_public_runner_directory_checkpoint_resume_and_archive(self):
-  for family in ('standard','custom'):
+  for family in self.families:
    with self.subTest(family=family),tempfile.TemporaryDirectory() as tmp:
     root=Path(tmp).resolve();source,work,value=fixture.prepare(root,family);model=value.model(schema=fixture.schema());backend=fixture.backend(family);runner=Runner(backends={backend.key:backend},directory_adapters={'test:directory.format':DirectoryAdapter(inspector=valid)});saved=[];settings=(configuration if family=='custom' else config)(root/'first',step_batch_size=30)
     result=runner.run(model,settings,relative_to=work,checkpoints=CheckpointSchedule(directory=FileReference(path=str(root/'saved'),direction='output'),interval=timedelta(seconds=150),on_saved=saved.append));self.assertTrue(result.succeeded,result.failure);self.assertTrue(saved);self.assertEqual(result.output_metadata.periods,10);self.assertTrue(result.directory_group_artifacts);expected=result.output.read_bytes();result.save(root/'result');self.assertEqual(RunResult.load(root/'result').output.read_bytes(),expected);relative=saved[0].directory.relative_to(root/'saved')
     for path in (source,work,root/'first'):self.assertTrue(path.resolve().is_relative_to(root));shutil.rmtree(path)
     (root/'saved').rename(root/'moved');resumed=runner.resume(root/'moved'/relative,ResumeConfig(output_directory=FileReference(path=str(root/'resumed'),direction='output')),schema=fixture.schema());self.assertTrue(resumed.succeeded,resumed.failure);self.assertEqual(resumed.output.read_bytes(),expected);self.assertTrue(resumed.directory_group_artifacts);resumed.save(root/'again');self.assertEqual(RunResult.load(root/'again').output.read_bytes(),expected)
     EVIDENCE.append(dict(kind='public-runner',family=family,periods=10,bytes=len(expected),full_output_equal=True,result_archive=True))
+class NativePublicDirectoryCheckpointTests(NativePublicDirectoryCheckpointChecks,unittest.TestCase):
+ families=('standard',)
+
+class ExperimentalNativePublicDirectoryCheckpointTests(NativePublicDirectoryCheckpointChecks,unittest.TestCase):
+ families=('custom',)
+
 if __name__=='__main__':unittest.main()

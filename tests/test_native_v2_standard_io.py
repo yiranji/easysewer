@@ -69,7 +69,13 @@ def handles():
         if not kernel.GetProcessHandleCount(kernel.GetCurrentProcess(), ctypes.byref(result)):
             raise ctypes.WinError(ctypes.get_last_error())
         return result.value
-    return len(tuple(Path('/proc/self/fd').iterdir()))
+    # Linux procfs and macOS fdescfs both enumerate the current process.
+    # Do not silently omit leak checks when one host lacks Linux's /proc.
+    for directory in ('/proc/self/fd', '/dev/fd'):
+        path = Path(directory)
+        if path.is_dir():
+            return len(tuple(path.iterdir()))
+    raise RuntimeError('Descriptor leak checks require /proc/self/fd or /dev/fd')
 
 
 def dry_quality_model(pollutants, units):

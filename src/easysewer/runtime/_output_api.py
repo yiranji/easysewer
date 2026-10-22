@@ -4,6 +4,7 @@ import ctypes
 import os
 
 from ..utils import NativeCapabilityError, require_native_capability
+from .._native_registry import NativeRegistryError, select_library
 
 
 class SWMMOutputError(RuntimeError):
@@ -26,6 +27,10 @@ class SWMMOutputAPI:
     def __init__(self):
         self.handle = ctypes.c_void_p()
         lib_path = require_native_capability('SWMM output reader', 'swmm-output')
+        try:
+            select_library('swmm-output', verify=True)
+        except NativeRegistryError as error:
+            raise NativeCapabilityError(str(error)) from error
         self.lib = ctypes.CDLL(lib_path)
         marker = getattr(self.lib, 'swmm_getEasySewerOutputIO', None)
         if marker is None:

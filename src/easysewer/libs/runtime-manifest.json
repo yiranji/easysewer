@@ -1,0 +1,98 @@
+{
+  "schema": "easysewer:native-runtime:1",
+  "targets": {
+    "windows-x86_64": {
+      "system": "Windows",
+      "architecture": "x86_64",
+      "pointer_bits": 64,
+      "abi": "cdecl:64",
+      "minimum_os": null,
+      "libc": null,
+      "libraries": {
+        "swmm5": {
+          "path": "libs/win/swmm5.dll.esdll",
+          "sha256": "8a164d4611870561e1e205f1a04d155c964d6ea8015212c36f9677f472e2cb2c",
+          "size": 1414461,
+          "numerical_policy": "easysewer:standard:5.2.4:16",
+          "build_record": "libs/win/swmm5.build.json",
+          "build_record_sha256": "8dff48b6e56717fe9fea80488a8c850ef487b7ffe45497fd7ee461ab17ba8c68",
+          "required": true,
+          "dependencies": [],
+          "external_dependencies": []
+        },
+        "swmm-output": {
+          "path": "libs/win/swmm-output.dll.esdll",
+          "sha256": "9701f865ed271dd0e4a7df5488299b41e992ddf4969c9613e7689ca232cfb392",
+          "size": 109597,
+          "numerical_policy": "easysewer:output-io:1",
+          "build_record": "libs/win/swmm-output.build.json",
+          "build_record_sha256": "4e9c1498e1a7f36b2d221bfbe0d891369388c8cc095a29fd117ca4f1ddc3e758",
+          "required": true,
+          "dependencies": [],
+          "external_dependencies": []
+        },
+        "flexible_ponding": {
+          "path": "libs/win/flexible_ponding.dll.esdll",
+          "sha256": "5eb49c9b096a947740f0156932fe8343583a1d0725ad8f943ccdb65a77437ca3",
+          "size": 1425093,
+          "numerical_policy": "easysewer:flexible-ponding:incremental-volume:2:native:14",
+          "build_record": "libs/win/flexible_ponding.build.json",
+          "build_record_sha256": "6da5b01fbbd4a75dd8e408842e59a3589d6af58736f54508870fe8716a9ed504",
+          "required": false,
+          "dependencies": [],
+          "external_dependencies": []
+        }
+      }
+    },
+    "linux-x86_64": {
+      "system": "Linux",
+      "architecture": "x86_64",
+      "pointer_bits": 64,
+      "abi": "cdecl:64",
+      "minimum_os": null,
+      "libc": {
+        "name": "glibc",
+        "minimum_version": "2.33"
+      },
+      "libraries": {
+        "swmm5": {
+          "path": "libs/linux/swmm5.so.esso",
+          "sha256": "f59cf3b394616e5964dd15cafe3bfeda8233b29ebe7d39bca7ca0531f7bd0e17",
+          "size": 721608,
+          "numerical_policy": "easysewer:standard:5.2.4:16",
+          "build_record": "libs/linux/swmm5.build.json",
+          "build_record_sha256": "b2a40a234a057cff724d0ad486247c499a46d0fb7273bc6bdcdfab90821de616",
+          "required": true,
+          "dependencies": [],
+          "external_dependencies": [
+            "libgomp.so.1"
+          ]
+        },
+        "swmm-output": {
+          "path": "libs/linux/swmm-output.so.esso",
+          "sha256": "e5385e0d40170d03b1c0e8edfd0b7753d7e726afd426cb094e3b874b46fe42cb",
+          "size": 25896,
+          "numerical_policy": "easysewer:output-io:1",
+          "build_record": "libs/linux/swmm-output.build.json",
+          "build_record_sha256": "bd764e353d785bbaeac97400f2c474d5d07d16d6f4fe0195ab19c6fafa4dfba1",
+          "required": true,
+          "dependencies": [],
+          "external_dependencies": []
+        },
+        "flexible_ponding": {
+          "path": "libs/linux/flexible_ponding.so.esso",
+          "sha256": "120897cecdea48535bde26125506d836ce9294e21f9815c321cdd0a213bf2cc1",
+          "size": 730880,
+          "numerical_policy": "easysewer:flexible-ponding:incremental-volume:2:native:14",
+          "build_record": "libs/linux/flexible_ponding.build.json",
+          "build_record_sha256": "1aa34cb185f77aadde302e68a0ab314b9752c680d06c01d605d5ddf964eb0229",
+          "required": false,
+          "dependencies": [],
+          "external_dependencies": [
+            "libgomp.so.1"
+          ]
+        }
+      }
+    }
+  }
+}

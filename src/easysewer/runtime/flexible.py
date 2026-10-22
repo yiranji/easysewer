@@ -11,6 +11,7 @@ from ..io.json import JsonDocument
 from ..model import UnitContext
 from ..model.network import Junction, Divider
 from ..utils import probe_library_path
+from .._native_registry import NativeRegistryError, policy_for_digest, select_library
 from ..validation import Diagnostic, Severity, ValidationError, ValidationReport
 
 POLICY = 'easysewer:flexible-ponding:incremental-volume:2'
@@ -112,13 +113,22 @@ def adjust_ponding(*, previous_depth, previous_volume, depth, volume, overflow,
 
 @dataclass(frozen=True, kw_only=True)
 class FlexiblePondingBackend(StandardBackend):
+    """Experimental, scientifically unvalidated replacement-backend example.
+
+    ABI and artifact checks do not validate this physical ponding policy. It is
+    optional in native wheels and is never substituted for the standard solver.
+    """
     key = 'easysewer:flexible-ponding'
     worker_kind = 'flexible-ponding'
     supported_extensions = (EXTENSION,)
+    library_name = 'flexible_ponding'
 
     def _selection(self):
         path=self.library or probe_library_path('flexible_ponding')
-        expected=self.expected_sha256 or (None if self.library else _HASHES.get(platform.system()))
+        expected=self.expected_sha256
+        if expected is None and self.library is None:
+            try:expected=select_library(self.library_name).record['sha256']
+            except NativeRegistryError:pass
         return path,expected.lower() if expected else None
 
     def execution_info(self, info):
@@ -127,7 +137,8 @@ class FlexiblePondingBackend(StandardBackend):
             and not value.startswith(_CORRECTION_PREFIXES)) + (EXTENSION,)
         # ABI 201 identifies accounting entry points; it does not prove that a
         # user-supplied library contains these independently qualified I/O fixes.
-        revision = (14 if info.sha256 in _HORTON_OUTFALL_HASHES.values() else
+        revision = (14 if (policy_for_digest(self.library_name, info.sha256) == BUILD_POLICY
+                           or info.sha256 in _HORTON_OUTFALL_HASHES.values()) else
                     13 if info.sha256 in _HORTON_HASHES.values() else
                     12 if info.sha256 in _PATH_HASHES.values() else
                     11 if info.sha256 in _CHECKPOINT_HASHES.values() else

@@ -1,4 +1,4 @@
-# EasySewer 2.0 documentation
+# EasySewer 2.x documentation
 
 The public entry point is `from easysewer import Model`. Version 2.0 provides no compatibility or migration support for EasySewer 1.x. Start with delivery scope, installation and the first runnable example. Earlier development batches are kept in a local archive; this directory contains current usage, contracts, limits and maintenance guidance.
 
@@ -6,8 +6,8 @@ Documentation in `docs/` is maintained in English, including titles, prose, tabl
 
 ## Getting started
 
-- [2.0 delivery scope](2.0-delivery.md)
-- [Installation](2.0-installation.md)
+- [2.1.0 release notes and 2.x delivery scope](2.0-delivery.md)
+- [Installation, native platforms and doctor](2.0-installation.md)
 - [From an empty model to portable results](2.0-first-run.md)
 - [Quick Start](2.0-quick-start.md)
 - [Known issues and follow-up work](2.0-known-issues.md)
@@ -58,7 +58,7 @@ Documentation in `docs/` is maintained in English, including titles, prose, tabl
 - [Candidate RUNOFF replay semantics](2.0-runoff-replay.md)
 - [Cache production conditions](2.0-cache-conditions.md)
 - [Recovering an interrupted local run](2.0-run-recovery.md)
-- [Candidate FlexiblePonding backend](2.0-flexible-ponding.md)
+- [Experimental FlexiblePonding backend](2.0-flexible-ponding.md)
 - [Complete checkpoint scope (2.0 development)](checkpoint-support.md)
 - [Checkpoint session contract (2.0 development)](checkpoint-session.md)
 - [Runner checkpoints (2.0 development)](checkpoint-runner.md)

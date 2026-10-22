@@ -1,11 +1,14 @@
 """Release gates must fail closed and preserve the authored archive inputs."""
 
 import ast
+import ctypes
+import hashlib
 import importlib.util
 import io
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tarfile
@@ -41,6 +44,28 @@ audit_sdist = load_tool('audit_sdist_tests')
 qualify = load_tool('qualify_release')
 pure = load_tool('build_pure')
 extractor = load_tool('extract_sdist')
+
+
+class ReadmePublicationTests(unittest.TestCase):
+    def test_pypi_readme_rejects_relative_links_and_images(self):
+        auditor = load_tool('audit_docs')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'docs').mkdir()
+            (root / 'docs/publish.json').write_text(json.dumps({
+                'format': 'easysewer:published-docs', 'version': 1,
+                'files': ['publish.json']}))
+            (root / 'MANIFEST.in').write_text('include docs/publish.json\n')
+            for link in ('[guide](docs/publish.json)', '![image](assets/icon.png)',
+                         '[root](/project/easysewer/)', '[host](//github.com/yiranji/easysewer)'):
+                with self.subTest(link=link):
+                    (root / 'README.md').write_text(link)
+                    with self.assertRaisesRegex(AssertionError, 'PyPI description'):
+                        auditor.audit(root)
+            (root / 'README.md').write_text(
+                '[guide](https://github.com/yiranji/easysewer/blob/master/docs/README.md)\n'
+                '![image](https://raw.githubusercontent.com/yiranji/easysewer/master/assets/icon.png)\n')
+            self.assertTrue(auditor.audit(root)['passed'])
 
 
 class SourceArchiveExtractionTests(unittest.TestCase):
@@ -229,6 +254,203 @@ class QualificationSelectionTests(unittest.TestCase):
         expected = list(first)
         first.clear()
         self.assertEqual(qualify.default_test_names(platform='linux'), expected)
+
+    def test_core_and_experimental_profiles_partition_shared_native_families(self):
+        for platform in ('linux', 'darwin', 'win32'):
+            with self.subTest(platform=platform):
+                core = qualify.default_test_names(profile='core', platform=platform)
+                experimental = qualify.default_test_names(profile='experimental', platform=platform)
+                all_checks = qualify.default_test_names(platform=platform)
+                self.assertIn('test_native_core_platform', core)
+                self.assertNotIn('test_native_v2_flexible', core)
+                self.assertIn('test_native_v2_flexible', experimental)
+                self.assertNotIn('test_native_core_platform', experimental)
+                for module, cls in qualify._SHARED_NATIVE_CLASSES:
+                    self.assertIn(module + '.' + cls, core)
+                    self.assertIn(module + '.Experimental' + cls, experimental)
+                    self.assertIn(module, all_checks)
+                    self.assertNotIn(module, core)
+                self.assertFalse(set(core).intersection(experimental))
+                for names in (core, experimental, all_checks):
+                    self.assertEqual(len(names), len(set(names)))
+
+    def test_selected_core_family_classes_never_iterate_experimental_family(self):
+        for module, cls in (*qualify._SHARED_NATIVE_CLASSES,
+                            ('test_native_horton_integration_v2', 'HortonIntegrationTests'),
+                            ('test_native_horton_outfall_v2', 'HortonIntegrationTests')):
+            with self.subTest(module=module):
+                tree = ast.parse((ROOT / 'tests' / (module + '.py')).read_text(encoding='utf-8'))
+                definitions = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
+                for name, expected in ((cls, ('standard', 'swmm:standard')),
+                                       ('Experimental' + cls, ('custom', 'easysewer:flexible-ponding'))):
+                    definition = definitions[name]
+                    families, = (ast.literal_eval(node.value) for node in definition.body
+                                  if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and
+                                      target.id == 'families' for target in node.targets))
+                    self.assertEqual(len(families), 1)
+                    self.assertIn(families[0], expected)
+
+    def test_windows_core_and_experimental_do_not_require_each_others_libraries(self):
+        for platform in ('linux', 'darwin', 'win32'):
+            core = qualify.default_test_names(profile='core', platform=platform)
+            experimental = qualify.default_test_names(profile='experimental', platform=platform)
+            self.assertIn('test_native_windows_error_mode.WorkerCommandHookTests', core)
+            for module, cls in (('test_native_windows_error_mode', 'WindowsErrorModeTests'),
+                                ('test_native_windows_paths', 'WindowsNativePathTests')):
+                with self.subTest(platform=platform, module=module):
+                    self.assertNotIn(module, core)
+                    self.assertEqual(module + '.Standard' + cls in core, platform == 'win32')
+                    self.assertEqual(module + '.Experimental' + cls in experimental, platform == 'win32')
+        for module, cls, attribute, expected in (
+                ('test_native_windows_error_mode', 'WindowsErrorModeTests', 'backend_types',
+                 ('StandardBackend', 'FlexiblePondingBackend')),
+                ('test_native_windows_paths', 'WindowsNativePathTests', 'families',
+                 ("'standard'", "'custom'"))):
+            tree = ast.parse((ROOT / 'tests' / (module + '.py')).read_text(encoding='utf-8'))
+            definitions = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
+            for prefix, members in (('', expected), ('Standard', expected[:1]), ('Experimental', expected[1:])):
+                with self.subTest(module=module, prefix=prefix):
+                    assignment, = (node for node in definitions[prefix + cls].body if isinstance(node, ast.Assign)
+                                    and any(isinstance(target, ast.Name) and target.id == attribute for target in node.targets))
+                    self.assertEqual(tuple(ast.unparse(item) for item in assignment.value.elts), members)
+            load, = (node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'load_tests')
+            self.assertIn('loader.loadTestsFromTestCase(' + cls + ')', ast.unparse(load))
+            if module == 'test_native_windows_error_mode':
+                self.assertIn('loader.loadTestsFromTestCase(WorkerCommandHookTests)', ast.unparse(load))
+
+    def test_horton_module_discovery_preserves_cross_family_oracles(self):
+        for module in ('test_native_horton_integration_v2', 'test_native_horton_outfall_v2'):
+            with self.subTest(module=module):
+                tree = ast.parse((ROOT / 'tests' / (module + '.py')).read_text(encoding='utf-8'))
+                definition, = (node for node in tree.body if isinstance(node, ast.ClassDef) and
+                               node.name == 'AllFamiliesHortonIntegrationTests')
+                assignment, = (node for node in definition.body if isinstance(node, ast.Assign))
+                self.assertEqual(ast.literal_eval(assignment.value), ('standard', 'custom'))
+                load, = (node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'load_tests')
+                call, = (node.value for node in load.body if isinstance(node, ast.Return))
+                self.assertEqual(ast.unparse(call), 'loader.loadTestsFromTestCase(AllFamiliesHortonIntegrationTests)')
+
+    def test_io_profile_selects_all_checks_except_the_exact_posix_only_method_on_windows(self):
+        tree = ast.parse((ROOT / 'tests/test_native_v2_standard_io.py').read_text(encoding='utf-8'))
+        definitions = [node for node in tree.body if isinstance(node, ast.ClassDef) and
+                       node.name in ('NativeIOChecks', 'NativeStandardIOTests')]
+        methods = {node.name for cls in definitions for node in cls.body
+                   if isinstance(node, ast.FunctionDef) and node.name.startswith('test_')}
+        posix_only = 'test_relative_input_past_legacy_path_capacity_opens_without_leaks'
+        self.assertEqual(set(qualify._STANDARD_IO_PORTABLE_METHODS), methods - {posix_only})
+        for platform in ('linux', 'darwin', 'win32'):
+            selected = qualify.core_io_test_names(platform=platform)
+            self.assertIn('test_native_v2_output_io', selected)
+            if platform == 'win32':
+                self.assertEqual(len(selected), len(methods))
+                self.assertTrue(all(not name.endswith('.' + posix_only) for name in selected))
+            else:
+                self.assertIn('test_native_v2_standard_io.NativeStandardIOTests', selected)
+
+    def test_descriptor_counter_uses_macos_fdescfs_without_omitting_leak_checks(self):
+        tree = ast.parse((ROOT / 'tests/test_native_v2_standard_io.py').read_text(encoding='utf-8'))
+        function, = (node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'handles')
+        isolated = ast.Module(body=[function], type_ignores=[])
+        for available in ('/proc/self/fd', '/dev/fd', None):
+            with self.subTest(available=available):
+                paths = {}
+                def path(name):
+                    value = mock.Mock()
+                    value.is_dir.return_value = name == available
+                    value.iterdir.return_value = iter(('0', '1', '2', '3'))
+                    paths[name] = value
+                    return value
+                namespace = {'os': mock.Mock(name='os'), 'Path': path}
+                namespace['os'].name = 'posix'
+                exec(compile(isolated, '<descriptor-counter-test>', 'exec'), namespace)
+                if available is None:
+                    with self.assertRaisesRegex(RuntimeError, 'Descriptor leak checks require'):
+                        namespace['handles']()
+                else:
+                    self.assertEqual(namespace['handles'](), 4)
+                    paths[available].iterdir.assert_called_once_with()
+                if available == '/dev/fd':
+                    paths['/proc/self/fd'].iterdir.assert_not_called()
+
+    def test_pure_profile_alias_and_invalid_combinations(self):
+        self.assertEqual(qualify.default_test_names(pure=True), qualify.default_test_names(profile='pure'))
+        for options in ({'pure': True, 'profile': 'core'}, {'profile': 'unknown'}):
+            with self.subTest(options=options), self.assertRaises(ValueError):
+                qualify.default_test_names(**options)
+
+    def test_native_profiles_cannot_be_combined_or_combined_with_pure(self):
+        for flags in (('--core', '--experimental'), ('--core', '--pure'), ('--experimental', '--pure')):
+            with self.subTest(flags=flags), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / 'must-not-exist'
+                result = subprocess.run([sys.executable, '-B', str(ROOT / 'tools/qualify_release.py'),
+                    '--package', str(ROOT / 'src'), '--output', str(output), *flags],
+                    capture_output=True, text=True, timeout=30)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn('not allowed with argument', result.stderr)
+                self.assertFalse(output.exists())
+
+
+class NativeRuntimeProvenanceTests(unittest.TestCase):
+    def helpers(self, **overrides):
+        tree = ast.parse((ROOT / 'tests/test_native_core_platform.py').read_text(encoding='utf-8'))
+        functions = [node for node in tree.body if isinstance(node, ast.FunctionDef) and
+                     node.name in ('loaded_openmp_images', 'openmp_origin_evidence')]
+        namespace = dict(Path=Path, ctypes=ctypes, hashlib=hashlib, os=os, re=re, sys=sys, unittest=unittest)
+        namespace.update(overrides)
+        exec(compile(ast.Module(body=functions, type_ignores=[]), '<native-provenance-test>', 'exec'), namespace)
+        return namespace
+
+    def test_linux_proc_and_macos_dyld_enumerate_real_openmp_origins(self):
+        runtime = Path('/installed package/.libs/libomp.dylib').resolve()
+        escaped = str(runtime).replace(' ', r'\040')
+        proc = mock.Mock()
+        proc.read_text.return_value = (
+            '1000-2000 r-xp 00000000 00:00 1 ' + escaped + '\n' +
+            '2000-3000 r--p 00001000 00:00 1 ' + escaped + '\n' +
+            '3000-4000 r-xp 00000000 00:00 2 /usr/lib/libc.so.6\n')
+        def path(value):
+            return proc if value == '/proc/self/maps' else Path(value)
+        helpers = self.helpers(Path=path)
+        self.assertEqual(helpers['loaded_openmp_images'](platform='linux'), [runtime])
+        dyld = mock.Mock()
+        dyld._dyld_image_count.return_value = 3
+        dyld._dyld_get_image_name.side_effect = [str(runtime).encode(), b'/usr/lib/libSystem.B.dylib', None]
+        library = mock.Mock(CDLL=mock.Mock(return_value=dyld))
+        helpers = self.helpers(ctypes=library)
+        self.assertEqual(helpers['loaded_openmp_images'](platform='darwin'), [runtime])
+        library.CDLL.assert_called_once_with(None)
+        self.assertEqual(dyld._dyld_get_image_name.call_count, 3)
+        self.assertEqual(helpers['loaded_openmp_images'](platform='win32'), [])
+
+    def test_bundled_origin_is_required_and_hashed_but_legacy_external_is_reported(self):
+        check = self.helpers()['openmp_origin_evidence']
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve() / 'package'
+            runtime = root / 'libs/native/.libs/libgomp.so.1'
+            runtime.parent.mkdir(parents=True)
+            runtime.write_bytes(b'pinned test runtime')
+            dependency = dict(path=runtime.relative_to(root).as_posix(), size=runtime.stat().st_size,
+                              sha256=hashlib.sha256(runtime.read_bytes()).hexdigest())
+            artifact = mock.Mock(root=root, target={'system': 'Linux'},
+                                 record={'external_dependencies': [], 'dependencies': [dependency]})
+            evidence = check(artifact, [runtime])
+            self.assertTrue(evidence['bundled_required'])
+            self.assertEqual(evidence['images'][0]['sha256'], dependency['sha256'])
+            foreign = root.parent / 'libgomp.so.1'
+            foreign.write_bytes(runtime.read_bytes())
+            for images in ([], [foreign], [runtime, foreign]):
+                with self.subTest(images=images), self.assertRaises(AssertionError):
+                    check(artifact, images)
+            runtime.write_bytes(b'unpinned test runtime')
+            with self.assertRaises(AssertionError):
+                check(artifact, [runtime])
+            artifact.record = {'external_dependencies': [], 'dependencies': []}
+            with self.assertRaisesRegex(AssertionError, 'must record a bundled'):
+                check(artifact, [foreign])
+            artifact.record = {'external_dependencies': ['libgomp.so.1'], 'dependencies': []}
+            evidence = check(artifact, [foreign])
+            self.assertFalse(evidence['bundled_required'])
+            self.assertEqual(evidence['images'][0]['path'], str(foreign))
 
 
 class ReleaseGateTests(unittest.TestCase):

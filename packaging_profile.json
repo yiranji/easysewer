@@ -203,7 +203,10 @@
         "src/easysewer/runtime/_mutable_outputs.py",
         "src/easysewer/runtime/_publication_directory.py",
         "src/easysewer/runtime/_runner_directories.py",
-        "src/easysewer/runtime/directory_resources.py"
+        "src/easysewer/runtime/directory_resources.py",
+        "src/easysewer/_native_registry.py",
+        "src/easysewer/doctor.py",
+        "src/easysewer/__main__.py"
       ],
       "exclude_paths": [
         "src/easysewer/libs/**",
