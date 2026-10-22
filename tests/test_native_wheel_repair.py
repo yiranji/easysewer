@@ -129,6 +129,40 @@ class WheelFinalizationTests(unittest.TestCase):
             shutil.copyfile(ROOT/'native/licenses'/name,licenses/name)
         return package
 
+    def test_only_transient_repair_command_path_arguments_are_canonicalized(self):
+        workspace=Path('/tmp/repair-random-one'); wheel=Path('/input/random-one/package.whl')
+        command=['delocate-wheel','--require-archs','arm64','-w',str(workspace/'repaired'),str(wheel),
+                 '/stable/toolchain/path',str(workspace)+'-not-a-child',
+                 '--opaque='+str(workspace/'unchanged')]
+        canonical=repair.canonical_repair_command(command,wheel,workspace)
+        self.assertEqual(canonical[:6],['delocate-wheel','--require-archs','arm64','-w',
+                         '<repair-workspace>/repaired','<input-wheel>/package.whl'])
+        self.assertEqual(canonical[6:],command[6:])
+        self.assertEqual(command[4],str(workspace/'repaired'))
+
+    def test_identical_native_inputs_seal_identically_across_repair_workspaces(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary); wheels=[]; records=[]
+            for number in (1,2):
+                tree=root/f'tree-{number}'; package=self.stage_windows(tree)
+                info=tree/'easysewer-2.0.1.dist-info';info.mkdir()
+                (info/'WHEEL').write_text('Root-Is-Purelib: false\nTag: py3-none-win_amd64\n')
+                workspace=root/f'random-repair-{number}'
+                wheel=root/f'random-input-{number}'/'input.whl'
+                # The command is metadata under test; real PE auditing and
+                # final-byte manifest/RECORD sealing still execute unchanged.
+                command=['fixture-repair','-w',str(workspace/'repaired'),str(wheel)]
+                result=repair.finalize_tree(package,'windows-x86_64',repair_evidence={
+                    'command':repair.canonical_repair_command(command,wheel,workspace),
+                    'tool_version':'same-toolchain-fixture'})
+                records.append(result)
+                destination=root/f'output-{number}'/'easysewer-2.0.1-py3-none-win_amd64.whl'
+                destination.parent.mkdir()
+                repair.write_wheel(tree,destination,'windows-x86_64')
+                wheels.append(destination.read_bytes())
+            self.assertEqual(records[0],records[1])
+            self.assertEqual(wheels[0],wheels[1])
+
     def test_final_manifest_hashes_are_post_repair_and_records_are_bound(self):
         with tempfile.TemporaryDirectory() as temporary:
             package=self.stage_windows(Path(temporary))

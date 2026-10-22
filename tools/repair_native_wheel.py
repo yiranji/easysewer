@@ -517,6 +517,27 @@ def write_wheel(tree, destination, target):
             archive.writestr(info, path.read_bytes())
 
 
+def canonical_repair_command(command, wheel, workspace):
+    """Remove only transient invocation locations from shipped provenance.
+
+    Actual paths remain in the external repair evidence. Keep all other
+    arguments untouched, including source/toolchain locations and audit flags.
+    """
+    wheel, workspace = Path(wheel), Path(workspace)
+    prefix = str(workspace) + os.sep
+    result = []
+    for argument in command:
+        if argument == str(wheel):
+            result.append('<input-wheel>/' + wheel.name)
+        elif argument == str(workspace):
+            result.append('<repair-workspace>')
+        elif argument.startswith(prefix):
+            result.append('<repair-workspace>/' + Path(argument).relative_to(workspace).as_posix())
+        else:
+            result.append(argument)
+    return result
+
+
 def repair(wheel, target, output):
     if target not in TARGETS:
         raise ValueError('Unknown native wheel target: ' + target)
@@ -556,7 +577,8 @@ def repair(wheel, target, output):
         tree = workspace / 'final'
         safe_extract(repaired_wheel, tree)
         result = finalize_tree(tree / 'easysewer', target,
-                               repair_evidence=dict(command=command, tool_version=version,
+                               repair_evidence=dict(command=canonical_repair_command(command, wheel, workspace),
+                                   tool_version=version,
                                    final_platform_tag=spec['tag']))
         # auditwheel has no glibc2.33 policy. Existing x64 binaries keep their
         # real 2.33 floor: repair under 2.34, audit all bytes <=2.33 above, then
@@ -566,8 +588,10 @@ def repair(wheel, target, output):
         if destination.exists():
             raise ValueError('Refusing to overwrite a previously finalized wheel: ' + str(destination))
         write_wheel(tree, destination, target)
-        (output / (destination.stem + '.repair.log')).write_text(log, encoding='utf-8')
+        (output / (destination.stem + '.repair.log')).write_text(
+            'command: ' + json.dumps(command) + '\n' + log, encoding='utf-8')
         evidence = dict(wheel=str(destination), sha256=sha256(destination), target=target,
+                        repair_command=command, repair_tool_version=version,
                         native_audit=result['native_audit'], licenses=result['licenses'],
                         recipe_sha256=sha256(__file__))
         (output / (destination.stem + '.repair.json')).write_text(json.dumps(evidence, indent=2) + '\n', encoding='utf-8')
