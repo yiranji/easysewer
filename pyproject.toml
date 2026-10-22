@@ -38,10 +38,18 @@ namespaces = true
 
 [tool.setuptools.package-data]
 easysewer = [
+    "libs/runtime-manifest.json",
     "libs/win/*.esdll",
     "libs/linux/*.esso",
+    "libs/linux-aarch64/*.esso",
+    "libs/macos-arm64/*.esso",
     "libs/win/*.json",
-    "libs/linux/*.json"
+    "libs/linux/*.json",
+    "libs/linux-aarch64/*.json",
+    "libs/macos-arm64/*.json",
+    "libs/*/.libs/*",
+    "libs/licenses/*.txt",
+    "libs/licenses/*.json"
 ]
 
 [dependency-groups]

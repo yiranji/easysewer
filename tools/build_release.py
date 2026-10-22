@@ -18,6 +18,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--python', default=sys.executable)
+    parser.add_argument('--source-only', action='store_true',
+                        help='Build the audited sdist and pure profile; native CI builds each platform from this sdist')
     args = parser.parse_args()
     # The documentation and archive auditors also use assertions. Fail before
     # creating output rather than silently omitting release gates under -O.
@@ -37,7 +39,7 @@ def main():
                         and not any(v in ('__pycache__', '.pytest_cache') or v.endswith('.egg-info') for v in p.parts)
                         and p.suffix not in ('.pyc', '.pyo'))
     selected.extend(root / 'docs' / name for name in published_files(root))
-    selected.extend(root / name for name in ('pyproject.toml', 'MANIFEST.in', 'packaging_profile.json', 'README.md', 'cases/utils.py'))
+    selected.extend(root / name for name in ('pyproject.toml', 'setup.py', 'MANIFEST.in', 'packaging_profile.json', 'README.md', 'cases/utils.py'))
     selected.extend(p for p in root.glob('LICENSE*') if p.is_file())
     for directory in (root / 'cases').glob('*Quick*Start'):
         selected.extend(directory / name for name in ('main.ipynb', 'cubic.inp'))
@@ -66,16 +68,24 @@ def main():
     # Runtime jobs need this helper before they can read tools from the sdist.
     shutil.copyfile(source / 'tools/extract_sdist.py', output / 'extract_sdist.py')
     rebuilt, = extracted.iterdir()
-    run('wheel', [args.python, '-B', '-c', 'import sys;from setuptools.build_meta import build_wheel;build_wheel(sys.argv[1])', str(dist)], rebuilt)
+    if not args.source_only:
+        run('wheel', [args.python, '-B', '-c', 'import sys;from setuptools.build_meta import build_wheel;build_wheel(sys.argv[1])', str(dist)], rebuilt)
     pure = build(rebuilt, output / 'pure', python=args.python)
     packages = {}
-    for kind in ('native', 'pure'):
+    for kind in (('pure',) if args.source_only else ('native', 'pure')):
         wheel, = (output / kind).glob('*.whl')
         with zipfile.ZipFile(wheel) as archive:
             members = {name: hashlib.sha256(archive.read(name)).hexdigest()
                        for name in archive.namelist() if name.startswith('easysewer/') and not name.endswith('/')}
         if kind == 'native':
-            assert members == {name[4:]: digest for name, digest in inputs.items() if name.startswith('src/easysewer/')}
+            # NativeBuild deliberately selects one platform and rewrites only
+            # the manifest. Everything else must retain source provenance.
+            for name, digest in members.items():
+                if name != 'easysewer/libs/runtime-manifest.json':
+                    assert inputs['src/' + name] == digest, name
+            required = {name[4:] for name in inputs
+                        if name.startswith('src/easysewer/') and '/libs/' not in name}
+            assert required <= set(members), sorted(required - set(members))
         else:
             assert members == {name: record['sha256'] for name, record in pure['files'].items()}
         installed = output / ('installed-' + kind)
