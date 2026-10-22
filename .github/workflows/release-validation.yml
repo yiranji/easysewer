@@ -167,8 +167,8 @@ jobs:
         run: |
           git clone --filter=blob:none https://github.com/USEPA/Stormwater-Management-Model.git upstream
           git -C upstream checkout --detach 7952ca837988b1c32f791812eccc9fd64547e093
-          git clone --depth 1 --filter=blob:none --sparse --branch llvmorg-18.1.8 https://github.com/llvm/llvm-project.git llvm
-          git -C llvm sparse-checkout set openmp cmake
+          git clone --depth 1 --filter=blob:none --sparse --branch llvmorg-23.1.4 https://github.com/llvm/llvm-project.git llvm
+          git -C llvm sparse-checkout set openmp cmake runtimes llvm/cmake third-party/unittest
       - name: Build the pinned OpenMP runtime for deployment 14
         run: >-
           python source/*/native/openmp/build.py --source llvm --build build/openmp
