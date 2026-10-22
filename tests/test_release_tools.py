@@ -46,6 +46,28 @@ pure = load_tool('build_pure')
 extractor = load_tool('extract_sdist')
 
 
+class ReadmePublicationTests(unittest.TestCase):
+    def test_pypi_readme_rejects_relative_links_and_images(self):
+        auditor = load_tool('audit_docs')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'docs').mkdir()
+            (root / 'docs/publish.json').write_text(json.dumps({
+                'format': 'easysewer:published-docs', 'version': 1,
+                'files': ['publish.json']}))
+            (root / 'MANIFEST.in').write_text('include docs/publish.json\n')
+            for link in ('[guide](docs/publish.json)', '![image](assets/icon.png)',
+                         '[root](/project/easysewer/)', '[host](//github.com/yiranji/easysewer)'):
+                with self.subTest(link=link):
+                    (root / 'README.md').write_text(link)
+                    with self.assertRaisesRegex(AssertionError, 'PyPI description'):
+                        auditor.audit(root)
+            (root / 'README.md').write_text(
+                '[guide](https://github.com/yiranji/easysewer/blob/master/docs/README.md)\n'
+                '![image](https://raw.githubusercontent.com/yiranji/easysewer/master/assets/icon.png)\n')
+            self.assertTrue(auditor.audit(root)['passed'])
+
+
 class SourceArchiveExtractionTests(unittest.TestCase):
     filter_modes = (False, True) if hasattr(tarfile, 'data_filter') else (True,)
 

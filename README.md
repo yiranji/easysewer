@@ -30,7 +30,7 @@ These wheels contain standard SWMM 5.2.4, the native OUT reader and their
 non-system native dependencies. A compiler or separate system OpenMP installation
 is not needed to use a supported wheel. Use a native 64-bit Python interpreter
 and a current pip so it can select the matching platform wheel.
-The [macOS 14.8.9 execution record](docs/2.0-testing.md#observed-macos-14-baseline)
+The [macOS 14.8.9 execution record](https://github.com/yiranji/easysewer/blob/master/docs/2.0-testing.md#observed-macos-14-baseline)
 binds an earlier exact artifact, not the final 2.1.0 wheel or initial macOS 14.0.
 
 Version 2.1.0 also fixes the Windows virtual-environment worker launch failure
@@ -59,8 +59,8 @@ bytes and ABI; keep the original runtime for older archives. Cross-architecture
 checkpoint continuation is not supported.
 
 Modeling, conversion and pure result reading do not require a native solver.
-See the [2.1.0 release notes](docs/2.0-delivery.md#210-release-notes), [installation, supported ABIs and doctor exit codes](docs/2.0-installation.md)
-and [native build and qualification instructions](docs/2.0-testing.md).
+See the [2.1.0 release notes](https://github.com/yiranji/easysewer/blob/master/docs/2.0-delivery.md#210-release-notes), [installation, supported ABIs and doctor exit codes](https://github.com/yiranji/easysewer/blob/master/docs/2.0-installation.md)
+and [native build and qualification instructions](https://github.com/yiranji/easysewer/blob/master/docs/2.0-testing.md).
 
 See the [documentation index](https://github.com/yiranji/easysewer/blob/master/docs/README.md) for installation, the Quick Start notebook,
 modeling, runtime, results, maintenance and known limits. The [editable network example](https://github.com/yiranji/easysewer/blob/master/examples/v2_edit_model.py)
