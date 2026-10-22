@@ -377,6 +377,9 @@ jobs:
           test_worker_launch_v2 test_native_v2_venv_worker
           test_worker_identity_v2 test_darwin_worker_identity
       - name: Check core Horton physics and continuation contracts
+        # The x64 all-family step below includes these identical standard assertions.
+        # Run the standard-only selection on ARM without duplicating x64 work.
+        if: matrix.platform == 'linux-aarch64' || matrix.platform == 'darwin-arm64'
         run: >-
           "$VENV_PY" source/*/tools/qualify_release.py --package "$NATIVE_SITE"
           --core --output checks/horton --tests
