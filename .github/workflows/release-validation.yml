@@ -193,6 +193,7 @@ jobs:
             build/native/*.json
             build/native/*.log
             build/native/wheelhouse/*.json
+            build/openmp/build.log
             build/openmp-prefix/share/easysewer-openmp/*
           if-no-files-found: ignore
           retention-days: 14
