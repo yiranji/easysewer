@@ -115,7 +115,7 @@ print("ok")
     def test_get_native_capabilities_on_emscripten_returns_false_flags(self):
         sys.path.insert(0, str(self.src_path))
         from easysewer.utils import get_native_capabilities
-        with patch("easysewer.utils.platform.system", return_value="Emscripten"):
+        with patch("sys.platform", "emscripten"):
             caps = get_native_capabilities()
         self.assertEqual(caps, {
             "swmm_solver": False,

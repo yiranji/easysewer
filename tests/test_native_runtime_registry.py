@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -58,6 +59,12 @@ def write_manifest(root, keys=('windows-x86_64', 'linux-x86_64'), *, flexible=Tr
 @contextmanager
 def runtime(system='Linux', machine='x86_64', bits=64, python_platform='linux-x86_64', soabi=''):
     with ExitStack() as stack:
+        # Simulate registry inputs without changing worker-launch OS behavior.
+        stack.enter_context(patch.object(registry, 'sys', SimpleNamespace(
+            platform={'Windows': 'win32', 'Linux': 'linux', 'Darwin': 'darwin'}.get(system, system.lower()),
+            executable=sys.executable)))
+        stack.enter_context(patch('os.uname', return_value=SimpleNamespace(machine=machine), create=True))
+        stack.enter_context(patch.dict('os.environ', {'PROCESSOR_ARCHITEW6432': machine, 'PROCESSOR_ARCHITECTURE': machine}))
         stack.enter_context(patch('platform.system', return_value=system))
         stack.enter_context(patch('platform.machine', return_value=machine))
         stack.enter_context(patch('struct.calcsize', return_value=bits // 8))
@@ -98,6 +105,34 @@ class NativeRegistryTests(unittest.TestCase):
             self.assertEqual(registry.runtime_identity()['target'], 'linux-x86_64')
         with runtime('Linux', 'x86_64', soabi='cpython-313-aarch64-linux-gnu'):
             self.assertEqual(registry.runtime_identity()['target'], 'linux-aarch64')
+
+    def test_windows_build_identity_and_static_probes_never_query_platform(self):
+        for tag, machine, target in (('win-amd64', 'ARM64', 'windows-x86_64'),
+                                     ('win-arm64', 'AMD64', None), ('win32', 'AMD64', None),
+                                     ('win-unknown', 'AMD64', None)):
+            with self.subTest(tag=tag), runtime('Windows', machine, python_platform=tag), \
+                    patch('platform.system', side_effect=AssertionError('OS version probe')), \
+                    patch('platform.machine', side_effect=AssertionError('OS version probe')), \
+                    patch('platform.uname', side_effect=AssertionError('OS version probe')), \
+                    patch('os.uname', side_effect=AssertionError('Windows has no uname')), \
+                    patch('subprocess.Popen', side_effect=AssertionError('spawn')):
+                identity = registry.runtime_identity()
+                self.assertEqual(identity['system'], 'Windows')
+                self.assertEqual(identity['target'], target)
+                self.assertEqual(any(get_native_capabilities().values()), target is not None)
+                if target is None:
+                    self.assertFalse(StandardBackend().probe().available)
+        (self.root / 'libs/runtime-manifest.json').unlink()
+        with runtime('Windows', 'AMD64', python_platform='win-amd64'), \
+                patch('platform.system', side_effect=AssertionError('OS version probe')), \
+                patch('platform.machine', side_effect=AssertionError('OS version probe')), \
+                patch('subprocess.Popen', side_effect=AssertionError('spawn')):
+            self.assertFalse(StandardBackend().probe().available)
+
+    def test_unsupported_os_never_uses_build_platform_detection(self):
+        with runtime('AIX', 'ppc64'), patch('sysconfig.get_platform', side_effect=AssertionError('may spawn on AIX')):
+            self.assertIsNone(registry.runtime_identity()['target'])
+            self.assertFalse(any(get_native_capabilities().values()))
 
     def test_universal2_uses_active_slice_and_rosetta_is_not_arm(self):
         for machine, target in (('arm64', 'darwin-arm64'), ('x86_64', None)):

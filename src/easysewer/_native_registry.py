@@ -47,13 +47,23 @@ def runtime_identity():
     build tag alone cannot identify that slice. Linux SOABI identifies the built
     interpreter when available, including an emulated interpreter on an ARM host.
     """
-    system, machine = platform.system(), platform.machine()
-    python_platform = sysconfig.get_platform()
-    architecture = machine.lower()
+    # platform.system()/machine() may run `ver` through a subprocess on
+    # Windows. These facts do not require OS version detection or native loads.
+    system = {'win32': 'Windows', 'linux': 'Linux', 'darwin': 'Darwin'}.get(sys.platform, sys.platform)
+    python_platform = sysconfig.get_platform() if system in ('Windows', 'Linux', 'Darwin') else sys.platform
     if system == 'Windows':
         architecture = {'win-amd64': 'x86_64', 'win-arm64': 'arm64', 'win32': 'x86'}.get(
             python_platform, 'unknown')
-    elif system == 'Linux':
+        # Environment values are informational, not authoritative ABI inputs.
+        machine = os.environ.get('PROCESSOR_ARCHITEW6432') or os.environ.get('PROCESSOR_ARCHITECTURE') or architecture
+    else:
+        uname = getattr(os, 'uname', None)
+        try:
+            machine = uname().machine if uname is not None else 'unknown'
+        except OSError:
+            machine = 'unknown'
+        architecture = machine.lower()
+    if system == 'Linux':
         soabi = sysconfig.get_config_var('SOABI') or ''
         # Only use the architecture portion of a Linux interpreter ABI tag.
         if '-x86_64-linux-' in soabi:

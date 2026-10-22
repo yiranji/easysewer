@@ -2,14 +2,14 @@
 
 from dataclasses import dataclass, replace
 from pathlib import Path
-import platform
 import re
 import struct
 import sys
 
 from .backend import BackendInfo, NativeFailure, SessionError
 from ..utils import _packaged_native_platform_error, probe_library_path
-from .._native_registry import NativeRegistryError, backend_architecture, policy_for_digest, select_library
+from .._native_registry import (NativeRegistryError, backend_architecture, policy_for_digest,
+                                runtime_identity, select_library)
 
 
 _LEGACY_HASHES = {
@@ -75,7 +75,7 @@ class StandardBackend:
         path, _ = self._selection()
         return BackendInfo(key=self.key, available=False, reason=reason,
             library=metadata.get('library', path), sha256=metadata.get('sha256'),
-            engine_version=metadata.get('engine_version'), platform=metadata.get('platform', platform.system()),
+            engine_version=metadata.get('engine_version'), platform=metadata.get('platform', runtime_identity()['system']),
             architecture=metadata.get('architecture', backend_architecture()),
             abi=metadata.get('abi', f'cdecl:{struct.calcsize("P")*8}'), profiles=(), capabilities=(),
             isolation='process', origin='user-library' if self.library else 'packaged-bytes')
@@ -177,7 +177,7 @@ class StandardBackend:
             # Keep the original loader evidence. These requirements belong to
             # bundled Linux bytes, not arbitrary compatible user libraries.
             hint = None
-            if self.library is None and platform.system() == 'Linux' and type(error) is SessionError and error.failure.stage == 'load':
+            if self.library is None and runtime_identity()['system'] == 'Linux' and type(error) is SessionError and error.failure.stage == 'load':
                 message = error.failure.message
                 try:
                     artifact = select_library(self.library_name)

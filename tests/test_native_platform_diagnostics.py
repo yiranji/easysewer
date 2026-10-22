@@ -12,7 +12,7 @@ from easysewer.runtime import (FlexiblePondingBackend, RunError, Runner, Session
                               SessionTimeout, StandardBackend)
 from easysewer.runtime.backend import NativeFailure
 from easysewer.utils import find_library_path, probe_library_path
-from test_native_runtime_registry import write_manifest
+from test_native_runtime_registry import runtime, write_manifest
 
 
 @contextmanager
@@ -24,13 +24,7 @@ def host(system='Linux', machine='x86_64', bits=64, python_platform=None):
         directory = stack.enter_context(tempfile.TemporaryDirectory())
         write_manifest(directory)
         stack.enter_context(patch('easysewer._native_registry._package_roots', return_value=(Path(directory),)))
-        stack.enter_context(patch('platform.system', return_value=system))
-        stack.enter_context(patch('platform.machine', return_value=machine))
-        stack.enter_context(patch('struct.calcsize', return_value=bits // 8))
-        stack.enter_context(patch('sysconfig.get_platform', return_value=python_platform))
-        stack.enter_context(patch('sysconfig.get_config_var', return_value=''))
-        stack.enter_context(patch('platform.libc_ver', return_value=('glibc', '2.99')))
-        stack.enter_context(patch('platform.mac_ver', return_value=('15.0', (), 'arm64')))
+        stack.enter_context(runtime(system, machine, bits, python_platform))
         yield
 
 
