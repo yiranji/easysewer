@@ -1,0 +1,17 @@
+{
+  "repository": "https://github.com/llvm/llvm-project.git",
+  "tag": "llvmorg-18.1.8",
+  "commit": "3b5b5c1ec4a3095ab096dd780e84d7ab81f3d7ff",
+  "commit_timestamp": 1718472092,
+  "trees": {
+    "openmp": "36a57537bc409e0333bbcdc1b37b93fa160d7676",
+    "cmake": "cc59f2acc2e57c02d85e6508b697cc40dc215e25"
+  },
+  "files": {
+    "openmp/LICENSE.TXT": "fdad1758a9e1f9d5a81e18879b3406772115edc92c24bfa36b70c654f325e8e4",
+    "openmp/CMakeLists.txt": "fff653f5f28318a91bd99d0929ac6cd9560391f5cefcd5c22213affe1411651c"
+  },
+  "target": "darwin-arm64",
+  "minimum_os": "14.0",
+  "license": "Apache-2.0 WITH LLVM-exception"
+}
