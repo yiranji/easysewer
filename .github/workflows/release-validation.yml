@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Audit and rebuild release artifacts
+  source:
+    name: Audit source archive and pure profile
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -36,6 +36,10 @@ jobs:
           python -m unittest discover -s tests -p test_checkpoint_test_build_tool.py -v
           python -m unittest discover -s tests -p test_lid_report_test_build_tool.py -v
           python -m unittest discover -s tests -p test_support_matrix_audit.py -v
+          python -m unittest discover -s tests -p test_native_toolchain.py -v
+          python -m unittest discover -s tests -p test_native_wheel_repair.py -v
+          python -m unittest discover -s tests -p test_native_wheel_build.py -v
+          python -m unittest discover -s tests -p test_release_artifact_selection.py -v
       - name: Check current directory format contracts
         env:
           PYTHONPATH: src:tests
@@ -49,16 +53,15 @@ jobs:
           test_mutable_directory_v2
           test_optional_mutable_directory_v2
           test_output_directory_checkpoint_v2
-      - name: Rebuild both wheel profiles from the source archive
-        run: python tools/build_release.py --output build/release
+      - name: Build the audited source archive and pure profile
+        run: python tools/build_release.py --source-only --output build/release
       - name: Check distribution metadata
-        run: python -m twine check --strict build/release/native/*.whl build/release/native/*.tar.gz build/release/pure/*.whl
+        run: python -m twine check --strict build/release/native/*.tar.gz build/release/pure/*.whl
       - name: Save wheels and source archive for runtime checks
         uses: actions/upload-artifact@v7
         with:
-          name: release-packages
+          name: release-source
           path: |
-            build/release/native/*.whl
             build/release/native/*.tar.gz
             build/release/pure/*.whl
             build/release/extract_sdist.py
@@ -77,59 +80,332 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  qualify:
-    name: ${{ matrix.os }} / Python ${{ matrix.python }} / x64
-    needs: build
+  linux-build:
+    name: Build native Linux ${{ matrix.arch }} wheel
+    needs: source
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2022]
-        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        include:
+          - arch: x86_64
+            os: ubuntu-24.04
+          - arch: aarch64
+            os: ubuntu-24.04-arm
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-source
+          path: packages
+      - name: Extract the audited source
+        run: python packages/extract_sdist.py --archive packages/native/*.tar.gz --output source
+      - name: Get the pinned public EPA source
+        if: matrix.arch == 'aarch64'
+        run: |
+          git clone --filter=blob:none https://github.com/USEPA/Stormwater-Management-Model.git upstream
+          git -C upstream checkout --detach 7952ca837988b1c32f791812eccc9fd64547e093
+      - name: Build and bundle in the native manylinux 2.28 toolchain
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          test "$(uname -m)" = "$ARCH"
+          image="quay.io/pypa/manylinux_2_28_$ARCH"
+          docker pull "$image"
+          mkdir -p evidence
+          docker image inspect "$image" > evidence/build-image.json
+          docker run --rm -v "$PWD:/work" -w /work -e ARCH "$image" /bin/bash -euc '
+            test "$(uname -m)" = "$ARCH"
+            export PATH=/opt/python/cp311-cp311/bin:$PATH
+            python -m pip install "setuptools>=77.0.3" wheel auditwheel patchelf
+            python source/*/tools/build_native_wheel.py --source source/* \
+              --platform "linux-$ARCH" --output build/native --upstream /work/upstream
+          '
+      - name: Save platform wheel
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-linux-${{ matrix.arch }}
+          path: build/native/wheelhouse/*.whl
+          if-no-files-found: error
+          retention-days: 7
+      - name: Save native build and repair evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-build-linux-${{ matrix.arch }}
+          path: |
+            evidence/*.json
+            build/native/*.json
+            build/native/*.log
+            build/native/wheelhouse/*.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  macos-build:
+    name: Build native macOS arm64 wheel (deployment 14)
+    needs: source
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          architecture: arm64
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-source
+          path: packages
+      - name: Extract the audited source and install build tools
+        run: |
+          test "$(uname -m)" = arm64
+          python packages/extract_sdist.py --archive packages/native/*.tar.gz --output source
+          python -m pip install 'setuptools>=77.0.3' wheel delocate cmake ninja
+      - name: Get pinned public EPA and LLVM OpenMP sources
+        run: |
+          git clone --filter=blob:none https://github.com/USEPA/Stormwater-Management-Model.git upstream
+          git -C upstream checkout --detach 7952ca837988b1c32f791812eccc9fd64547e093
+          git clone --depth 1 --filter=blob:none --sparse --branch llvmorg-18.1.8 https://github.com/llvm/llvm-project.git llvm
+          git -C llvm sparse-checkout set openmp cmake
+      - name: Build the pinned OpenMP runtime for deployment 14
+        run: >-
+          python source/*/native/openmp/build.py --source llvm --build build/openmp
+          --prefix "$PWD/build/openmp-prefix"
+      - name: Build, delocate and audit arm64 payloads
+        run: >-
+          python source/*/tools/build_native_wheel.py --source source/* --platform darwin-arm64
+          --output build/native --upstream upstream --openmp-prefix "$PWD/build/openmp-prefix"
+      - name: Save platform wheel
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-darwin-arm64
+          path: build/native/wheelhouse/*.whl
+          if-no-files-found: error
+          retention-days: 7
+      - name: Save native build and repair evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-build-darwin-arm64
+          path: |
+            build/native/*.json
+            build/native/*.log
+            build/native/wheelhouse/*.json
+            build/openmp-prefix/share/easysewer-openmp/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  windows-build:
+    name: Preserve and audit Windows x64 payloads
+    needs: source
+    runs-on: windows-2022
+    timeout-minutes: 15
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python }}
+          python-version: '3.11'
           architecture: x64
       - uses: actions/download-artifact@v8
         with:
-          name: release-packages
+          name: release-source
           path: packages
-      - name: Extract shipped tests and tools
-        # Windows Python 3.10.11 predates tarfile's data filter. The shipped
-        # helper validates paths/types and safely copies files on older Python.
-        run: >-
-          python packages/extract_sdist.py
-          --archive packages/native/*.tar.gz --output source
-      - name: Install native and pure wheels in separate directories
+      - name: Build the platform wheel from verified existing binaries
         run: |
-          python -m pip install --no-index --no-deps --no-compile --target installed-native packages/native/*.whl
+          python packages/extract_sdist.py --archive packages/native/*.tar.gz --output source
+          python -m pip install 'setuptools>=77.0.3' wheel
+          python source/*/tools/build_native_wheel.py --source source/* --platform windows-x86_64 --output build/native
+      - name: Save platform wheel
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-windows-x86_64
+          path: build/native/wheelhouse/*.whl
+          if-no-files-found: error
+          retention-days: 7
+      - name: Save native build and audit evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-build-windows-x86_64
+          path: |
+            build/native/*.json
+            build/native/*.log
+            build/native/wheelhouse/*.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  qualify:
+    name: ${{ matrix.platform }} / Python ${{ matrix.python }} / ${{ matrix.os }}
+    needs: [source, linux-build, macos-build, windows-build]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            os: ubuntu-24.04
+            architecture: x64
+            python: '3.10'
+          - platform: linux-x86_64
+            os: ubuntu-24.04
+            architecture: x64
+            python: '3.11'
+          - platform: linux-x86_64
+            os: ubuntu-24.04
+            architecture: x64
+            python: '3.12'
+          - platform: linux-x86_64
+            os: ubuntu-24.04
+            architecture: x64
+            python: '3.13'
+          - platform: linux-x86_64
+            os: ubuntu-24.04
+            architecture: x64
+            python: '3.14'
+          - platform: linux-aarch64
+            os: ubuntu-24.04-arm
+            architecture: arm64
+            python: '3.10'
+          - platform: linux-aarch64
+            os: ubuntu-24.04-arm
+            architecture: arm64
+            python: '3.11'
+          - platform: linux-aarch64
+            os: ubuntu-24.04-arm
+            architecture: arm64
+            python: '3.12'
+          - platform: linux-aarch64
+            os: ubuntu-24.04-arm
+            architecture: arm64
+            python: '3.13'
+          - platform: linux-aarch64
+            os: ubuntu-24.04-arm
+            architecture: arm64
+            python: '3.14'
+          - platform: darwin-arm64
+            os: macos-15
+            architecture: arm64
+            python: '3.10'
+          - platform: darwin-arm64
+            os: macos-15
+            architecture: arm64
+            python: '3.11'
+          - platform: darwin-arm64
+            os: macos-15
+            architecture: arm64
+            python: '3.12'
+          - platform: darwin-arm64
+            os: macos-15
+            architecture: arm64
+            python: '3.13'
+          - platform: darwin-arm64
+            os: macos-15
+            architecture: arm64
+            python: '3.14'
+          - platform: windows-x86_64
+            os: windows-2022
+            architecture: x64
+            python: '3.10'
+          - platform: windows-x86_64
+            os: windows-2022
+            architecture: x64
+            python: '3.11'
+          - platform: windows-x86_64
+            os: windows-2022
+            architecture: x64
+            python: '3.12'
+          - platform: windows-x86_64
+            os: windows-2022
+            architecture: x64
+            python: '3.13'
+          - platform: windows-x86_64
+            os: windows-2022
+            architecture: x64
+            python: '3.14'
+          - platform: darwin-arm64
+            os: macos-26
+            architecture: arm64
+            python: '3.13'
+          # One-time native deployment-floor evidence before 2026-11-02 retirement.
+          # Remove this row only after recording the successful baseline artifact.
+          - platform: darwin-arm64
+            os: macos-14
+            architecture: arm64
+            python: '3.13'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: ${{ matrix.architecture }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-source
+          path: packages
+      - uses: actions/download-artifact@v8
+        with:
+          name: native-${{ matrix.platform }}
+          path: native-wheel
+      - name: Extract tests and install only the matching wheel in a clean venv
+        run: |
+          python packages/extract_sdist.py --archive packages/native/*.tar.gz --output source
+          python -m venv clean-venv
+          if [ "$RUNNER_OS" = Windows ]; then venv_python="$PWD/clean-venv/Scripts/python.exe"; else venv_python="$PWD/clean-venv/bin/python"; fi
+          "$venv_python" -m pip install --no-index --no-deps --no-compile native-wheel/*.whl
+          echo "VENV_PY=$venv_python" >> "$GITHUB_ENV"
+          "$venv_python" -c 'import sysconfig; print("NATIVE_SITE=" + sysconfig.get_paths()["purelib"])' >> "$GITHUB_ENV"
           python -m pip install --no-index --no-deps --no-compile --target installed-pure packages/pure/*.whl
-      - name: Check the native installed package
-        run: python source/*/tools/qualify_release.py --package installed-native --output checks/native
-      - name: Check isolated virtualenv worker identity and lifecycle
+      - name: Diagnose then solve without loader overrides
+        run: |
+          mkdir -p checks/doctor
+          unset LD_LIBRARY_PATH LD_PRELOAD DYLD_LIBRARY_PATH DYLD_FALLBACK_LIBRARY_PATH DYLD_INSERT_LIBRARIES
+          "$VENV_PY" -m easysewer doctor --json > checks/doctor/load.json
+          "$VENV_PY" -m easysewer doctor --json --smoke-test > checks/doctor/smoke.json
+      - name: Qualify required standard solver and native output reader
         run: >-
-          python source/*/tools/qualify_release.py --package installed-native
-          --output checks/venv --tests
+          "$VENV_PY" source/*/tools/qualify_release.py --package "$NATIVE_SITE"
+          --core --output checks/native
+      - name: Check real venv launch identity and lifecycle
+        run: >-
+          "$VENV_PY" source/*/tools/qualify_release.py --package "$NATIVE_SITE"
+          --core --output checks/venv --tests
           test_worker_launch_v2 test_native_v2_venv_worker
-      - name: Check current Horton physics and continuation contracts
+          test_worker_identity_v2 test_darwin_worker_identity
+      - name: Check core Horton physics and continuation contracts
         run: >-
-          python source/*/tools/qualify_release.py --package installed-native
-          --output checks/horton --tests
+          "$VENV_PY" source/*/tools/qualify_release.py --package "$NATIVE_SITE"
+          --core --output checks/horton --tests
+          test_native_horton_integration_v2.HortonIntegrationTests
+          test_native_horton_outfall_v2.HortonIntegrationTests
+      - name: Preserve the explicitly experimental x64 example
+        if: matrix.platform == 'windows-x86_64' || matrix.platform == 'linux-x86_64'
+        run: >-
+          "$VENV_PY" source/*/tools/qualify_release.py --package "$NATIVE_SITE"
+          --experimental --output checks/experimental
+      - name: Preserve x64 cross-family Horton comparisons
+        if: matrix.platform == 'windows-x86_64' || matrix.platform == 'linux-x86_64'
+        run: >-
+          "$VENV_PY" source/*/tools/qualify_release.py --package "$NATIVE_SITE"
+          --output checks/horton-all --tests
           test_native_horton_integration_v2 test_native_horton_outfall_v2
-      - name: Check the pure installed package and read the native archive
+      - name: Check pure package reads the native archive
         run: >-
           python source/*/tools/qualify_release.py --package installed-pure --pure
           --output checks/pure --archive checks/native/first-run/archive-moved
       - name: Check Windows file sharing and directory recovery
         if: runner.os == 'Windows'
         run: >-
-          python source/*/tools/qualify_release.py --package installed-native
-          --output checks/windows-files --tests
+          "$VENV_PY" source/*/tools/qualify_release.py --package "$NATIVE_SITE"
+          --core --output checks/windows-files --tests
           test_recovery_journal_readers_v2.WindowsJournalReaders.test_nonsharing_reader_preserves_destination_and_retry
           test_recovery_journal_readers_v2.WindowsJournalReaders.test_readonly_destination_preserved
           test_recovery_journal_readers_v2.WindowsJournalReaders.test_extended_path_and_unicode_replacement
@@ -142,10 +418,99 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: release-checks-${{ matrix.os }}-py${{ matrix.python }}
+          name: release-checks-${{ matrix.platform }}-${{ matrix.os }}-py${{ matrix.python }}
           path: |
             checks/*/*.json
             checks/*/*.log
             checks/*/first-run/summary.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  linux-arm-baseline:
+    name: Clean Linux ARM64 glibc 2.28 runtime
+    needs: [source, linux-build]
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          architecture: arm64
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-source
+          path: packages
+      - uses: actions/download-artifact@v8
+        with:
+          name: native-linux-aarch64
+          path: native-wheel
+      - name: Install and execute without a compiler or system OpenMP
+        run: |
+          python packages/extract_sdist.py --archive packages/native/*.tar.gz --output source
+          mkdir -p checks
+          docker pull almalinux:8-minimal
+          docker image inspect almalinux:8-minimal > checks/runtime-image.json
+          docker run --rm -v "$PWD:/work" -w /work almalinux:8-minimal /bin/bash -euc '
+            microdnf install -y python3.12 python3.12-pip
+            ! command -v gcc
+            ! rpm -q libgomp
+            test "$(uname -m)" = aarch64
+            python3.12 -c "import platform; assert platform.libc_ver() == (\"glibc\", \"2.28\")"
+            python3.12 -m pip install --no-index --no-deps --no-compile native-wheel/*.whl
+            python3.12 -m easysewer doctor --json --smoke-test > checks/doctor.json
+            site=$(python3.12 -c "import sysconfig; print(sysconfig.get_paths()[\"purelib\"])")
+            python3.12 source/*/tools/qualify_release.py --package "$site" --core --output checks/core
+          '
+      - name: Save clean runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: baseline-linux-aarch64-glibc228
+          path: checks
+          if-no-files-found: ignore
+          retention-days: 14
+
+  linux-x64-baseline:
+    name: Preserve clean Linux x64 glibc 2.33 compatibility
+    needs: [source, linux-build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-source
+          path: packages
+      - uses: actions/download-artifact@v8
+        with:
+          name: native-linux-x86_64
+          path: native-wheel
+      - name: Build an isolated historical ABI test fixture
+        run: |
+          python packages/extract_sdist.py --archive packages/native/*.tar.gz --output source
+          git clone --depth 1 --branch v3.10.19 https://github.com/python/cpython.git cpython-checkout
+          test "$(git -C cpython-checkout rev-parse HEAD)" = f08d3c437bc5f41973ddd11f4cfc3d9fe04010f7
+          mkdir -p baseline-context/cpython checks
+          git -C cpython-checkout archive HEAD | tar -x -C baseline-context/cpython
+          cp source/*/native/baseline/linux-x86_64.Dockerfile baseline-context/Dockerfile
+          docker build --progress=plain -t easysewer-glibc233 baseline-context > checks/image-build.log 2>&1
+          docker image inspect easysewer-glibc233 > checks/runtime-image.json
+      - name: Install and run the final wheel without compiler or system OpenMP
+        run: |
+          docker run --rm --network none -v "$PWD:/work" -w /work easysewer-glibc233 /bin/bash -euc '
+            python3.10 -m pip install --no-index --no-deps --no-compile native-wheel/*.whl
+            python3.10 -m easysewer doctor --json --smoke-test > checks/doctor.json
+            site=$(python3.10 -c "import sysconfig; print(sysconfig.get_paths()[\"purelib\"])")
+            python3.10 source/*/tools/qualify_release.py --package "$site" --core --output checks/core
+            python3.10 source/*/tools/qualify_release.py --package "$site" --experimental --output checks/experimental
+          '
+      - name: Save historical ABI runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: baseline-linux-x86_64-glibc233
+          path: checks
           if-no-files-found: ignore
           retention-days: 14
