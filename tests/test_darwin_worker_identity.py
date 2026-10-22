@@ -2,6 +2,9 @@
 from contextlib import contextmanager
 import ctypes
 import errno
+from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -18,6 +21,32 @@ class DarwinWorkerIdentityTests(unittest.TestCase):
                      boot_id=BOOT, pid_namespace=None)
         value.update(changes)
         return value
+
+    def test_import_and_metadata_validation_do_not_load_native_helper(self):
+        script = '''
+import sys
+sys.path.insert(0, sys.argv[1])
+from easysewer.runtime import _worker_identity as identity
+assert 'easysewer.runtime._darwin_identity' not in sys.modules
+assert 'ctypes' not in sys.modules
+identity.validate(dict(platform='darwin', pid=17, started=1,
+                       boot_id='12345678-1234-1234-1234-123456789abc', pid_namespace=None))
+assert 'easysewer.runtime._darwin_identity' not in sys.modules
+assert 'ctypes' not in sys.modules
+'''
+        package_root = str(Path(identity.__file__).resolve().parents[2])
+        child = subprocess.run([sys.executable, '-I', '-B', '-c', script, package_root],
+                               capture_output=True, text=True, timeout=15)
+        self.assertEqual(child.returncode, 0, child.stdout + child.stderr)
+
+    def test_missing_native_helper_keeps_metadata_valid_but_cannot_prove_exit(self):
+        with patch.dict(sys.modules, {'easysewer.runtime._darwin_identity': None}), \
+                patch.object(identity.sys, 'platform', 'darwin'):
+            self.assertEqual(identity.validate(self.stamp()), self.stamp())
+            for observation in (identity._darwin_environment, lambda: identity._darwin(17),
+                                lambda: identity.has_exited(self.stamp())):
+                with self.subTest(observation=observation), self.assertRaises(ImportError):
+                    observation()
 
     @contextmanager
     def kernel(self, *, status=2, pid=17, seconds=1700000000, microseconds=123456,
