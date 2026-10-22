@@ -29,7 +29,7 @@ TARGETS = {
     'darwin-arm64': ('Darwin', 'arm64'),
 }
 _SHA = re.compile(r'[0-9a-f]{64}\Z')
-_VERSION = re.compile(r'\d+(?:\.\d+)*\Z')
+_VERSION = re.compile(r'\d{1,6}(?:\.\d{1,6}){0,3}\Z')
 
 
 class NativeRegistryError(OSError):
@@ -95,9 +95,10 @@ def platform_error():
 def _package_roots():
     roots = []
     if getattr(sys, 'frozen', False):
-        base = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent)).resolve()
+        base = _resolved(Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent)),
+                         'manifest_invalid', 'Cannot resolve frozen package location')
         roots.extend((base / 'easysewer', base))
-    roots.append(Path(__file__).resolve().parent)
+    roots.append(_resolved(Path(__file__), 'manifest_invalid', 'Cannot resolve package location').parent)
     return tuple(dict.fromkeys(roots))
 
 
@@ -191,20 +192,43 @@ def _validate(data):
     return data
 
 
+def _resolved(path, code, message):
+    try:
+        return path.resolve()
+    except (OSError, RuntimeError) as error:
+        # Path.resolve raises RuntimeError for symlink loops on Python <=3.12,
+        # and OSError on newer interpreters. Neither is a registry traceback.
+        raise NativeRegistryError(code, message + ': ' + str(error)) from error
+
+
+def _json_document(raw, code, message):
+    try:
+        return json.loads(raw, object_pairs_hook=_unique)
+    except (ValueError, RecursionError) as error:
+        # json.loads can exhaust recursion well below the byte-size limit.
+        raise NativeRegistryError(code, message + ': ' + str(error)) from error
+
+
 def read_manifest():
     for root in _package_roots():
         path = root / 'libs' / 'runtime-manifest.json'
-        if not path.exists() and not path.is_symlink():
-            continue
         try:
-            if not path.resolve().is_relative_to(root.resolve()):
+            if not path.exists() and not path.is_symlink():
+                continue
+            resolved_path = _resolved(path, 'manifest_invalid', 'Cannot resolve native manifest')
+            resolved_root = _resolved(root, 'manifest_invalid', 'Cannot resolve native package')
+            if not resolved_path.is_relative_to(resolved_root):
                 raise ValueError('Native manifest escapes the package')
+            if not path.is_file():
+                raise ValueError('Native manifest is not a regular file')
             with path.open('rb') as stream:
                 raw = stream.read(1024 * 1024 + 1)
             if len(raw) > 1024 * 1024:
                 raise ValueError('Native manifest exceeds its size limit')
-            data = _validate(json.loads(raw, object_pairs_hook=_unique))
+            data = _validate(_json_document(raw, 'manifest_invalid', 'Invalid native runtime manifest'))
             return root, data
+        except NativeRegistryError:
+            raise
         except (OSError, ValueError, TypeError) as error:
             raise NativeRegistryError('manifest_invalid', 'Invalid native runtime manifest: ' + str(error)) from error
     raise NativeRegistryError('native_absent',
@@ -214,7 +238,9 @@ def read_manifest():
 
 def _confined(root, relative):
     path = root / relative
-    if not path.resolve().is_relative_to(root.resolve()):
+    resolved_path = _resolved(path, 'artifact_invalid', 'Cannot resolve native artifact ' + relative)
+    resolved_root = _resolved(root, 'artifact_invalid', 'Cannot resolve native package')
+    if not resolved_path.is_relative_to(resolved_root):
         raise NativeRegistryError('artifact_invalid', 'Native artifact escapes the package: ' + relative)
     return path
 
@@ -274,12 +300,14 @@ class NativeArtifact:
                 if path.stat().st_size != record['size'] or _digest(path) != record['sha256']:
                     raise ValueError('Native artifact SHA-256/size does not match the selected artifact: ' + record['path'])
             evidence = _confined(self.root, self.record['build_record'])
-            if not evidence.is_file() or _digest(evidence) != self.record['build_record_sha256']:
-                raise ValueError('Native build-record SHA-256 does not match the selected artifact')
+            if not evidence.is_file():
+                raise ValueError('Native build record is not a regular file')
             if evidence.stat().st_size > 1024 * 1024:
                 raise ValueError('Native build record exceeds its size limit')
-            build = json.loads(evidence.read_bytes())
-            if build.get('sha256') != self.record['sha256'] or build.get('size') != self.record['size']:
+            if _digest(evidence) != self.record['build_record_sha256']:
+                raise ValueError('Native build-record SHA-256 does not match the selected artifact')
+            build = _json_document(evidence.read_bytes(), 'artifact_invalid', 'Invalid native build record')
+            if type(build) is not dict or build.get('sha256') != self.record['sha256'] or build.get('size') != self.record['size']:
                 raise ValueError('Native build record does not describe the final artifact bytes')
         except (OSError, ValueError, TypeError, AttributeError) as error:
             if isinstance(error, NativeRegistryError):

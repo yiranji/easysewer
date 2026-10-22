@@ -183,6 +183,81 @@ class NativeRegistryTests(unittest.TestCase):
             with patch.object(Path, 'resolve', resolve), self.assertRaisesRegex(registry.NativeRegistryError, 'escapes'):
                 registry.select_library('swmm5')
 
+    def assert_corruption_is_contained(self, expected_code):
+        from easysewer import doctor
+        with patch.object(doctor, '_run_worker', return_value=dict(ok=True, evidence={})), \
+                patch('subprocess.Popen') as launch:
+            report = doctor.diagnose()
+            self.assertEqual(report['exit_code'], 11)
+            self.assertEqual(report['checks'][0]['code'], expected_code)
+            info = StandardBackend().probe()
+            self.assertFalse(info.available)
+            launch.assert_not_called()
+
+    def test_manifest_and_artifact_resolution_loops_are_diagnostics(self):
+        with runtime():
+            manifest_path = self.root / 'libs/runtime-manifest.json'
+            artifact = registry.select_library('swmm5')
+            original = Path.resolve
+            for failing, code in ((manifest_path, 'manifest_invalid'), (artifact.path, 'artifact_invalid'),
+                                  (self.root / artifact.record['build_record'], 'artifact_invalid'),
+                                  (self.root / artifact.record['dependencies'][0]['path'], 'artifact_invalid')):
+                for error_type in (RuntimeError, OSError):
+                    def resolve(path, *args, **kwargs):
+                        if path == failing:
+                            raise error_type('Symlink loop from Path.resolve')
+                        return original(path, *args, **kwargs)
+                    with self.subTest(path=failing, error=error_type), patch.object(Path, 'resolve', resolve):
+                        self.assert_corruption_is_contained(code)
+
+    def test_manifest_existence_errors_and_nonregular_files_are_diagnostics(self):
+        manifest = self.root / 'libs/runtime-manifest.json'
+        original = Path.exists
+        def exists(path):
+            if path == manifest:
+                raise PermissionError('Cannot inspect manifest')
+            return original(path)
+        with runtime(), patch.object(Path, 'exists', exists):
+            self.assert_corruption_is_contained('manifest_invalid')
+        original_file = Path.is_file
+        def is_file(path):
+            return False if path == manifest else original_file(path)
+        with runtime(), patch.object(Path, 'is_file', is_file), patch.object(Path, 'open', side_effect=AssertionError('must not open nonregular manifest')):
+            self.assert_corruption_is_contained('manifest_invalid')
+
+    def test_deep_manifest_and_build_record_json_are_diagnostics(self):
+        deep = '[' * 20000 + '0' + ']' * 20000
+        with runtime():
+            manifest_path = self.root / 'libs/runtime-manifest.json'
+            manifest_path.write_text(deep)
+            self.assert_corruption_is_contained('manifest_invalid')
+            self.save()
+            artifact = registry.select_library('swmm5')
+            evidence = self.root / artifact.record['build_record']
+            evidence.write_text(deep)
+            self.manifest['targets']['linux-x86_64']['libraries']['swmm5']['build_record_sha256'] = hashlib.sha256(evidence.read_bytes()).hexdigest()
+            self.save()
+            self.assert_corruption_is_contained('artifact_invalid')
+
+    def test_unbounded_version_numbers_are_invalid_manifest_diagnostics(self):
+        self.manifest['targets']['linux-x86_64']['libc']['minimum_version'] = '9' * 5000
+        self.save()
+        with runtime():
+            self.assert_corruption_is_contained('manifest_invalid')
+
+    def test_oversized_build_record_is_rejected_before_hashing(self):
+        with runtime():
+            artifact = registry.select_library('swmm5')
+            evidence = self.root / artifact.record['build_record']
+            evidence.write_bytes(b'x' * (1024 * 1024 + 1))
+            original = registry._digest
+            def digest(path):
+                if path == evidence:
+                    raise AssertionError('Oversized build record must not be hashed')
+                return original(path)
+            with patch.object(registry, '_digest', digest), self.assertRaisesRegex(registry.NativeRegistryError, 'size limit'):
+                artifact.verify()
+
     def test_optional_flexible_is_absent_without_substitution(self):
         del self.manifest['targets']['linux-aarch64']['libraries']['flexible_ponding']
         self.save()

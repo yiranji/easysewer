@@ -2,6 +2,7 @@
 from contextlib import ExitStack
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -137,6 +138,34 @@ class DoctorTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 11, completed.stderr)
             self.assertEqual(json.loads(completed.stdout)['checks'][0]['code'], 'native_absent')
             self.assertFalse(list(package.rglob('__pycache__')))
+
+    def test_corrupt_manifest_cli_remains_bounded_json(self):
+        cases = ['deep_json', 'directory']
+        if os.name == 'posix':
+            cases.append('symlink_loop')
+        if hasattr(os, 'mkfifo'):
+            cases.append('fifo')
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                package = Path(directory) / 'easysewer'
+                (package / 'libs').mkdir(parents=True)
+                for name in ('__init__.py', '__main__.py', 'doctor.py', '_native_registry.py'):
+                    shutil.copyfile(Path(registry.__file__).parent / name, package / name)
+                manifest = package / 'libs/runtime-manifest.json'
+                if case == 'deep_json':
+                    manifest.write_text('[' * 20000 + '0' + ']' * 20000)
+                elif case == 'directory':
+                    manifest.mkdir()
+                elif case == 'symlink_loop':
+                    manifest.symlink_to(manifest.name)
+                else:
+                    os.mkfifo(manifest)
+                script = f"import sys, runpy; sys.path.insert(0, {directory!r}); sys.argv=['easysewer','doctor','--json','--timeout','0.05']; runpy.run_module('easysewer',run_name='__main__')"
+                completed = subprocess.run([sys.executable, '-I', '-B', '-c', script],
+                    text=True, capture_output=True, timeout=5)
+                self.assertEqual(completed.returncode, 11, completed.stderr)
+                self.assertEqual(json.loads(completed.stdout)['checks'][0]['code'], 'manifest_invalid')
+                self.assertNotIn('Traceback', completed.stderr)
 
 
 class NativeDoctorIntegrationTests(unittest.TestCase):
