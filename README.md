@@ -16,12 +16,33 @@ python -m pip install easysewer==2.0.1
 python -c "from easysewer import Model; print(Model())"
 ```
 
-Python 3.10+ is required. The PyPI distribution includes x86-64 Windows/Linux
-native solver libraries for 64-bit Python. Bundled Linux solvers require glibc
-2.33+ and `libgomp.so.1`. Simulation requires a compatible native backend;
-package installation alone does not establish solver availability on every platform.
+Python 3.10+ is required. The already published PyPI `2.0.1` distribution includes
+x86-64 Windows/Linux solver libraries, not the new ARM artifacts described below.
+Its Linux libraries require glibc 2.33+ and a system `libgomp.so.1`.
+
+This development branch adds platform-specific native wheels for Windows x86-64,
+Linux x86-64, Linux aarch64 and macOS arm64, with standard SWMM 5.2.4 and the native
+OUT reader. Non-system native dependencies are bundled in the repaired wheels.
+These are branch build artifacts, not a new PyPI release or evidence that every
+native CI target has passed. Install a matching built wheel before using the new
+diagnostic command:
+
+```console
+python -m easysewer doctor
+python -m easysewer doctor --json
+python -m easysewer doctor --smoke-test --timeout 30
+```
+
+The default check loads libraries only in disposable processes; it does not solve
+a model, write simulation files or install anything. The optional smoke test
+solves a minimal model in a temporary directory. Readiness is not a guarantee of
+numerical or scientific validity. FlexiblePonding remains an experimental,
+scientifically unvalidated example of a replaceable backend, preserved on x86-64
+and optional on ARM. A requested backend is never silently replaced.
+
 Modeling, conversion and pure result reading do not require a native solver.
-See [installation and backend checks](https://github.com/yiranji/easysewer/blob/master/docs/2.0-installation.md).
+See [installation, supported ABIs and doctor exit codes](docs/2.0-installation.md)
+and [native build and qualification instructions](docs/2.0-testing.md).
 
 See the [documentation index](https://github.com/yiranji/easysewer/blob/master/docs/README.md) for installation, the Quick Start notebook,
 modeling, runtime, results, maintenance and known limits. The [editable network example](https://github.com/yiranji/easysewer/blob/master/examples/v2_edit_model.py)

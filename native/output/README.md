@@ -8,14 +8,28 @@ and replaces `swmm_output.c` with `output_reader.c`. The original error manager
 is retained in the source record but not compiled. This establishes the new
 build's provenance, not the source identity of previously distributed binaries.
 
+The core native target contract includes Windows x86-64, Linux x86-64, Linux
+aarch64 and macOS arm64. The standard solver and this native OUT reader are both
+required. The x86-64 artifacts are preserved before dependency repair; native
+ARM builds use the public pinned EPA source and this existing reader recipe.
+Final platform-specific wheels carry final-byte hashes in the runtime manifest.
+They are development-branch artifacts, not replacements for the already published
+PyPI `2.0.1` files. See [installation](../../docs/2.0-installation.md) for runtime
+baselines and [build/qualification gates](../../docs/2.0-testing.md).
+
 ```powershell
 python -B native/output/prepare.py --source D:\tmp\epa-swmm --destination D:\tmp\out-source
 python -B native/output/build.py --source D:\tmp\out-source --compiler gcc --output D:\tmp\swmm-output.dll --target windows
 ```
 
-Use a GCC-compatible compiler for the requested target (MinGW-w64 for Windows).
-Linux uses `--target linux` and a `.so` output. Prepared trees, outputs and logs
-belong outside the repository. The adjacent JSON build record contains source,
+Use a GCC-compatible compiler for Linux/Windows (MinGW-w64 for Windows) or
+Apple Clang for macOS. Linux uses `--target linux` and a `.so` output; native
+Linux ARM additionally uses `--architecture aarch64`. Native macOS uses
+`--target darwin --architecture arm64 --deployment-target 14.0` and a `.dylib`
+output. ARM builds require the matching native host and 64-bit interpreter.
+The reader does not need OpenMP itself. Compiler options retain
+`-fno-fast-math -ffp-contract=off`. Prepared trees, outputs and logs belong
+outside the source checkout. The adjacent JSON build record contains source,
 recipe, compiler, flags and binary hashes. `swmm_getEasySewerOutputIO()` returns
 `1`: an interface revision, not proof of qualification for an arbitrary binary.
 
@@ -71,3 +85,9 @@ For direct ABI tests, set `EASYSEWER_TEST_OUTPUT_LIBRARY` and run
 baselines, normal comparisons, fault injection and sanitizer records are kept
 with the external development plan. Solver OUT writing and report rereads are
 a separate implementation and qualification task.
+
+`python -m easysewer doctor` verifies the reader's files and isolated load/ABI
+alongside the solver, without creating output files. The explicit `--smoke-test`
+option adds a minimal standard solve and native output read in a temporary
+directory. Readiness is not numerical validation or proof of every query contract;
+release qualification must execute the installed final wheel on its native target.

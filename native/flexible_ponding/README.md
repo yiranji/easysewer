@@ -1,4 +1,16 @@
-# FlexiblePonding native candidate
+# Experimental FlexiblePonding native example
+
+FlexiblePonding is an experimental, scientifically unvalidated example of a
+replaceable backend. Existing Windows/Linux x86-64 artifacts remain available;
+the new native ARM core wheels require only the public standard SWMM solver and
+OUT reader. This private-source example is optional on ARM and not a core
+release gate. Its absence is reported explicitly when requested, never replaced
+silently by standard SWMM. Runtime availability, smoke tests and the accounting
+checks below do not constitute scientific validation.
+
+The custom source checkout is not published by this branch. Public standard and
+OUT builds do not require it. See [the backend guide](../../docs/2.0-flexible-ponding.md)
+and [separate qualification profiles](../../docs/2.0-testing.md).
 
 Native revision 14 adds shared `../standard/horton_outfall.py`: Modified Horton
 constant-rate/zero-decay state handling and the outfall gate reader with a
@@ -47,7 +59,7 @@ The original checkout is read-only during preparation.
   idempotent close, climate/scratch handle ownership and replaced TREATMENT
   expression release. Shared exact-source patches in `../standard` explicitly
   verify the custom source's already-corrected buildup write count.
-* `swmm_getEasySewerNativeIOFixes() == 13`, separate from the unchanged ABI 201
+* `swmm_getEasySewerNativeIOFixes() == 14`, separate from the unchanged ABI 201
   and discrete water/quality accounting policy.
 * Shared RAIN header/payload, runtime read and SAVE write checks, read-only USE,
   deterministic station padding, and bounded historical rainfall text parsing.
@@ -110,7 +122,7 @@ platform and older-runtime release matrix.
 
 The standard SWMM build is documented separately in [../standard](../standard/README.md).
 The shared I/O/lifecycle changes are qualified against each library family.
-Only known custom binary hashes advertise `easysewer:native-io-fixes:10`; an
+Only current known custom binary hashes advertise `easysewer:native-io-fixes:14`; an
 unknown user library's ABI number does not establish that patch capability.
 Remaining native I/O and calendar audits are separate work. The
 independent closed-node water and
