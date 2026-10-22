@@ -53,7 +53,9 @@ def environment():
     return result
 
 
-def command(package_root):
+def command(package_root, *, module='easysewer.runtime._solver_worker'):
+    if module not in ('easysewer.runtime._solver_worker', 'easysewer._doctor_worker'):
+        raise ValueError('Unsupported internal worker entry point')
     executable = sys.executable
     bootstrap = 'import sys\n'
     if _windows_venv():
@@ -86,5 +88,5 @@ def command(package_root):
     # -I excludes PYTHONPATH and cwd. Pin the installed package (or src tree),
     # while retaining the interpreter's own isolated dependency search paths.
     bootstrap += (f'sys.path.insert(0, {package_root!r})\n'
-                  'from easysewer.runtime._solver_worker import main\nmain()\n')
+                  f'from {module} import main\nmain()\n')
     return [executable, '-I', '-B', '-u', '-c', bootstrap]

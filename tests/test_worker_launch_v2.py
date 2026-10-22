@@ -28,6 +28,16 @@ def runtime(**overrides):
 
 
 class WorkerLaunchTests(unittest.TestCase):
+    def test_command_supports_only_bounded_internal_entry_points(self):
+        for module in ('easysewer.runtime._solver_worker', 'easysewer._doctor_worker'):
+            with self.subTest(module=module):
+                command = launch.command(PACKAGE, module=module)
+                self.assertEqual(command[1:5], ['-I', '-B', '-u', '-c'])
+                self.assertTrue(command[-1].endswith(f'from {module} import main\nmain()\n'))
+        for module in ('os', 'other.plugin', 'easysewer._doctor_worker; import os', None):
+            with self.subTest(module=module), self.assertRaisesRegex(ValueError, 'entry point'):
+                launch.command(PACKAGE, module=module)
+
     @contextmanager
     def windows_venv(self):
         with tempfile.TemporaryDirectory() as directory:
