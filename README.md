@@ -11,6 +11,13 @@ Use the 2.0 model/runtime APIs and standard SWMM INP or current Model JSON.
 
 ## Installation
 
+The development branch adds an explicitly selected `swmm:accelerated` hydraulic
+backend, built on Standard revision 16 with ordered node aggregation and fewer
+network scans. `swmm:standard` remains the default. See the
+[backend guide](https://github.com/yiranji/easysewer/blob/master/docs/2.0-backend.md#accelerated-hydraulic-backend) for selection,
+thread configuration and validation scope. This addition does not change the
+contents of an already published release.
+
 ```console
 python -m pip install --upgrade easysewer==2.1.0
 python -c "from easysewer import Model; print(Model())"

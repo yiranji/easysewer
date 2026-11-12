@@ -73,7 +73,7 @@ class CheckpointLifecycle:
             if solver.metadata[key] != getattr(snapshot.backend, key):
                 raise ValueError('Checkpoint snapshot differs from the actual engine')
         self.custom = isinstance(solver, NativeFlexibleSolver)
-        if snapshot.backend.key != ('easysewer:flexible-ponding' if self.custom else 'swmm:standard'):
+        if snapshot.backend.key != getattr(solver, 'backend_key', 'swmm:standard'):
             raise ValueError('Checkpoint snapshot backend family mismatch')
         self.solver, self.snapshot, self.limits = solver, snapshot, limits
         self.root = Path(snapshot.execution_directory).resolve(strict=True)

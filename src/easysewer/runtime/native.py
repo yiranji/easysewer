@@ -38,6 +38,26 @@ _FEATURES = ('swmm:standard', 'swmm:engine-identities', 'swmm:continuity',
              'runtime:process-isolation', 'runtime:cancellation', 'runtime:call-timeout')
 
 
+def _standard_execution_info(info, revision):
+    """Apply independently recognized standard correction provenance."""
+    capabilities = tuple(c for c in info.capabilities if not c.startswith(_CORRECTION_PREFIXES))
+    if revision is not None:
+        return replace(info, numerical_policy=f'easysewer:standard:5.2.4:{revision}',
+            capabilities=capabilities+(f'easysewer:standard-fixes:{revision}',)+_IO_CAPABILITIES+
+                (('easysewer:checkpoint:2',) if revision>=13 else ())+
+                (('easysewer:path-io:1',) if revision>=14 else ())+
+                (('easysewer:horton-capacity:1',) if revision>=15 else ())+
+                (('easysewer:horton-state:1','easysewer:outfall-gate:1') if revision>=16 else ()),
+            output_semantics=(('swmm:nws-rainfall-arithmetic', 'reference'),
+                              ('swmm:runoff-replay', 'easysewer:runoff-physics:1'),
+                              ('swmm:runoff-rain-clock', 'easysewer:runoff-rain-clock:1'))+
+                ((('swmm:modified-horton','easysewer:horton-state:1'),
+                  ('swmm:outfall-gate','easysewer:outfall-gate:1')) if revision>=16 else
+                 (('swmm:modified-horton','easysewer:horton-capacity:1'),) if revision>=15 else ()))
+    return replace(info, numerical_policy='user-library:unverified', output_semantics=(),
+        capabilities=capabilities)
+
+
 @dataclass(frozen=True, kw_only=True)
 class StandardBackend:
     """SWMM 5.2.4 C ABI, with one isolated process for each explicit session.
@@ -100,28 +120,13 @@ class StandardBackend:
     def execution_info(self, info):
         # A version number (or user-provided expected digest) does not prove
         # which source corrections and compiler policy produced a library.
-        capabilities = tuple(c for c in info.capabilities if not c.startswith(_CORRECTION_PREFIXES))
         revision = (16 if (policy_for_digest(self.library_name, info.sha256) == STANDARD_BUILD_POLICY
                            or info.sha256 in _HORTON_OUTFALL_HASHES.values()) else
                     15 if info.sha256 in _HORTON_HASHES.values() else
                     14 if info.sha256 in _PATH_HASHES.values() else
                     13 if info.sha256 in _CHECKPOINT_HASHES.values() else
                     12 if info.sha256 in _LEGACY_HASHES.values() else None)
-        if revision is not None:
-            return replace(info, numerical_policy=f'easysewer:standard:5.2.4:{revision}',
-                capabilities=capabilities+(f'easysewer:standard-fixes:{revision}',)+_IO_CAPABILITIES+
-                    (('easysewer:checkpoint:2',) if revision>=13 else ())+
-                    (('easysewer:path-io:1',) if revision>=14 else ())+
-                    (('easysewer:horton-capacity:1',) if revision>=15 else ())+
-                    (('easysewer:horton-state:1','easysewer:outfall-gate:1') if revision>=16 else ()),
-                output_semantics=(('swmm:nws-rainfall-arithmetic', 'reference'),
-                                  ('swmm:runoff-replay', 'easysewer:runoff-physics:1'),
-                                  ('swmm:runoff-rain-clock', 'easysewer:runoff-rain-clock:1'))+
-                    ((('swmm:modified-horton','easysewer:horton-state:1'),
-                      ('swmm:outfall-gate','easysewer:outfall-gate:1')) if revision>=16 else
-                     (('swmm:modified-horton','easysewer:horton-capacity:1'),) if revision>=15 else ()))
-        return replace(info, numerical_policy='user-library:unverified', output_semantics=(),
-            capabilities=capabilities)
+        return _standard_execution_info(info, revision)
 
     def _check_runtime(self):
         if self.library is None:

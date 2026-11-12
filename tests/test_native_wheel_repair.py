@@ -1,6 +1,7 @@
 """Final-byte manifest, dependency closure and platform-boundary regression checks."""
 
 import base64
+import copy
 import csv
 import hashlib
 import importlib.util
@@ -178,6 +179,41 @@ class NativeImageAuditTests(unittest.TestCase):
             record['source']['commit']='different';path.write_text(json.dumps(record))
             with self.assertRaisesRegex(ValueError,'pinned native source'):
                 repair.openmp_build_record(package)
+
+
+class AcceleratedRecordTests(unittest.TestCase):
+    def record(self):
+        return json.loads((ROOT / 'src/easysewer/libs/win/swmm-accelerated.build.json').read_text(encoding='utf-8'))
+
+    def test_formal_record_retains_standard_and_accelerated_provenance(self):
+        repair._check_record('swmm-accelerated', self.record())
+
+    def test_changed_math_or_missing_inherited_contract_is_rejected(self):
+        baseline = self.record()
+        mutations = {
+            'extra_source_change': lambda r: r['source']['files'].__setitem__('src/solver/dwflow.c', '0' * 64),
+            'wrong_dynwave': lambda r: r['source']['files'].__setitem__('src/solver/dynwave.c', '0' * 64),
+            'different_base': lambda r: r['source']['standard_source']['base'].__setitem__('commit', '0' * 40),
+            'missing_correction': lambda r: r.pop('routing_io'),
+            'missing_checkpoint': lambda r: r.pop('checkpoint'),
+            'fast_math': lambda r: r['command'].append('-ffast-math'),
+            'missing_openmp': lambda r: r.__setitem__('command', [v for v in r['command'] if v != '-fopenmp']),
+            'wrong_marker_revision': lambda r: r.__setitem__('acceleration_version', 2),
+            'boolean_revision': lambda r: r.__setitem__('acceleration_version', True),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                record = copy.deepcopy(baseline)
+                mutate(record)
+                with self.assertRaises(ValueError):
+                    repair._check_record('swmm-accelerated', record)
+
+    def test_consistent_but_wrong_checkpoint_abi_is_rejected(self):
+        record = self.record()
+        for part in (record, record['source'], record['source']['standard_source']):
+            part['checkpoint']['abi'] = 1
+        with self.assertRaisesRegex(ValueError, 'checkpoint ABI'):
+            repair._check_record('swmm-accelerated', record)
 
 
 class WheelFinalizationTests(unittest.TestCase):

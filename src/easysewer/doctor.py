@@ -2,8 +2,8 @@
 
 Exit codes are stable: 0 ready, 2 CLI usage, 10 unsupported ABI, 11 missing or
 invalid artifacts, 12 native load/ABI failure, 13 child failure/timeout, and
-14 smoke solve/output failure. Optional experimental FlexiblePonding does not
-change the standard solver/output readiness exit code.
+14 smoke solve/output failure. Optional accelerated and experimental
+FlexiblePonding solvers do not change standard solver/output readiness.
 """
 import argparse
 import json
@@ -69,12 +69,15 @@ def diagnose(*, smoke_test=False, timeout=30):
                                      code='unsupported_abi', message=reason))
         report['exit_code'] = 10
         return report
-    for name in ('swmm5', 'swmm-output', 'flexible_ponding'):
-        required = name != 'flexible_ponding'
-        check = dict(name=name, required=required, experimental=not required)
-        if not required:
+    for name in ('swmm5', 'swmm-output', 'swmm-accelerated', 'flexible_ponding'):
+        required = name in ('swmm5', 'swmm-output')
+        check = dict(name=name, required=required, experimental=name == 'flexible_ponding')
+        if name == 'flexible_ponding':
             check['note'] = ('Scientifically unvalidated replacement-backend example; '
                              'availability is not scientific validation and no fallback is performed')
+        elif name == 'swmm-accelerated':
+            check['display_name'] = 'SWMM Accelerated Solver'
+            check['note'] = 'Optional ordered hydraulic acceleration; no automatic fallback or default change'
         try:
             artifact = select_library(name, verify=True)
             check['artifact'] = dict(path=str(artifact.path), sha256=artifact.record['sha256'],
@@ -148,8 +151,11 @@ def main(argv=None):
         _print_line(f"EasySewer {__version__}: {identity['system']} {identity['architecture']} "
               f"({identity['pointer_bits']}-bit Python)")
         for check in report['checks']:
-            optional = ' (optional, experimental)' if not check['required'] else ''
-            _print_line(f"{check['name']}{optional}: {check['status']}")
+            optional = ''
+            if not check['required']:
+                optional = ' (optional, experimental)' if check.get('experimental') else ' (optional)'
+            label = check.get('display_name', check['name'])
+            _print_line(f"{label}{optional}: {check['status']}")
             if check.get('message'):
                 _print_line('  ' + check['message'])
             if check.get('artifact', {}).get('external_dependencies'):

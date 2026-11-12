@@ -145,7 +145,9 @@ def main():
                    unexpected_successes=[str(test) for test in result.unexpectedSuccesses],
                    pure=args.profile == 'pure', profile=args.profile, selected_tests=selected,
                    targeted=bool(args.tests), excluded_by_profile=excluded,
-                   native_core_evidence=getattr(sys.modules.get('test_native_core_platform'), 'EVIDENCE', []))
+                   native_core_evidence=getattr(sys.modules.get('test_native_core_platform'), 'EVIDENCE', []),
+                   accelerated_hydraulic_evidence=getattr(
+                       sys.modules.get('test_native_v2_accelerated_hydraulics'), 'EVIDENCE', []))
     (output / 'tests.json').write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
     check_test_result(result, summary)
     # Core/all execute the shipped solve and moved archive reads. Experimental

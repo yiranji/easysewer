@@ -12,6 +12,9 @@ def _solver(name):
     if name == 'swmm5':
         from .runtime._native_solver import NativeSolver as Solver
         from .runtime.native import StandardBackend as Backend
+    elif name == 'swmm-accelerated':
+        from .runtime._native_accelerated import NativeAcceleratedSolver as Solver
+        from .runtime.accelerated import AcceleratedBackend as Backend
     elif name == 'flexible_ponding':
         from .runtime._native_flexible import NativeFlexibleSolver as Solver
         from .runtime.flexible import FlexiblePondingBackend as Backend

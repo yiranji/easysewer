@@ -120,6 +120,7 @@ print("ok")
         self.assertEqual(caps, {
             "swmm_solver": False,
             "swmm_output": False,
+            "swmm_accelerated": False,
             "flexible_ponding": False,
         })
 

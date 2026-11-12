@@ -95,6 +95,9 @@ def main():
                         admission=enter(guard)
                     kind=args.get('solver_kind','standard')
                     if kind=='standard':solver_type=NativeSolver
+                    elif kind=='accelerated':
+                        from ._native_accelerated import NativeAcceleratedSolver
+                        solver_type=NativeAcceleratedSolver
                     elif kind=='flexible-ponding':
                         from ._native_flexible import NativeFlexibleSolver
                         solver_type=NativeFlexibleSolver

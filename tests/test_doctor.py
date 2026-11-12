@@ -38,10 +38,10 @@ class DoctorTests(unittest.TestCase):
         self.assertEqual(report['exit_code'], 0)
         self.assertEqual(report['schema'], 'easysewer:doctor:1')
         self.assertEqual(report['smoke_test']['status'], 'not_requested')
-        self.assertEqual(report['checks'][2]['status'], 'absent')
-        self.assertIn('unvalidated', report['checks'][2]['note'])
+        self.assertEqual(report['checks'][3]['status'], 'absent')
+        self.assertIn('unvalidated', report['checks'][3]['note'])
         self.assertEqual([call.args[0] for call in worker.call_args_list],
-                         [dict(operation='probe', name='swmm5'), dict(operation='probe', name='swmm-output')])
+                         [dict(operation='probe', name='swmm5'), dict(operation='probe', name='swmm-output'), dict(operation='probe', name='swmm-accelerated')])
         self.assertEqual(before, {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob('*') if p.is_file()})
 
     def test_missing_and_invalid_manifest_have_stable_exit_without_launch(self):
@@ -77,7 +77,7 @@ class DoctorTests(unittest.TestCase):
         with patch.object(doctor, '_run_worker', side_effect=outcome):
             report = doctor.diagnose()
         self.assertEqual(report['exit_code'], 0)
-        self.assertEqual(report['checks'][2]['status'], 'error')
+        self.assertEqual(report['checks'][3]['status'], 'error')
 
     def test_smoke_is_explicit_and_parent_cleans_temporary_files_on_failure(self):
         directories = []

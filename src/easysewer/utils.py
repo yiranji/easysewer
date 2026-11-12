@@ -78,7 +78,8 @@ def get_native_capabilities() -> dict[str, bool]:
     Detect packaged native files for this platform/ABI without loading a CDLL.
 
     True means that a candidate file exists, not that the system can load it.
-    Use StandardBackend().probe() or FlexiblePondingBackend().probe() to check
+    Use StandardBackend().probe(), AcceleratedBackend().probe(), or
+    FlexiblePondingBackend().probe() to check
     real solver availability, including native system-library dependencies.
 
     Returns:
@@ -86,6 +87,7 @@ def get_native_capabilities() -> dict[str, bool]:
     """
     return {
         "swmm_solver": probe_library_path("swmm5") is not None,
+        "swmm_accelerated": probe_library_path("swmm-accelerated") is not None,
         "swmm_output": probe_library_path("swmm-output") is not None,
         "flexible_ponding": probe_library_path("flexible_ponding") is not None,
     }

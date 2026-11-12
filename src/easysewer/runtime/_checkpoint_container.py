@@ -320,7 +320,7 @@ def _native_header(raw, snapshot, binding):
     if raw[20:52].hex() != binding or struct.unpack_from('<i', raw, 60)[0] != family:
         raise ValueError('Native checkpoint execution binding mismatch')
     custom = snapshot.backend.key == 'easysewer:flexible-ponding'
-    if snapshot.backend.key not in ('swmm:standard', 'easysewer:flexible-ponding') or bool(family) != custom:
+    if snapshot.backend.key not in ('swmm:standard', 'swmm:accelerated', 'easysewer:flexible-ponding') or bool(family) != custom:
         raise ValueError('Unsupported checkpoint backend or family mismatch')
     duration = struct.unpack_from('<d', raw, 100)[0] / 1000
     seconds = struct.unpack_from('<d', raw, 160)[0] / 86400000 * 86400

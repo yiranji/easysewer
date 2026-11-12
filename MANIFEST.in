@@ -1,5 +1,5 @@
 recursive-include assets *
-recursive-include native *.py *.c *.h *.inc *.json *.md *.txt
+recursive-include native *.py *.c *.h *.inc *.json *.md *.txt *.patch
 include setup.py
 recursive-include native/baseline *.Dockerfile
 

@@ -4,3 +4,9 @@ tests/** linguist-vendored
 
 # Preserve exact fixture bytes used by digest and round-trip checks.
 tests/fixtures/** -text
+
+# Native manifests bind the exact bytes of build records and license metadata.
+src/easysewer/libs/**/*.json text eol=lf
+native/licenses/*.txt text eol=lf
+# Exact patch context retains the inherited source whitespace.
+native/accelerated/*.patch text eol=lf -whitespace

@@ -24,8 +24,10 @@ TARGETS = {
     'darwin-arm64': ('Darwin', 'arm64', 'macos-arm64', '.dylib.esso'),
 }
 POLICIES = {'swmm5': 'easysewer:standard:5.2.4:16',
+            'swmm-accelerated': 'easysewer:accelerated:5.2.4:1',
             'swmm-output': 'easysewer:output-io:1',
             'flexible_ponding': 'easysewer:flexible-ponding:incremental-volume:2:native:14'}
+OPTIONAL_LIBRARIES = frozenset(('swmm-accelerated', 'flexible_ponding'))
 
 
 def digest(path):
@@ -52,7 +54,7 @@ def provisional_manifest(package, target):
     for name, policy in POLICIES.items():
         binary = package / 'libs' / directory / (name + suffix)
         if not binary.is_file():
-            if name != 'flexible_ponding':
+            if name not in OPTIONAL_LIBRARIES:
                 raise ValueError('Required native payload is absent: ' + name)
             continue
         build = binary.with_name(name + '.build.json')
@@ -62,7 +64,7 @@ def provisional_manifest(package, target):
         libraries[name] = dict(path=binary.relative_to(package).as_posix(),
             sha256=digest(binary), size=binary.stat().st_size,
             numerical_policy=policy, build_record=build.relative_to(package).as_posix(),
-            build_record_sha256=digest(build), required=name != 'flexible_ponding',
+            build_record_sha256=digest(build), required=name not in OPTIONAL_LIBRARIES,
             dependencies=[], external_dependencies=[])
     record = dict(system=system, architecture=architecture, pointer_bits=64, abi='cdecl:64',
                   minimum_os='14.0' if system == 'Darwin' else None,
@@ -108,7 +110,8 @@ def build(root, target, output, *, upstream=None, compiler=None, openmp_prefix=N
     if compile_core:
         if upstream is None:
             raise ValueError('The pinned public EPA SWMM checkout is required on Linux/macOS')
-        for component, name in (('standard', 'swmm5'), ('output', 'swmm-output')):
+        for component, name in (('standard', 'swmm5'), ('accelerated', 'swmm-accelerated'),
+                                ('output', 'swmm-output')):
             prepared = output / ('prepared-' + component)
             run('prepare-' + component, [sys.executable, '-B', root / 'native' / component / 'prepare.py',
                 '--source', Path(upstream).resolve(), '--destination', prepared])

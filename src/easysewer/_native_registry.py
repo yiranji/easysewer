@@ -19,6 +19,7 @@ import sysconfig
 SCHEMA = 'easysewer:native-runtime:1'
 POLICIES = {
     'swmm5': 'easysewer:standard:5.2.4:16',
+    'swmm-accelerated': 'easysewer:accelerated:5.2.4:1',
     'swmm-output': 'easysewer:output-io:1',
     'flexible_ponding': 'easysewer:flexible-ponding:incremental-volume:2:native:14',
 }
@@ -181,8 +182,8 @@ def _validate(data):
             paths.add(record['path'])
             if record['numerical_policy'] != POLICIES[name]:
                 raise ValueError('Unrecognized numerical policy for ' + name)
-            if type(record['required']) is not bool or record['required'] != (name != 'flexible_ponding'):
-                raise ValueError('Invalid required/experimental library designation')
+            if type(record['required']) is not bool or record['required'] != (name in ('swmm5', 'swmm-output')):
+                raise ValueError('Invalid required/optional library designation')
             _relative(record['build_record'])
             if (type(record['build_record_sha256']) is not str
                     or not _SHA.fullmatch(record['build_record_sha256'])):

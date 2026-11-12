@@ -35,11 +35,16 @@ class NativeWheelBuildTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     BUILD.require_native_host('windows-x86_64')
 
-    def fixture(self, root, target, *, flexible=False):
+    def fixture(self, root, target, *, flexible=False, accelerated=False):
         _, _, directory, suffix = BUILD.TARGETS[target]
         folder = root / 'libs' / directory
         folder.mkdir(parents=True)
-        for name in (('swmm5', 'swmm-output', 'flexible_ponding') if flexible else ('swmm5', 'swmm-output')):
+        names = ['swmm5', 'swmm-output']
+        if flexible:
+            names.append('flexible_ponding')
+        if accelerated:
+            names.append('swmm-accelerated')
+        for name in names:
             binary = folder / (name + suffix)
             binary.write_bytes(b'test native bytes: ' + name.encode())
             (folder / (name + '.build.json')).write_text(json.dumps({
@@ -62,6 +67,16 @@ class NativeWheelBuildTests(unittest.TestCase):
             target = BUILD.provisional_manifest(root, 'linux-x86_64')['targets']['linux-x86_64']
             self.assertEqual(target['libc']['minimum_version'], '2.33')
             self.assertFalse(target['libraries']['flexible_ponding']['required'])
+
+    def test_accelerated_artifact_has_its_own_optional_policy(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root, 'linux-aarch64', accelerated=True)
+            libraries = BUILD.provisional_manifest(root, 'linux-aarch64')['targets']['linux-aarch64']['libraries']
+            self.assertFalse(libraries['swmm-accelerated']['required'])
+            self.assertEqual(libraries['swmm-accelerated']['numerical_policy'],
+                             'easysewer:accelerated:5.2.4:1')
+            self.assertTrue(libraries['swmm5']['required'])
 
     def test_changed_build_artifact_cannot_be_sealed(self):
         with tempfile.TemporaryDirectory() as temporary:

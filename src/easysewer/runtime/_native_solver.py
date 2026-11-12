@@ -20,6 +20,8 @@ class NativeCallFailure(Exception):
 
 
 class NativeSolver:
+    backend_key = 'swmm:standard'
+
     def __init__(self, library, *, expected_sha256=None):
         self.open_attempted = False
         self.start_attempted = False
@@ -32,6 +34,8 @@ class NativeSolver:
         self.lib = c.CDLL(str(path))
         if type(self) is NativeSolver and hasattr(self.lib,'swmm_execRouting'):
             raise ValueError('A custom routing library requires its explicit backend and output semantics')
+        if type(self) is NativeSolver and hasattr(self.lib, 'swmm_getEasySewerAccelerationVersion'):
+            raise ValueError('An accelerated library requires its explicit accelerated backend')
         for name, args, result in (
             ('open', [c.c_char_p]*3, c.c_int), ('start', [c.c_int], c.c_int),
             ('step', [c.POINTER(c.c_double)], c.c_int), ('end', [], c.c_int),

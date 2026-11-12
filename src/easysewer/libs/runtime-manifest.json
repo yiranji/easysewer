@@ -41,6 +41,17 @@
           "required": false,
           "dependencies": [],
           "external_dependencies": []
+        },
+        "swmm-accelerated": {
+          "path": "libs/win/swmm-accelerated.dll.esdll",
+          "sha256": "cdea7650ab37b45e63efad88e9f041db251715c20b8a12683d6cf7684165b140",
+          "size": 1418584,
+          "numerical_policy": "easysewer:accelerated:5.2.4:1",
+          "build_record": "libs/win/swmm-accelerated.build.json",
+          "build_record_sha256": "6cdf83b7e53fec3e90477823affba36b071578800d7bc10de307f5aff28aa88f",
+          "required": false,
+          "dependencies": [],
+          "external_dependencies": []
         }
       }
     },
@@ -86,6 +97,19 @@
           "numerical_policy": "easysewer:flexible-ponding:incremental-volume:2:native:14",
           "build_record": "libs/linux/flexible_ponding.build.json",
           "build_record_sha256": "1aa34cb185f77aadde302e68a0ab314b9752c680d06c01d605d5ddf964eb0229",
+          "required": false,
+          "dependencies": [],
+          "external_dependencies": [
+            "libgomp.so.1"
+          ]
+        },
+        "swmm-accelerated": {
+          "path": "libs/linux/swmm-accelerated.so.esso",
+          "sha256": "94725100363eadc5d0ab7248e06aa77caec24318ee740dcc0c241ca5e8f14b74",
+          "size": 726192,
+          "numerical_policy": "easysewer:accelerated:5.2.4:1",
+          "build_record": "libs/linux/swmm-accelerated.build.json",
+          "build_record_sha256": "dd674809f8cae0afeffe083045b6ad0a1b9dadeef783b25447be0f225ff5d7af",
           "required": false,
           "dependencies": [],
           "external_dependencies": [

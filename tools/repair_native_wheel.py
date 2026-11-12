@@ -39,9 +39,11 @@ TARGETS = {
 }
 POLICIES = {
     'swmm5': 'easysewer:standard:5.2.4:16',
+    'swmm-accelerated': 'easysewer:accelerated:5.2.4:1',
     'swmm-output': 'easysewer:output-io:1',
     'flexible_ponding': 'easysewer:flexible-ponding:incremental-volume:2:native:14',
 }
+OPTIONAL_LIBRARIES = frozenset(('swmm-accelerated', 'flexible_ponding'))
 # This C-only release permits only glibc itself as an external Linux runtime.
 # In particular, a newer libgcc/libstdc++ ABI must not escape the glibc audit.
 LINUX_SYSTEM = frozenset(('libc.so.6', 'libm.so.6', 'libpthread.so.0', 'libdl.so.2',
@@ -345,7 +347,7 @@ def audit_native_tree(package, target):
             if path not in images:
                 raise ValueError('Unrecognized required native payload: ' + name)
             roots[name] = path
-        elif name != 'flexible_ponding':
+        elif name not in OPTIONAL_LIBRARIES:
             raise ValueError('Required native payload is missing: ' + name)
     edges = {}
     for path, info in images.items():
@@ -413,8 +415,9 @@ def audit_native_tree(package, target):
         raise ValueError('Wheel contains unregistered/orphan native dependency images')
     if spec['system'] in ('Linux', 'Darwin'):
         prefix = 'libgomp' if spec['system'] == 'Linux' else 'libomp'
-        if not any(path.name.startswith(prefix) for path in closures['swmm5']):
-            raise ValueError('Standard solver does not bundle its required OpenMP runtime')
+        for name in ('swmm5', 'swmm-accelerated'):
+            if name in roots and not any(path.name.startswith(prefix) for path in closures[name]):
+                raise ValueError('Solver does not bundle its required OpenMP runtime: ' + name)
     return roots, closures, {path.relative_to(package).as_posix(): info for path, info in images.items()}
 
 
@@ -429,6 +432,91 @@ def _check_record(name, record):
             raise ValueError('Unrecognized Standard source/build policy')
         if record.get('source', {}).get('base', {}).get('commit') != '7952ca837988b1c32f791812eccc9fd64547e093':
             raise ValueError('Standard source is not the pinned EPA commit')
+    elif name == 'swmm-accelerated':
+        source = record.get('source', {})
+        acceleration = record.get('acceleration', {})
+        if type(source) is not dict or type(acceleration) is not dict:
+            raise ValueError('Invalid Accelerated source/build evidence')
+        if '-fopenmp' not in command:
+            raise ValueError('Accelerated build must retain model-configurable OpenMP support')
+        standard = source.get('standard_source', {})
+        if (type(standard) is not dict or type(record.get('standard_fixes')) is not int or
+                type(record.get('acceleration_version')) is not int or
+                type(acceleration.get('version')) is not int or
+                record.get('standard_fixes') != 16 or record.get('acceleration_version') != 1 or
+                source.get('patch') != POLICIES[name] or source.get('acceleration') != acceleration or
+                acceleration.get('version') != 1 or acceleration.get('patch') != POLICIES[name] or
+                acceleration.get('base_patch') != POLICIES['swmm5'] or
+                standard.get('patch') != POLICIES['swmm5']):
+            raise ValueError('Unrecognized Accelerated source/build policy')
+        base = source.get('base', {})
+        if (type(base) is not dict or base != standard.get('base') or
+                base.get('commit') != '7952ca837988b1c32f791812eccc9fd64547e093'):
+            raise ValueError('Accelerated source is not the pinned EPA commit')
+        # Pin the transformed C file, not host-dependent raw checkout hashes of
+        # the Python recipes. Standard's byte receipt remains separately intact.
+        before = 'fb75ab9f8cf94a1c62d7e39b596cbb011d44828bf0b223bc156c824fff62e450'
+        after = '3abe56b90f5950ad50272010aae660db190cab359d951ada1871c44376c5cf9d'
+        if (acceleration.get('base_dynwave_sha256') != before or
+                acceleration.get('dynwave_sha256') != after or
+                acceleration.get('dynwave_hash_normalization') !=
+                'CRLF to LF before patching; LF output'):
+            raise ValueError('Accelerated hydraulic source or normalization differs')
+
+        def hashes(value, required=None):
+            return (type(value) is dict and bool(value) and
+                    (required is None or set(value) == set(required)) and
+                    all(type(key) is str and type(digest) is str and
+                        re.fullmatch('[0-9a-f]{64}', digest)
+                        for key, digest in value.items()))
+
+        recipes = acceleration.get('recipes')
+        source_recipes = source.get('recipe')
+        if (not hashes(recipes, ('patch.py', 'dynwave.patch')) or
+                not hashes(source_recipes, ('prepare.py', 'patch.py', 'dynwave.patch')) or
+                any(source_recipes[key] != digest for key, digest in recipes.items()) or
+                not hashes(standard.get('recipe')) or 'prepare.py' not in standard['recipe']):
+            raise ValueError('Incomplete Accelerated or inherited recipe evidence')
+        files, original_files = source.get('files'), standard.get('files')
+        if (not hashes(files) or not hashes(original_files) or
+                set(files) != set(original_files) or
+                files.get('src/solver/dynwave.c') != after or
+                'src/solver/swmm5.c' not in files):
+            raise ValueError('Incomplete Accelerated source-file evidence')
+        changed = {key for key in files if files[key] != original_files[key]}
+        if changed != {'src/solver/dynwave.c', 'src/solver/swmm5.c'}:
+            raise ValueError('Accelerated source changes exceed the declared two files')
+        corrections = ('rainfall_fixes', 'runoff_fixes', 'runoff_physics', 'runoff_rain_clock',
+                       'rdii_io', 'routing_io', 'solver_output_io', 'climate_io',
+                       'timeseries_io', 'report_io', 'lid_report_io')
+        for key in corrections:
+            if any(type(part.get(key)) is not int or part[key] != 1
+                   for part in (record, source, standard)):
+                raise ValueError('Missing Accelerated inherited correction: ' + key)
+        for key in ('checkpoint', 'path_io', 'horton_capacity', 'horton_outfall'):
+            value = record.get(key)
+            if (type(value) is not dict or value != source.get(key) or
+                    value != standard.get(key)):
+                raise ValueError('Accelerated inherited profile differs: ' + key)
+        checkpoint = record['checkpoint']
+        fixes = checkpoint.get('fixes')
+        fix_names = {'event_rule_clock_fix', 'inactive_routing_clock_fix', 'paraboloid_exfil_fix',
+                     'inlet_sides_fix', 'groundwater_conductivity_fix', 'snow_initialization_fix'}
+        if (type(checkpoint.get('abi')) is not int or checkpoint['abi'] != 2 or
+                type(fixes) is not dict or set(fixes) != fix_names or
+                any(type(value) is not int or value != 1 for value in fixes.values()) or
+                not hashes(checkpoint.get('recipes'))):
+            raise ValueError('Accelerated checkpoint ABI or corrections differ')
+        for key in ('path_io', 'horton_capacity', 'horton_outfall'):
+            value = record[key]
+            if type(value.get('revision')) is not int or value['revision'] != 1:
+                raise ValueError('Accelerated inherited revision differs: ' + key)
+        if (not hashes(record['path_io'].get('recipes')) or
+                not hashes({'recipe': record['horton_capacity'].get('recipe_sha256')}) or
+                not hashes({'recipe': record['horton_outfall'].get('recipe_sha256')}) or
+                any(type(record['horton_outfall'].get(key)) is not int or
+                    record['horton_outfall'][key] != 1 for key in ('horton_state', 'outfall_gate'))):
+            raise ValueError('Incomplete Accelerated path/Horton correction evidence')
     elif name == 'swmm-output':
         if record.get('source', {}).get('base', {}).get('commit') != '7952ca837988b1c32f791812eccc9fd64547e093':
             raise ValueError('Output-reader source is not the pinned EPA commit')
@@ -473,7 +561,7 @@ def verify_input_records(package, target):
     for name in POLICIES:
         path = directory / (name + spec['suffix'])
         if not path.is_file():
-            if name != 'flexible_ponding':
+            if name not in OPTIONAL_LIBRARIES:
                 raise ValueError('Missing compiled payload: ' + name)
             continue
         record = json.loads((directory / (name + '.build.json')).read_text(encoding='utf-8'))
@@ -481,7 +569,10 @@ def verify_input_records(package, target):
         if record.get('sha256') != sha256(path) or record.get('size') != path.stat().st_size:
             raise ValueError('Compiled payload does not match its build evidence: ' + name)
     if spec['system'] == 'Darwin':
-        verify_openmp_input(package, directory / ('swmm5' + spec['suffix']))
+        for name in ('swmm5', 'swmm-accelerated'):
+            solver = directory / (name + spec['suffix'])
+            if solver.is_file():
+                verify_openmp_input(package, solver)
 
 
 def finalize_tree(package, target, *, repair_evidence=None):
@@ -527,7 +618,7 @@ def finalize_tree(package, target, *, repair_evidence=None):
         record_path.write_text(json.dumps(record, indent=2) + '\n', encoding='utf-8')
         libraries[name] = dict(file_record(path, package), numerical_policy=POLICIES[name],
                               build_record=record_path.relative_to(package).as_posix(),
-                              build_record_sha256=sha256(record_path), required=name != 'flexible_ponding',
+                              build_record_sha256=sha256(record_path), required=name not in OPTIONAL_LIBRARIES,
                               dependencies=dependencies, external_dependencies=[])
     manifest = dict(schema='easysewer:native-runtime:1', targets={target: dict(
         system=spec['system'], architecture=spec['architecture'], pointer_bits=64, abi='cdecl:64',

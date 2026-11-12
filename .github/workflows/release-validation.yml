@@ -377,6 +377,12 @@ jobs:
           --core --output checks/venv --tests
           test_worker_launch_v2 test_native_v2_venv_worker
           test_worker_identity_v2 test_darwin_worker_identity
+      - name: Qualify explicitly selected accelerated hydraulics and checkpoints
+        run: >-
+          "$VENV_PY" source/*/tools/qualify_release.py --package "$NATIVE_SITE"
+          --core --output checks/accelerated --tests
+          test_accelerated_backend_v2 test_native_v2_accelerated_runtime
+          test_native_v2_accelerated_hydraulics
       - name: Check core Horton physics and continuation contracts
         # The x64 all-family step below includes these identical standard assertions.
         # Run the standard-only selection on ARM without duplicating x64 work.
@@ -460,6 +466,7 @@ jobs:
             python3.12 -m easysewer doctor --json --smoke-test > checks/doctor.json
             site=$(python3.12 -c "import sysconfig; print(sysconfig.get_paths()[\"platlib\"])")
             python3.12 source/*/tools/qualify_release.py --package "$site" --core --output checks/core
+            python3.12 source/*/tools/qualify_release.py --package "$site" --core --output checks/accelerated --tests test_accelerated_backend_v2 test_native_v2_accelerated_runtime test_native_v2_accelerated_hydraulics
           '
       - name: Save clean runtime evidence
         if: always()
@@ -509,6 +516,7 @@ jobs:
             python3.10 -m easysewer doctor --json --smoke-test > checks/doctor.json
             site=$(python3.10 -c "import sysconfig; print(sysconfig.get_paths()[\"platlib\"])")
             python3.10 source/*/tools/qualify_release.py --package "$site" --core --output checks/core
+            python3.10 source/*/tools/qualify_release.py --package "$site" --core --output checks/accelerated --tests test_accelerated_backend_v2 test_native_v2_accelerated_runtime test_native_v2_accelerated_hydraulics
             python3.10 source/*/tools/qualify_release.py --package "$site" --experimental --output checks/experimental
           '
       - name: Save historical ABI runtime evidence

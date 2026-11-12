@@ -15,6 +15,8 @@ from ..model.identity import canonical_key
 
 
 class NativeFlexibleSolver(NativeSolver):
+    backend_key = 'easysewer:flexible-ponding'
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.parameters=None;self.trace=None;self.records=[];self.steps=0

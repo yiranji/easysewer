@@ -87,7 +87,7 @@ class NativePlatformDiagnosticsTests(unittest.TestCase):
         ):
             with self.subTest(system=system, machine=machine, bits=bits), host(system, machine, bits):
                 self.assertEqual(get_native_capabilities(), {
-                    'swmm_solver': False, 'swmm_output': False, 'flexible_ponding': False,
+                    'swmm_solver': False, 'swmm_output': False, 'swmm_accelerated': False, 'flexible_ponding': False,
                 })
                 with self.assertRaisesRegex(OSError, 'supported 64-bit Python'):
                     find_library_path('swmm5')

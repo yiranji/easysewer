@@ -6,6 +6,7 @@ from .backend import (Backend, BackendArtifact, BackendInfo, BackendRunPlan, Eng
                       Session, SessionCancelled, SessionError, SessionStateError,
                       SessionTimeout, StepResult)
 from .native import StandardBackend
+from .accelerated import AcceleratedBackend
 from .flexible import FlexiblePondingBackend, FlexiblePondingPolicy, PondingAdjustment
 from .results import (CacheConsumption, FileArtifact, ProducedCache, ResourceSnapshot,
                       RunContinuation, RunError, RunFailure, RunProgress, RunResult, RunSnapshot)
@@ -23,7 +24,7 @@ __all__ = ["DirectoryAdapter", "DirectoryLimits", "DirectoryEntry", "DirectoryMa
            "CheckpointSchedule", "RunnerCheckpoint", "ResumeConfig",
            "ReportReadOptions", "RunConfig", "RunPaths", "FileCheck", "FilePreflight", "check_files",
            "Backend", "BackendInfo", "EngineObjects", "MassBalance", "NativeFailure", "Session",
-           "SessionCancelled", "SessionError", "SessionStateError", "SessionTimeout", "StepResult", "StandardBackend",
+           "SessionCancelled", "SessionError", "SessionStateError", "SessionTimeout", "StepResult", "StandardBackend", "AcceleratedBackend",
            "CacheConsumption", "FileArtifact", "ProducedCache", "ResourceSnapshot", "RunError", "RunFailure",
            "RunContinuation", "RunProgress", "RunResult", "RunSnapshot", "Runner", "BackendArtifact", "BackendRunPlan",
            "FlexiblePondingBackend", "FlexiblePondingPolicy", "PondingAdjustment",

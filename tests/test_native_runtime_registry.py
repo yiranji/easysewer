@@ -45,7 +45,7 @@ def write_manifest(root, keys=('windows-x86_64', 'linux-x86_64'), *, flexible=Tr
             libraries[name] = dict(path=path.relative_to(root).as_posix(), **record,
                 numerical_policy=policy, build_record=evidence.relative_to(root).as_posix(),
                 build_record_sha256=hashlib.sha256(evidence.read_bytes()).hexdigest(),
-                required=name != 'flexible_ponding', dependencies=dependencies,
+                required=name in ('swmm5', 'swmm-output'), dependencies=dependencies,
                 external_dependencies=['libgomp.so.1'] if system == 'Linux' and name != 'swmm-output' and not dependency else [])
         targets[key] = dict(system=system, architecture=architecture, pointer_bits=64, abi='cdecl:64',
                             minimum_os='15.0' if system == 'Darwin' else None,

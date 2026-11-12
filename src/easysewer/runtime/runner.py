@@ -13,6 +13,7 @@ from .backend import SessionCancelled, SessionError, SessionTimeout
 from .config import ResumeConfig, RunConfig
 from .files import check_files
 from .native import StandardBackend, _NATIVE_SESSION_FACTORY
+from .accelerated import AcceleratedBackend
 from .flexible import FlexiblePondingBackend
 from .results import (CacheConsumption, FileArtifact, ProducedCache, RunError, RunFailure,
                       RunContinuation, RunProgress, RunResult, RunSnapshot)
@@ -93,7 +94,8 @@ class Runner:
     def __init__(self, *, backends=None, inspectors=None, report_tables=None, cache_policies=None,
                  directory_adapters=None, directory_limits=None):
         self.backends=dict(backends) if backends is not None else {
-            'swmm:standard':StandardBackend(),'easysewer:flexible-ponding':FlexiblePondingBackend()}
+            'swmm:standard':StandardBackend(), 'swmm:accelerated':AcceleratedBackend(),
+            'easysewer:flexible-ponding':FlexiblePondingBackend()}
         self.inspectors=dict(inspectors or {})
         from .directory_resources import directory_adapters as validate_adapters, DirectoryLimits
         self.directory_limits=DirectoryLimits() if directory_limits is None else directory_limits

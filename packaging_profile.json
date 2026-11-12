@@ -89,6 +89,7 @@
         "src/easysewer/runtime/files.py",
         "src/easysewer/runtime/backend.py",
         "src/easysewer/runtime/native.py",
+        "src/easysewer/runtime/accelerated.py",
         "src/easysewer/runtime/flexible.py",
         "src/easysewer/runtime/results.py",
         "src/easysewer/runtime/archive.py",
@@ -211,6 +212,7 @@
       "exclude_paths": [
         "src/easysewer/libs/**",
         "src/easysewer/runtime/_native_solver.py",
+        "src/easysewer/runtime/_native_accelerated.py",
         "src/easysewer/runtime/_native_flexible.py",
         "src/easysewer/runtime/_checkpoint_worker.py",
         "src/easysewer/runtime/_checkpoint_native.py",
@@ -267,6 +269,7 @@
       "import_core_api": "from easysewer import Model, get_native_capabilities",
       "native_caps_expected_false": [
         "swmm_solver",
+        "swmm_accelerated",
         "swmm_output",
         "flexible_ponding"
       ]
