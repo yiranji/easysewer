@@ -236,6 +236,22 @@ class FastInpTests(unittest.TestCase):
         self.assertEqual(Model.from_inp(self.directory / 'microsecond.inp').options.routing_step,
                          timedelta(microseconds=1))
 
+    def test_integer_conversion_never_silently_truncates_barrel_count(self):
+        for count in ('1.9', '-1.9', '1e-1'):
+            with self.subTest(count=count):
+                text = NETWORK.replace('P CIRCULAR 1 0 0 0 1',
+                                       'P CIRCULAR 1 0 0 0 ' + count)
+                with self.assertRaisesRegex(ValueError, 'Expected an integer'):
+                    Model.from_inp(self.source(text))
+                self.assertFalse(active())
+        # Exact conversion remains independent of the later legality checks.
+        for count in ('2.0', '2e0', '-2'):
+            with self.subTest(count=count):
+                text = NETWORK.replace('P CIRCULAR 1 0 0 0 1',
+                                       'P CIRCULAR 1 0 0 0 ' + count)
+                model = Model.from_inp(self.source(text))
+                self.assertEqual(model.links['P'].section.barrels, int(float(count)))
+
     def test_quotes_backslashes_and_non_ascii_whitespace_match_lexer(self):
         for raw in ('A\u00a0B 1', '"space name"\tC:\\data\\file.dat 1', 'A\t\t1  2'):
             expected = tuple(token.value for token in tokenize(raw, offset=0, line=1,

@@ -38,8 +38,8 @@ def finite_number(token: str) -> float:
 
 
 def integer(token: str) -> int:
-    if _trusted_active():
-        return int(float(token))
+    # Integrality is a lossless-conversion requirement, even for trusted input.
+    # Skipping range checks must not silently change a fractional parameter.
     value = finite_number(token)
     if value != int(value):
         raise ValueError(f"Expected an integer: {token!r}")
