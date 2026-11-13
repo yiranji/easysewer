@@ -1,7 +1,9 @@
 """Declared file consumers shared by exporters and runtime preflight."""
 
 from dataclasses import dataclass, fields, is_dataclass, replace
+from pathlib import Path
 
+from ._trusted import active as _trusted_active
 from .identity import Ref, namespace_key
 from .values import FileReference
 from ..validation import DiagnosticSubject
@@ -48,6 +50,8 @@ class FileUse:
     active: bool = True
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         namespace_key(self.role); namespace_key(self.format)
         if not isinstance(self.owner, Ref) or not isinstance(self.file, FileReference):
             raise TypeError("File consumers require a model owner and FileReference")
@@ -82,6 +86,8 @@ def replace_path(value, path, replacement):
 
 def resolve_files(model, *, input_directory=None, working_directory=None):
     """Return an independent model with explicit absolute paths; perform no IO."""
+    if input_directory is None and model.source_path:
+        input_directory = str(Path(model.source_path).parent)
     result = model.copy()
     with result._store._permit_context_change("file_rebase"):
         for use in checkpointed(model.file_uses()):

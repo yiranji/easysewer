@@ -8,6 +8,7 @@ from pathlib import PurePath
 import re
 from typing import Iterator
 
+from ._trusted import active as _trusted_active
 from ..validation._cooperative import checkpointed
 
 RecordKey = str | tuple[str, ...]
@@ -17,6 +18,8 @@ _CAPABILITY = re.compile(r"[a-z][a-z0-9_.-]*:[a-z][a-z0-9_.-]*(?::[a-z0-9][a-z0-
 
 
 def namespace_key(value: str) -> str:
+    if _trusted_active():
+        return value
     if not isinstance(value, str) or not _NAMESPACE.fullmatch(value):
         raise ValueError("Expected a namespaced collection key, e.g. 'swmm:nodes'")
     return value
@@ -24,6 +27,8 @@ def namespace_key(value: str) -> str:
 
 def capability_key(value: str) -> str:
     """Validate an exact capability ID, including optional version components."""
+    if _trusted_active():
+        return value
     if not isinstance(value, str) or not _CAPABILITY.fullmatch(value):
         raise ValueError("Expected a capability key, e.g. 'easysewer:routing-io:1'")
     return value
@@ -31,6 +36,10 @@ def capability_key(value: str) -> str:
 
 def canonical_key(value: RecordKey) -> RecordKey:
     """Match SWMM's ASCII-only case-insensitive IDs, preserving non-ASCII text."""
+    if _trusted_active():
+        if isinstance(value, tuple):
+            return tuple(part.translate(_ASCII_UPPER) for part in value)
+        return value.translate(_ASCII_UPPER)
     if isinstance(value, tuple):
         if not value or any(not isinstance(part, str) for part in value):
             raise ValueError("Composite keys require one or more string components")
@@ -41,6 +50,8 @@ def canonical_key(value: RecordKey) -> RecordKey:
 
 
 def validate_identifier(value: str) -> None:
+    if _trusted_active():
+        return
     canonical_key(value)
     if not isinstance(value, str) or value.startswith("[") or any(
         char in value for char in ' \t\r\n;"'
@@ -54,6 +65,8 @@ class Ref:
     key: RecordKey
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         namespace_key(self.collection)
         canonical_key(self.key)
 
@@ -101,6 +114,8 @@ def rewrite_references(value: object, old: Ref, new: Ref) -> object:
 
 def require_immutable(value: object, path: str = "record", _active=None) -> None:
     """Reject mutable extension payloads before they can corrupt graph indexes."""
+    if _trusted_active():
+        return
     if value is None or isinstance(value, (str, bytes, int, float, bool, Decimal, Enum,
                                            date, datetime, time, timedelta, PurePath)):
         return

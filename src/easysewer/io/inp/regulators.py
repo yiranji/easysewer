@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 
+from ...model._trusted import active as _trusted_active
 from ...model import network as n
 from ...model.identity import Ref
 from ...model.values import Offset
@@ -64,7 +65,7 @@ def parse_regulator(section, values):
         opening = None
         if len(values) > 7:
             hours = finite_number(values[7])  # Native accepts decimal hours, never a clock token.
-            if hours < 0:
+            if not _trusted_active() and (hours < 0):
                 raise ValueError("Opening time must be nonnegative")
             try:
                 opening = timedelta(hours=hours)

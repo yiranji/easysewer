@@ -4,6 +4,7 @@ from dataclasses import dataclass, fields, replace
 from datetime import date, time, timedelta
 from typing import Literal
 
+from ._trusted import active as _trusted_active
 from ..validation import Diagnostic, DiagnosticSubject
 from .fields import number, validate_fields
 from .store import CollectionSpec
@@ -17,6 +18,8 @@ class DayTime:
     day_offset: int = 0
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         if not isinstance(self.clock, time) or self.clock.tzinfo is not None:
             raise ValueError("SWMM uses local model time without a timezone")
         if type(self.day_offset) is not int or self.day_offset < 0:

@@ -2,10 +2,13 @@
 
 from dataclasses import fields, is_dataclass
 
+from ...model._trusted import active as _trusted_active
 from ...model import hydrology as h, climate as c
 
 
 def hydrology_sources(source, owner, record, lines, options, profile):
+    if _trusted_active():
+        return
     from .hydrology import parse_infiltration
     if type(record) not in (h.RainGage, h.Subcatchment, h.Snowpack, c.SubcatchmentAdjustments):
         return

@@ -5,6 +5,7 @@ from dataclasses import replace
 from datetime import date, timedelta
 import re
 
+from ...model._trusted import active as _trusted_active
 from ...model import controls as c
 from ...model.fields import validate_fields
 from ...model.identity import Ref, canonical_key, references
@@ -161,7 +162,7 @@ class ControlsCodec:
             kind = c.native_value_attribute(attr) if attr else "NUMERIC"
             if kind == "STATUS":
                 value = token.upper()
-                if value not in ("ON", "OFF", "OPEN", "CLOSED"):
+                if not _trusted_active() and (value not in ("ON", "OFF", "OPEN", "CLOSED")):
                     raise ValueError("Expected a status constant")
             elif kind in c.TIME_ATTRIBUTES:
                 value, changed = _native_time(token, integer_seconds=False)
@@ -177,7 +178,7 @@ class ControlsCodec:
             else:
                 value = finite_number(token)
                 limits = {"DAY":(1,7), "MONTH":(1,12), "DAYOFYEAR":(1,365)}
-                if kind in limits and not limits[kind][0] <= value <= limits[kind][1]:
+                if not _trusted_active() and (kind in limits and not limits[kind][0] <= value <= limits[kind][1]):
                     raise ValueError(f"Out-of-range {kind} constant")
             return c.Constant(value=value)
 
@@ -232,7 +233,7 @@ class ControlsCodec:
                     if len(values[1].encode("utf-8")) > 32:
                         raise UnsupportedControl("Native named control symbols are limited to 32 bytes")
                     if keyword == "VARIABLE":
-                        if values[1].upper() in c.NATIVE_ATTRIBUTES:
+                        if not _trusted_active() and (values[1].upper() in c.NATIVE_ATTRIBUTES):
                             raise ValueError("Variable name cannot equal a control attribute")
                         value, count = attribute(values[3:])
                         if count != len(values)-3:
@@ -255,7 +256,7 @@ class ControlsCodec:
                     if len(values) != 2:
                         raise ValueError("RULE requires one ID")
                     current = ("RULE", canonical_key(values[1]))
-                    if current in records:
+                    if not _trusted_active() and (current in records):
                         raise ValueError("Duplicate control rule")
                     records[current] = c.ControlRule(id=values[1], conditions=(), then_actions=())
                     groups[current], state = [line.number], "RULE"

@@ -12,11 +12,11 @@ Use the 2.0 model/runtime APIs and standard SWMM INP or current Model JSON.
 ## Installation
 
 ```console
-python -m pip install --upgrade easysewer==2.1.0
+python -m pip install --upgrade easysewer==2.2.0
 python -c "from easysewer import Model; print(Model())"
 ```
 
-EasySewer 2.1.0 requires Python 3.10 or later; CPython 3.10–3.14 is tested.
+EasySewer 2.2.0 requires Python 3.10 or later; CPython 3.10–3.14 is tested.
 It provides platform-specific native wheels for:
 
 | Platform | Native runtime baseline |
@@ -31,7 +31,7 @@ non-system native dependencies. A compiler or separate system OpenMP installatio
 is not needed to use a supported wheel. Use a native 64-bit Python interpreter
 and a current pip so it can select the matching platform wheel.
 The [macOS 14.8.9 execution record](https://github.com/yiranji/easysewer/blob/master/docs/2.0-testing.md#observed-macos-14-baseline)
-binds an earlier exact artifact, not the final 2.1.0 wheel or initial macOS 14.0.
+binds an earlier exact artifact, not the final 2.2.0 wheel or initial macOS 14.0.
 
 Version 2.1.0 also fixes the Windows virtual-environment worker launch failure
 reported in [issue #5](https://github.com/yiranji/easysewer/issues/5), while keeping
@@ -59,7 +59,7 @@ bytes and ABI; keep the original runtime for older archives. Cross-architecture
 checkpoint continuation is not supported.
 
 Modeling, conversion and pure result reading do not require a native solver.
-See the [2.1.0 release notes](https://github.com/yiranji/easysewer/blob/master/docs/2.0-delivery.md#210-release-notes), [installation, supported ABIs and doctor exit codes](https://github.com/yiranji/easysewer/blob/master/docs/2.0-installation.md)
+See the [2.2.0 release notes](https://github.com/yiranji/easysewer/blob/master/docs/2.0-delivery.md#220-release-notes), [installation, supported ABIs and doctor exit codes](https://github.com/yiranji/easysewer/blob/master/docs/2.0-installation.md)
 and [native build and qualification instructions](https://github.com/yiranji/easysewer/blob/master/docs/2.0-testing.md).
 
 See the [documentation index](https://github.com/yiranji/easysewer/blob/master/docs/README.md) for installation, the Quick Start notebook,

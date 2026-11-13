@@ -1,5 +1,6 @@
 """Storage and divider positional syntax, separate from graph ownership."""
 
+from ...model._trusted import active as _trusted_active
 from ...model import network as n
 from ...model.identity import Ref
 from .formatting import optional_tail
@@ -36,7 +37,7 @@ def parse_storage(values):
         record_type, fields = _STORAGE[kind]
         numbers = tuple(finite_number(token) for token in values[5:8])
         if kind == "CYLINDRICAL":
-            if numbers[2] < 0:
+            if not _trusted_active() and (numbers[2] < 0):
                 raise ValueError("Native cylindrical placeholder must be nonnegative")
             if numbers[2] != 0:
                 ignored.append(("storage.ignored_shape_parameter", "CYLINDRICAL's third shape parameter is ignored by native SWMM"))

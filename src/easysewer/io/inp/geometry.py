@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import math
 import re
 
+from ...model._trusted import active as _trusted_active
 from ...model import geometry as g
 from ...model.fields import validate_fields
 from ...model.identity import Ref
@@ -23,6 +24,8 @@ _NUMBER_TOKEN = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0
 
 
 def finite_number(token: str) -> float:
+    if _trusted_active():
+        return float(token)
     if not isinstance(token, str) or not _NUMBER_TOKEN.fullmatch(token):
         raise ValueError(f"Invalid numeric token: {token!r}")
     try:
@@ -35,6 +38,8 @@ def finite_number(token: str) -> float:
 
 
 def integer(token: str) -> int:
+    # Integrality is a lossless-conversion requirement, even for trusted input.
+    # Skipping range checks must not silently change a fractional parameter.
     value = finite_number(token)
     if value != int(value):
         raise ValueError(f"Expected an integer: {token!r}")
@@ -42,6 +47,8 @@ def integer(token: str) -> int:
 
 
 def number_text(value: float) -> str:
+    if _trusted_active():
+        return str(value) if isinstance(value, int) else repr(value)
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
         raise ValueError("Expected a finite number")
     return str(value) if isinstance(value, int) else repr(value)

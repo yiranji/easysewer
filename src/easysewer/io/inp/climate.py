@@ -3,6 +3,7 @@
 from dataclasses import fields, replace
 from pathlib import Path, PureWindowsPath
 
+from ...model._trusted import active as _trusted_active
 from ...model import climate as c
 from ...model.fields import validate_fields
 from ...model.identity import Ref, canonical_key
@@ -35,7 +36,7 @@ def _count(tokens, *allowed):
 
 
 def _yes(token):
-    if token.upper() not in ("YES", "NO"):
+    if not _trusted_active() and (token.upper() not in ("YES", "NO")):
         raise ValueError("Expected YES or NO")
     return token.upper() == "YES"
 

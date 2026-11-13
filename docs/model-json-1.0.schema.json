@@ -37,6 +37,16 @@
         }
       ]
     },
+    "input_context": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/input_context"
+        }
+      ]
+    },
     "extensions": {
       "type": "object"
     }
@@ -11021,6 +11031,109 @@
                     ]
                   }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "input_context": {
+      "type": "object",
+      "required": [
+        "encoding",
+        "format",
+        "passthrough",
+        "schema_version",
+        "source_path"
+      ],
+      "properties": {
+        "format": {
+          "const": "easysewer:inp-context"
+        },
+        "schema_version": {
+          "const": "1.0"
+        },
+        "source_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "encoding": {
+          "type": "string"
+        },
+        "passthrough": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "after",
+              "before",
+              "content",
+              "order",
+              "section"
+            ],
+            "properties": {
+              "section": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "content": {
+                "type": "string"
+              },
+              "after": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "prefixItems": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "before": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "prefixItems": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "order": {
+                "type": "integer",
+                "minimum": 0
               }
             }
           }

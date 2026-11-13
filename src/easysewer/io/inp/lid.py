@@ -3,6 +3,7 @@
 from collections import OrderedDict
 import re
 
+from ...model._trusted import active as _trusted_active
 from ...model import lid as l
 from ...model.fields import validate_fields
 from ...model.file_resources import FileUse
@@ -133,7 +134,7 @@ class LidCodec:
                 count = int(match[0]) if match else 0
                 if v[2] != str(count):
                     issue(line, f'Native integer prefix resolves replicate count to {count}', 'lid.native_count', Severity.WARNING)
-                if not 0 <= count <= 2_147_483_647:
+                if not _trusted_active() and (not 0 <= count <= 2_147_483_647):
                     raise ValueError('Replicate count is outside the native signed integer range')
                 args = dict(record_id=f'lid-usage-{index}', subcatchment=_ref('subcatchments',v[0]), control=_ref('lid_controls',v[1]))
                 if count == 0:
@@ -145,7 +146,7 @@ class LidCodec:
                     args['number'] = count
                     args.update(zip(('area','width','initial_saturation','from_impervious'), map(finite_number, v[3:7])))
                     flag = finite_number(v[7])
-                    if flag < 0:
+                    if not _trusted_active() and (flag < 0):
                         raise ValueError('ToPerv must be nonnegative')
                     args['to_pervious'] = flag > 0
                     if flag not in (0,1):

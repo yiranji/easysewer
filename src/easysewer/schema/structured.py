@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from typing import Iterable, Protocol
 
+from ..model._trusted import active as _trusted_active
 from ..model.identity import Ref, canonical_key, namespace_key, require_immutable
 from ..model.store import CollectionSpec, RecordStore
 from ..model.units import UnitTransform
@@ -22,6 +23,8 @@ class RecordEntry:
     value: object
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         namespace_key(self.collection)
         require_immutable(self.value)
 
@@ -32,6 +35,8 @@ class SourceBinding:
     key: tuple[str, ...]
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         if type(self.line) is not int or self.line < 1:
             raise ValueError("Source line must be a positive integer")
         canonical_key(self.key)
@@ -90,6 +95,8 @@ class FeatureData:
     field_coverage: tuple[FieldCoverage, ...] = ()
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         require_immutable(self)
         if (any(not isinstance(v, (FieldBinding, FieldLineBinding)) for v in self.field_bindings) or
                 any(type(v) is not FieldCoverage for v in self.field_coverage)):

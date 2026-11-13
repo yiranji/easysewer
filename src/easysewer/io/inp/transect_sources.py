@@ -1,16 +1,21 @@
 """Trace the NC state carried through X1 blocks and native finalizations."""
 from dataclasses import replace
+from ...model._trusted import active as _trusted_active
 from ...model.identity import Ref
 from .surface_sources import cover
 
 
 class TransectSources:
     def __init__(self, source):
+        if _trusted_active():
+            return
         self.source = source
         self.state = [(), (), ()]
         self.current = None
 
     def manning(self, line, old_values, new_values):
+        if _trusted_active():
+            return
         # A positive NC token replaces the component; zero inherits its state.
         for i, value in enumerate(new_values):
             atom = (line, i + 1, 'value' if value > 0 else 'marker', True)
@@ -23,12 +28,18 @@ class TransectSources:
                 self.state[i] += tuple((l, c, 'derived', a) for l, c, _, a in self.state[2])
 
     def start(self, line):
+        if _trusted_active():
+            return
         self.current = dict(line=line, roughness=tuple(self.state), stations=[])
 
     def stations(self, line):
+        if _trusted_active():
+            return
         self.current['stations'].append(line)
 
     def finalize(self, *, wrong_target):
+        if _trusted_active():
+            return
         if not wrong_target:
             self.current['roughness'] = tuple(self.state)
         # Native mutates Nchannel on each finalization, including section exits.
@@ -36,11 +47,15 @@ class TransectSources:
             (self.current['line'], 7, 'derived', True),)
 
     def reconcile_owners(self, bindings):
+        if _trusted_active():
+            return
         owners = {binding.line: binding.key[0] for binding in bindings}
         self.source.bindings = [replace(b, role='derived') if b.owner.canonical.key != owners[b.line] else b
                                 for b in self.source.bindings]
 
     def save(self, record):
+        if _trusted_active():
+            return
         owner = Ref(collection='swmm:transects', key=record.id)
         source = self.source
         cover(source, owner, record)

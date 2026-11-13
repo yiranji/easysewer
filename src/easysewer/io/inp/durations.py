@@ -6,6 +6,8 @@ from decimal import Decimal, DecimalException, localcontext
 from fractions import Fraction
 import re
 
+from ...model._trusted import active as _trusted_active
+
 _FACTORS = {"seconds": Decimal(1), "minutes": Decimal(60), "hours": Decimal(3600)}
 _CLOCK = re.compile(r"(\d+):(\d{1,2})(?::(\d{1,2}(?:\.\d+)?))?\Z", re.ASCII)
 _NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?\Z")
@@ -27,14 +29,15 @@ class DurationCodec:
         return (value.days * 86400 + value.seconds) * 1_000_000 + value.microseconds
 
     def _checked(self, seconds: Decimal) -> timedelta:
-        if not seconds.is_finite() or seconds < 0:
+        if not _trusted_active() and (not seconds.is_finite() or seconds < 0):
             raise ValueError("Duration must be finite and nonnegative")
-        if seconds >= Decimal(86400000000000):
+        if not _trusted_active() and (seconds >= Decimal(86400000000000)):
             raise ValueError("Duration exceeds Python timedelta range")
         with localcontext() as context:
             context.prec = max(32, len(seconds.as_tuple().digits) + 12)
             micros = seconds * 1_000_000
             step = self._microseconds(self.resolution)
+            # Trusted inputs must still fit the Python value without truncation.
             if micros != micros.to_integral_value() or micros % step:
                 raise ValueError("Duration cannot be represented at this field's resolution")
         try:
@@ -57,7 +60,7 @@ class DurationCodec:
         if match:
             hours, minutes = int(match[1]), int(match[2])
             seconds = Decimal(match[3] or "0")
-            if minutes >= 60 or seconds >= 60:
+            if not _trusted_active() and (minutes >= 60 or seconds >= 60):
                 raise ValueError("Minute and second components must be less than 60")
             return self._checked(Decimal(hours * 3600 + minutes * 60) + seconds)
         if ":" in token:

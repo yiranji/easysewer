@@ -1,4 +1,6 @@
 """Quality relation sources, including repeated pairs on a single line."""
+
+from ...model._trusted import active as _trusted_active
 from dataclasses import fields, is_dataclass
 
 from ...model import quality as q
@@ -6,6 +8,8 @@ from ...model.identity import Ref, canonical_key
 
 
 def landuse_sources(source, section, records, lines):
+    if _trusted_active():
+        return
     namespace = {'LANDUSES': 'landuses', 'COVERAGES': 'coverages', 'LOADINGS': 'loadings',
                  'BUILDUP': 'buildup', 'WASHOFF': 'washoff'}[section]
     owners = {}

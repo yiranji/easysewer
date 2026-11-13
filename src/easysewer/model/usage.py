@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from ._trusted import active as _trusted_active
 from ..validation import Diagnostic, DiagnosticSubject
 from .identity import Ref, references, require_immutable
 
@@ -16,6 +17,8 @@ class ResourceUse:
     accepted_kinds: tuple[str, ...] = ()
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         require_immutable(self)
         if not isinstance(self.owner, Ref) or not isinstance(self.target, Ref):
             raise TypeError("Resource-use owner and target must be Ref values")

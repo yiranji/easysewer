@@ -6,7 +6,7 @@ Documentation in `docs/` is maintained in English, including titles, prose, tabl
 
 ## Getting started
 
-- [2.1.0 release notes and 2.x delivery scope](2.0-delivery.md)
+- [2.2.0 release notes and 2.x delivery scope](2.0-delivery.md)
 - [Installation, native platforms and doctor](2.0-installation.md)
 - [From an empty model to portable results](2.0-first-run.md)
 - [Quick Start](2.0-quick-start.md)

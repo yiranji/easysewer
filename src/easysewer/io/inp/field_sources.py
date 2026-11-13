@@ -2,12 +2,15 @@
 
 from dataclasses import replace
 
+from ...model._trusted import active as _trusted_active
 from ...model.inspection import field_at
 from ...schema.structured import FieldBinding, FieldCoverage, FieldLineBinding
 
 
 class FieldSources:
     def __init__(self):
+        if _trusted_active():
+            return
         self.bindings = []
         self.coverage = set()
         self.uncertain = set()
@@ -15,24 +18,36 @@ class FieldSources:
         self._active = {}
 
     def cover(self, owner, *paths):
+        if _trusted_active():
+            return
         self.coverage.update((owner.canonical, path) for path in paths)
 
     def block(self, owner, *prefixes):
+        if _trusted_active():
+            return
         self.uncertain.update((owner.canonical, path) for path in prefixes)
 
     def block_value(self, owner, path):
+        if _trusted_active():
+            return
         self.uncertain_values.add((owner.canonical, path))
 
     def add(self, owner, path, line, tokens, *, role='value', overwrite=True, contributes=True):
+        if _trusted_active():
+            return
         binding = FieldBinding(owner=owner, path=path, line=line.number,
                                tokens=tuple(tokens), role=role, contributes=contributes)
         self._append(binding, overwrite)
 
     def add_line(self, owner, path, line, *, role='value', overwrite=True, contributes=True):
+        if _trusted_active():
+            return
         self._append(FieldLineBinding(owner=owner, path=path, line=line.number,
                                       role=role, contributes=contributes), overwrite)
 
     def _append(self, binding, overwrite):
+        if _trusted_active():
+            return
         key = binding.owner.canonical, binding.path
         if overwrite and binding.contributes:
             for index in self._active.get(key, ()):
@@ -45,6 +60,8 @@ class FieldSources:
 
     def finish(self, records):
         """Nested paths removed by a later parent assignment have no final field."""
+        if _trusted_active():
+            return dict(field_coverage=(), field_bindings=())
         def exists(owner, path):
             if owner not in records:
                 return False

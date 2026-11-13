@@ -1,4 +1,6 @@
 """Stateful layer assignments, ordered usages and removal-pair sources."""
+
+from ...model._trusted import active as _trusted_active
 from dataclasses import fields, is_dataclass
 
 from ...model import lid as l
@@ -6,6 +8,8 @@ from ...model.identity import Ref, canonical_key
 
 
 def cover(source, owner, value, path=()):
+    if _trusted_active():
+        return
     if is_dataclass(value):
         for f in fields(value):
             p = path + (f.name,); source.cover(owner, p)
@@ -17,6 +21,8 @@ def cover(source, owner, value, path=()):
 
 
 def control_sources(source, row, lines, keyword, required, optional):
+    if _trusted_active():
+        return
     owner = Ref(collection='swmm:lid_controls', key=row.id)
     cover(source, owner, row)
     entries, last, removal_last = [], {}, {}
@@ -71,6 +77,8 @@ def control_sources(source, row, lines, keyword, required, optional):
 
 
 def usage_sources(source, row, line):
+    if _trusted_active():
+        return
     owner = Ref(collection='swmm:lid_usage', key=row.record_id)
     cover(source, owner, row)
     v = line.values

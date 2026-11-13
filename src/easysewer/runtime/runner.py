@@ -270,16 +270,18 @@ class Runner:
                 output_directory=host_path(config.output_directory,relative_to=relative_to).resolve()
                 if config.input_directory:
                     input_directory=host_path(config.input_directory,relative_to=relative_to).resolve()
-                elif captured.document is not None and captured.document.source:
-                    input_directory=Path(captured.document.source).absolute().parent
+                elif captured.source_path:
+                    input_directory=Path(captured.source_path).absolute().parent
                 else:
                     input_directory=Path(relative_to).resolve() if relative_to is not None else None
                 phase='inventory'
                 with checkpoint_scope(cancellation.check):
                     plans=inventory(captured,input_directory=input_directory,working_directory=output_directory,directory_adapters=self.directory_adapters)
                 protected=[plan.original for plan in plans if plan.original is not None and plan.use.access!='write']
-                for document in (captured.document,captured.json_document):
-                    if document is not None and document.source:protected.append(Path(document.source).absolute())
+                if captured.source_path:
+                    protected.append(Path(captured.source_path).absolute())
+                document=captured.json_document
+                if document is not None and document.source:protected.append(Path(document.source).absolute())
                 run_paths=config.resolved_paths(relative_to=relative_to)
                 main_targets={key:host_path(getattr(run_paths,key)).resolve() for key in ('input','report','output')}
                 destinations=[(path,False) for path in main_targets.values()]

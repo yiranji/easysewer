@@ -17,6 +17,8 @@ class Model:
         self._store = self._schema.new_store()
         self._source = None
         self._json_source = None
+        self._input_context = None
+        self._trusted_input = False
 
     @property
     def profile(self):
@@ -324,8 +326,16 @@ class Model:
 
     @property
     def document(self):
-        """Original source snapshot; export projects current semantic values onto it."""
+        """Original snapshot for checked/document imports; None for fast imports."""
         return None if self._source is None else self._source.decoded.document
+
+    @property
+    def source_path(self):
+        """Input path used for file resolution, independent of source analysis."""
+        if self._input_context is not None:
+            return self._input_context.source_path
+        document = self.document
+        return None if document is None else document.source
 
     @property
     def support(self):
@@ -386,6 +396,8 @@ class Model:
             result._store = self._store.clone()
             result._source = self._source
             result._json_source = self._json_source
+            result._input_context = self._input_context
+            result._trusted_input = self._trusted_input
             return result
 
     def run(self, config, *, runner=None, **options):
@@ -405,9 +417,28 @@ class Model:
         return result
 
     @classmethod
-    def from_inp(cls, path, *, encoding=None, **kwargs):
+    def from_inp(cls, path, *, encoding=None, schema=None, profile=None, strict=False):
+        """Read trusted parameters by default, or retain/check source with strict=True.
+
+        Custom codecs retain the document-based import protocol unless their
+        schema consists entirely of the built-in codec classes. Explicit
+        from_document imports also retain the source-oriented editing API.
+        """
         from ..io.inp import InpDocument
-        return cls.from_document(InpDocument.read(path, encoding=encoding), **kwargs)
+        from ..io.inp.network import default_schema
+        if schema is not None:
+            builtin_types = {type(codec) for _, codec in default_schema().bindings}
+            custom_codecs = any(type(codec) not in builtin_types for _, codec in schema.bindings)
+        else:
+            custom_codecs = False
+        if strict or custom_codecs:
+            return cls.from_document(InpDocument.read(path, encoding=encoding),
+                                     schema=schema, profile=profile, strict=strict)
+        from ..io.inp._fast_read import read_into
+        result = cls(schema=schema, profile=profile)
+        read_into(result, path, encoding=encoding)
+        result._trusted_input = True
+        return result
 
     @classmethod
     def from_json_document(cls, document, **kwargs):
@@ -456,8 +487,13 @@ class Model:
             issues.extend(validate_uses(self._store, self._schema.resource_uses(self._store, self.profile)))
             if for_run and ValidationReport(diagnostics=tuple(issues)).is_valid:
                 from ..io.inp.semantic import render_new
-                document = (self._source.render(self._schema, self._store, self.profile, normalize=normalize)
-                            if self._source else render_new(self._schema, self._store, self.profile))
+                if self._trusted_input:
+                    from ..io.inp import InpDocument
+                    from ..io.inp._fast_write import render_text
+                    document = InpDocument.from_text(render_text(self, normalize=normalize))
+                else:
+                    document = (self._source.render(self._schema, self._store, self.profile, normalize=normalize)
+                                if self._source else render_new(self._schema, self._store, self.profile))
                 issues.extend(self._validate_native_document(document).diagnostics)
             resolver = DiagnosticResolver(self)
             return ValidationReport(diagnostics=tuple(resolver.resolve(issue) for issue in checkpointed(issues)))
@@ -483,25 +519,39 @@ class Model:
         from .file_resources import resolve_files
         return resolve_files(self, input_directory=input_directory, working_directory=working_directory)
 
-    def to_document(self, *, normalize=False, checkpoint=None):
+    def to_document(self, *, normalize=False, checkpoint=None, strict=False):
         with checkpoint_scope(checkpoint):
             from ..io.inp.semantic import render_new
             if self._json_source:
                 self._json_source.require_inp()
+            if self._trusted_input:
+                from ..io.inp import InpDocument
+                from ..io.inp._fast_write import render_text
+                if strict:
+                    self.validate().raise_for_errors()
+                return InpDocument.from_text(render_text(self, normalize=normalize),
+                    encoding=self._input_context.encoding if self._input_context else "utf-8")
             self.validate().raise_for_errors()
             if self._source is not None:
                 return self._source.render(self._schema, self._store, self.profile, normalize=normalize)
             return render_new(self._schema, self._store, self.profile)
 
-    def to_inp(self, path, *, encoding=None, path_policy="relative", normalize=False):
+    def to_inp(self, path, *, encoding=None, path_policy="relative", normalize=False, strict=False):
         from .transforms import rebase_files
         path = Path(path).resolve()
+        if self._json_source:
+            self._json_source.require_inp()
+        if self._trusted_input and not strict:
+            from ..io.inp._fast_write import write_model
+            return write_model(self, path, encoding=encoding, path_policy=path_policy, normalize=normalize)
+        if strict:
+            self.validate().raise_for_errors()
         for descriptor, codec in self._schema.bindings:
             if self.profile.key in descriptor.profiles and callable(getattr(codec, "validate_export", None)):
                 self._resolve_diagnostics(ValidationReport(diagnostics=tuple(codec.validate_export(self._store, self.profile,
                     directory=str(path.parent), path_policy=path_policy)))).raise_for_errors()
-        if self.document is not None and self.document.source is not None:
-            origin = Path(self.document.source).parent
+        if self.source_path is not None:
+            origin = Path(self.source_path).parent
             if origin != path.parent and self._store.opaque_constraints:
                 ValidationReport(diagnostics=tuple(Diagnostic(code="inp.unresolved_file_paths", span=constraint.span,
                     message="Cannot rebase unstructured external-file references; retain the source directory or add their codecs")

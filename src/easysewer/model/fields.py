@@ -11,6 +11,7 @@ import math
 import types
 from typing import Any, Literal, Union, get_args, get_origin, get_type_hints
 
+from ._trusted import active as _trusted_active
 from ..validation import Diagnostic, DiagnosticSubject, Severity
 from ..validation._cooperative import checkpointed
 from .identity import Ref
@@ -68,6 +69,8 @@ def _matches(value, annotation):
 
 def validate_fields(record):
     """Validate finite local values and reference namespaces recursively."""
+    if _trusted_active():
+        return
     identity = getattr(record, "id", getattr(record, "record_id", None))
 
     def visit(value, path="", typed_path=()):

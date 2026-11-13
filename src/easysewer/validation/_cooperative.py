@@ -3,6 +3,8 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
 
+from ._trusted import checking_scope
+
 
 _active = ContextVar('easysewer_work_checkpoint', default=None)
 
@@ -22,7 +24,10 @@ def checkpoint():
     callback = _active.get()
     if callback is not None:
         try:
-            callback()
+            # A caller can use public constructors or validators here. The
+            # surrounding parser's private trust must not weaken those APIs.
+            with checking_scope():
+                callback()
         except _CheckpointRaised:
             raise
         except BaseException as error:
