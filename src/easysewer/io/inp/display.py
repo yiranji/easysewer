@@ -1,4 +1,6 @@
 """Ordered GUI map labels and named profile plots, independent of hydraulics."""
+
+from ...model._trusted import active as _trusted_active
 import re
 from dataclasses import fields
 
@@ -25,7 +27,7 @@ def _integer(token):
     if not re.fullmatch(r'[+-]?[0-9]+', token):
         raise ValueError('GUI font fields require integer values')
     value = int(token)
-    if not -2147483648 <= value <= 2147483647:
+    if not _trusted_active() and (not -2147483648 <= value <= 2147483647):
         raise ValueError('GUI font fields require signed 32-bit integers')
     return value
 

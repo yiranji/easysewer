@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import ClassVar, Literal
 
+from ._trusted import active as _trusted_active
 from .fields import number, reference, validate_fields
 from .geometry import CrossSection
 from .identity import Ref, validate_identifier
@@ -17,6 +18,8 @@ class Entity:
     id: str
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         validate_identifier(self.id)
 
 

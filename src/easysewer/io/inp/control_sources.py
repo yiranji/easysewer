@@ -1,4 +1,6 @@
 """Exact clause positions and traced arithmetic spans in control programs."""
+
+from ...model._trusted import active as _trusted_active
 from dataclasses import fields, is_dataclass
 
 from ...model import controls as c
@@ -8,6 +10,8 @@ from ...model.options import MonthDay
 
 
 def control_sources(source, row, lines, spans):
+    if _trusted_active():
+        return
     owner = Ref(collection='swmm:controls', key=c.statement_key(row))
     def cover(value, path=()):
         if is_dataclass(value):

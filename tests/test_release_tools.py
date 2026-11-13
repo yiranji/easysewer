@@ -233,9 +233,10 @@ class QualificationSelectionTests(unittest.TestCase):
                     self.assertEqual(names.count(name), 1, name)
                 self.assertEqual(len(names), len(set(names)))
 
-    def test_pure_defaults_remain_unchanged_on_windows_and_linux(self):
+    def test_pure_defaults_include_fast_input_checks_on_windows_and_linux(self):
         expected = ['test_public_api_v2', 'test_edit_workflow_v2', 'test_scenario_v2',
-                    'test_project_v2', 'test_json_v2', 'test_runner_v2', 'test_output_v2', 'test_report_v2']
+                    'test_project_v2', 'test_json_v2', 'test_runner_v2', 'test_output_v2', 'test_report_v2',
+                    'test_fast_inp', 'test_trusted_inp_scope', 'test_fast_inp_context']
         for platform in ('linux', 'win32'):
             with self.subTest(platform=platform):
                 self.assertEqual(qualify.default_test_names(pure=True, platform=platform), expected)
@@ -401,8 +402,10 @@ class NativeRuntimeProvenanceTests(unittest.TestCase):
         return namespace
 
     def test_linux_proc_and_macos_dyld_enumerate_real_openmp_origins(self):
-        runtime = Path('/installed package/.libs/libomp.dylib').resolve()
-        escaped = str(runtime).replace(' ', r'\040')
+        # Synthetic OS records stay POSIX even when this test runs on Windows.
+        image = '/installed package/.libs/libomp.dylib'
+        runtime = Path(image).resolve()
+        escaped = image.replace(' ', r'\040')
         proc = mock.Mock()
         proc.read_text.return_value = (
             '1000-2000 r-xp 00000000 00:00 1 ' + escaped + '\n' +
@@ -414,7 +417,7 @@ class NativeRuntimeProvenanceTests(unittest.TestCase):
         self.assertEqual(helpers['loaded_openmp_images'](platform='linux'), [runtime])
         dyld = mock.Mock()
         dyld._dyld_image_count.return_value = 3
-        dyld._dyld_get_image_name.side_effect = [str(runtime).encode(), b'/usr/lib/libSystem.B.dylib', None]
+        dyld._dyld_get_image_name.side_effect = [image.encode(), b'/usr/lib/libSystem.B.dylib', None]
         library = mock.Mock(CDLL=mock.Mock(return_value=dyld))
         helpers = self.helpers(ctypes=library)
         self.assertEqual(helpers['loaded_openmp_images'](platform='darwin'), [runtime])

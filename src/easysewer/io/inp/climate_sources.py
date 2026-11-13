@@ -2,10 +2,13 @@
 
 from dataclasses import fields, is_dataclass
 
+from ...model._trusted import active as _trusted_active
 from ...model import climate as c
 
 
 def climate_sources(source, owner, record, lines):
+    if _trusted_active():
+        return
     from .climate import _adjust_keyword, _ADJUST_FIELDS
 
     def cover(value, path=()):

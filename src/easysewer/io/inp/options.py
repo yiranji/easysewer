@@ -7,6 +7,7 @@ import math
 from pathlib import Path, PureWindowsPath
 import re
 
+from ...model._trusted import active as _trusted_active
 from ...model.fields import validate_fields
 from ...model.identity import Ref
 from ...model.options import DayTime, MonthDay, Options, OPTIONS_COLLECTION, get_options, option_diagnostics
@@ -34,21 +35,21 @@ def _native_time(token, *, integer_seconds):
     match = _CLOCK.fullmatch(token)
     if match:
         hours, minutes, seconds = int(match[1]), int(match[2]), int(match[3] or 0)
-        if minutes >= 60 or seconds >= 60:
+        if not _trusted_active() and (minutes >= 60 or seconds >= 60):
             raise ValueError("Minute and second components must be less than 60")
-        if hours * 3600 + minutes * 60 + seconds > 2_147_483_647:
+        if not _trusted_active() and (hours * 3600 + minutes * 60 + seconds > 2_147_483_647):
             raise ValueError("Clock exceeds native signed integer range; use decimal hours for calendar clocks")
         result = timedelta(hours=hours, minutes=minutes, seconds=seconds)
         changed = bool(match[4] and Decimal(match[4]) != 0)
         return result, changed
     hours = finite_number(token)
-    if hours < 0:
+    if not _trusted_active() and (hours < 0):
         raise ValueError("Time cannot be negative")
     if integer_seconds:
         day_value = hours / 24.0
         days = math.floor(day_value)
         seconds = min(86399, math.floor((day_value - days) * 86400 + .5)) + 86400 * days
-        if seconds > 2_147_483_647:
+        if not _trusted_active() and (seconds > 2_147_483_647):
             raise ValueError("Time exceeds native signed integer range")
         result = timedelta(seconds=seconds)
         return result, abs(hours * 3600 - seconds) > 1e-9
@@ -99,7 +100,7 @@ def parse_option(definition, token, *, source=None):
         if value not in definition.choices:
             raise ValueError(f"{definition.keyword} expects one of {definition.choices}")
     elif kind == "boolean":
-        if token.upper() not in ("YES", "NO"):
+        if not _trusted_active() and (token.upper() not in ("YES", "NO")):
             raise ValueError("Expected YES or NO")
         value = token.upper() == "YES"
     elif kind == "number":
@@ -111,7 +112,7 @@ def parse_option(definition, token, *, source=None):
         match = re.match(r"[+-]?[0-9]+", token)
         value = int(match[0]) if match else 0
         changed = value != finite_number(token)
-        if not 0 <= value <= 2_147_483_647:
+        if not _trusted_active() and (not 0 <= value <= 2_147_483_647):
             raise ValueError("Integer option exceeds the native nonnegative range")
     elif kind == "compatibility":
         if token not in ("3", "4", "5"):

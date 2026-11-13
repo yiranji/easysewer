@@ -3,6 +3,7 @@
 from dataclasses import dataclass, replace
 from typing import ClassVar, Literal
 
+from ._trusted import active as _trusted_active
 from ..validation import Diagnostic, DiagnosticSubject, Severity, ValidationReport
 from .fields import number, reference, validate_fields
 from .identity import Ref, canonical_key, validate_identifier
@@ -147,6 +148,8 @@ class LidUsage:
     number: int = number('count', minimum=1, maximum=2_147_483_647, integer=True)
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         validate_identifier(self.record_id)
 
     def validate_local(self):
@@ -176,6 +179,8 @@ class DisabledLidUsage:
     number: ClassVar[int] = 0
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         validate_identifier(self.record_id)
 
     def validate_local(self):

@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, is_dataclass, replace
 from typing import Callable, Generic, Iterable, TypeVar
 
+from ._trusted import active as _trusted_active
 from ..validation import Diagnostic, DiagnosticSubject, SourceSpan, ValidationError, ValidationReport
 from .identity import (
     RecordKey, Ref, ReferenceUse, canonical_key, namespace_key, references,
@@ -91,6 +92,9 @@ class RecordCollection(Mapping[RecordKey, T], Generic[T]):
             self._store._put(self.spec, record, adding=True)
 
     def replace(self, key: RecordKey, record: T) -> None:
+        if _trusted_active():
+            self._store._put(self.spec, record, adding=False)
+            return
         self._store._check(self.spec, record)
         if self.spec.key_of(record) != self.spec.key_of(self[key]):
             raise RecordConflictError("Replacement cannot change identity; use rename for named entities")
@@ -177,12 +181,21 @@ class RecordStore:
 
     @staticmethod
     def _check(spec, record):
+        if _trusted_active():
+            return canonical_key(spec.key_of(record))
         if not isinstance(record, spec.record_type) or not is_dataclass(record):
             raise TypeError(f"Wrong record type for {spec.key}: {type(record).__name__}")
         require_immutable(record)
         return canonical_key(spec.key_of(record))
 
     def _put(self, spec, record, *, adding):
+        if _trusted_active():
+            key = canonical_key(spec.key_of(record))
+            self._records[spec.key][key] = record
+            if adding:
+                self._origins[Ref(collection=spec.key, key=key)] = RecordOrigin()
+            self._changed()
+            return
         key = self._check(spec, record)
         records = self._records[spec.key]
         if adding and key in records:

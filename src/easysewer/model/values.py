@@ -6,6 +6,7 @@ from pathlib import PurePath, PurePosixPath, PureWindowsPath
 import ntpath
 import posixpath
 
+from ._trusted import active as _trusted_active
 from .fields import number
 
 
@@ -28,6 +29,8 @@ class FileReference:
     direction: str = "input"
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         if not isinstance(self.path, str) or not self.path or "\x00" in self.path:
             raise ValueError("A file reference needs a nonempty path without NUL")
         if self.flavor not in ("native", "windows", "posix"):

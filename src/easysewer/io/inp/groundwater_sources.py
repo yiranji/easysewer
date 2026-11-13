@@ -1,8 +1,12 @@
 """Groundwater assignments and original arithmetic token provenance."""
+
+from ...model._trusted import active as _trusted_active
 from dataclasses import fields, is_dataclass
 
 
 def groundwater_sources(source, owner, record, entries, section, aquifer_fields, binding_fields, optional_fields):
+    if _trusted_active():
+        return
     def cover(value, path=()):
         if is_dataclass(value):
             for f in fields(value):

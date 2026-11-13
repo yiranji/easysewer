@@ -55,6 +55,8 @@ def check_files(model, *, input_directory=None, working_directory=None, overwrit
     Exceptions from explicit file/directory inspectors also propagate unchanged;
     return an inspection report to describe invalid resource content.
     """
+    if input_directory is None and model.source_path:
+        input_directory = Path(model.source_path).parent
     with checkpoint_scope(checkpoint):
         return _check_files(model,input_directory=input_directory,working_directory=working_directory,
             overwrite=overwrite,inspect_data=inspect_data,encoding=encoding,max_bytes=max_bytes,

@@ -5,6 +5,7 @@ from dataclasses import fields, replace
 from datetime import timedelta
 import math
 
+from ...model._trusted import active as _trusted_active
 from ...model import hydrology as h, climate as c
 from ...model.fields import validate_fields
 from ...model.identity import Ref, canonical_key
@@ -142,7 +143,7 @@ class HydrologyCodec:
                 try:
                     if collection == "raingages":
                         declarations = [line for line in checkpointed(lines) if line.section == "RAINGAGES"]
-                        if len(declarations) != 1:
+                        if not _trusted_active() and (len(declarations) != 1):
                             raise ValueError("Rain gage requires exactly one declaration")
                         line = declarations[0]
                         tokens = line.values
@@ -165,7 +166,7 @@ class HydrologyCodec:
                         else:
                             seconds = finite_number(tokens[2]) * 3600
                             native_seconds = math.floor(seconds + .5) if source_kind == "TIMESERIES" else math.trunc(seconds)
-                            if not 1 <= native_seconds <= 2_147_483_647:
+                            if not _trusted_active() and (not 1 <= native_seconds <= 2_147_483_647):
                                 raise ValueError("Rain gage duration is outside the native positive integer range")
                             interval, changed = timedelta(seconds=native_seconds), abs(native_seconds-seconds) > 1e-9
                         if changed:
@@ -184,13 +185,13 @@ class HydrologyCodec:
                             local_bindings.append(SourceBinding(line=line.number, key=_key("SYMBOLS", row.id)))
                     elif collection == "subcatchments":
                         declarations = [line for line in checkpointed(lines) if line.section == "SUBCATCHMENTS"]
-                        if len(declarations) != 1:
+                        if not _trusted_active() and (len(declarations) != 1):
                             raise ValueError("Subcatchment requires exactly one declaration")
                         line = declarations[0]
                         tokens = line.values
                         _count(tokens, 8, 9)
                         outlet = canonical_key(tokens[2])
-                        if outlet in node_names and outlet in catchment_names:
+                        if not _trusted_active() and (outlet in node_names and outlet in catchment_names):
                             raise ValueError("Ambiguous outlet is both a node and subcatchment")
                         namespace = "swmm:subcatchments" if outlet in catchment_names else "swmm:nodes"
                         row = h.Subcatchment(id=tokens[0], rain_gage=Ref(collection="swmm:raingages", key=tokens[1]),

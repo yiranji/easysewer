@@ -182,12 +182,14 @@ class NativeRunnerTests(unittest.TestCase):
 
     def test_inputs_aliases_existing_destinations_and_unknown_inventory_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory);source=root/'model.inp';source.write_bytes(network().to_document().to_bytes())
-            model=Model.from_inp(source)
-            result=Runner().run(model,config(root,overwrite=True,keep_failed_artifacts=False))
-            self.assertFalse(result.succeeded)
-            self.assertIn('aliases an input',result.failure.message)
-            self.assertEqual(source.read_bytes(),model.document.to_bytes())
+            root=Path(directory);source=root/'model.inp';original=network().to_document().to_bytes();source.write_bytes(original)
+            for strict in (False,True):
+                with self.subTest(strict=strict):
+                    model=Model.from_inp(source,strict=strict)
+                    result=Runner().run(model,config(root,overwrite=True,keep_failed_artifacts=False))
+                    self.assertFalse(result.succeeded)
+                    self.assertIn('aliases an input',result.failure.message)
+                    self.assertEqual(source.read_bytes(),original)
             unsupported=Model.from_document(InpDocument.from_text(network().to_document().text+'[UNKNOWN_FILE_DOMAIN]\nx dangerous.dat\n'))
             result=Runner().run(unsupported,config(root/'opaque'))
             self.assertEqual(result.status,'rejected')

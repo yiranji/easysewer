@@ -3,6 +3,7 @@
 from dataclasses import replace
 import math
 
+from ...model._trusted import active as _trusted_active
 from ...model.fields import validate_fields
 from ...model.identity import Ref, canonical_key
 from ...model.options import get_options
@@ -101,7 +102,7 @@ class TransectsCodec:
                         raise ValueError("NC requires left, right and channel roughness")
                     finalize(line)
                     roughness = [finite_number(token) for token in checkpointed(tokens[1:])]
-                    if any(value < 0 for value in checkpointed(roughness)):
+                    if not _trusted_active() and (any(value < 0 for value in checkpointed(roughness))):
                         raise ValueError("NC roughness cannot be negative")
                     sources.manning(line, values, roughness)
                     values = [new if new > 0 else old for old, new in checkpointed(zip(values, roughness))]
@@ -112,11 +113,11 @@ class TransectsCodec:
                     if not 10 <= len(tokens) <= 11:
                         raise ValueError("SWMM 5.2.4 X1 requires ID, count, banks, two placeholders, meander, width and elevation offset")
                     save(line)
-                    if canonical_key(tokens[1]) in seen:
+                    if not _trusted_active() and (canonical_key(tokens[1]) in seen):
                         raise ValueError(f"Duplicate transect {tokens[1]}")
                     seen.add(canonical_key(tokens[1]))
                     data = [finite_number(token) for token in checkpointed(tokens[2:10])]
-                    if data[5] < 0 or data[6] < 0:
+                    if not _trusted_active() and (data[5] < 0 or data[6] < 0):
                         raise ValueError("Transect meander and width factors cannot be negative")
                     current = dict(id=tokens[1], roughness=TransectRoughness(left=values[0], right=values[1], channel=values[2]),
                                    count=data[0], left_bank=data[1], right_bank=data[2], meander_factor=data[5],

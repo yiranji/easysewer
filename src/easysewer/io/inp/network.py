@@ -6,6 +6,7 @@ bindings; positional syntax is delegated to the relevant domain codecs.
 
 from dataclasses import fields, replace
 
+from ...model._trusted import active as _trusted_active
 from ...model import network as n
 from ...model.identity import Ref, canonical_key
 from ...model.fields import validate_fields
@@ -34,7 +35,7 @@ from ...validation._cooperative import checkpointed
 
 
 def _boolean(token):
-    if token.upper() not in ("YES", "NO"):
+    if not _trusted_active() and (token.upper() not in ("YES", "NO")):
         raise ValueError(f"Expected YES or NO: {token}")
     return token.upper() == "YES"
 
@@ -217,7 +218,7 @@ class NetworkCodec:
             if section == "XSECTIONS":
                 if not isinstance(record, (n.Conduit, n.Orifice, n.Weir)):
                     raise UnsupportedGeometry("Cross-sections are supported for conduits, orifices and weirs")
-                if record.section is not None:
+                if not _trusted_active() and (record.section is not None):
                     raise ValueError("Duplicate cross-section")
                 if isinstance(record, (n.Orifice, n.Weir)):
                     section_value, ignored = parse_regulator_section(values[1:], self.cross_sections)
@@ -232,7 +233,7 @@ class NetworkCodec:
             elif section == "LOSSES":
                 if not isinstance(record, n.Conduit):
                     raise UnsupportedGeometry("Non-conduit LOSSES records remain source-owned")
-                if not 4 <= len(values) <= 6 or record.losses is not None:
+                if not _trusted_active() and (not 4 <= len(values) <= 6 or record.losses is not None):
                     raise ValueError("Invalid or duplicate conduit losses")
                 record = replace(record, losses=n.ConduitLosses(
                     entry=finite_number(values[1]), exit=finite_number(values[2]), average=finite_number(values[3]),

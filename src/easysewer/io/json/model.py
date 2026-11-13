@@ -202,6 +202,15 @@ def _read_model(document, *, schema, profile, migrations, locations):
     if current > version(SCHEMA_VERSION):
         diagnostics.append(warning("json.future_minor", "Reading a newer schema minor version; unknown content will be preserved", path=('schema_version',)))
     source = data.get("source")
+    input_context = data.get("input_context")
+    unknown_context = False
+    if input_context is not None:
+        if source is not None:
+            fail("json.input_context", "Original source and lightweight input context are mutually exclusive",
+                 path=('input_context',))
+        from .input_context import read_context
+        result._input_context, unknown_context = read_context(input_context)
+        result._trusted_input = result._input_context is not None
     baseline, prior_source_keys = {}, frozenset()
     source_constraints = ()
     origins, unknown_origins = None, False
@@ -224,7 +233,12 @@ def _read_model(document, *, schema, profile, migrations, locations):
             diagnostics.append(warning("json.unknown_field", f"Unknown member {key!r} is preserved", path=(*path, key), owner=owner))
             incomplete = True
 
-    unknown_members(data, ("kind","schema_version","profile","collections","source","extensions"), ())
+    unknown_members(data, ("kind","schema_version","profile","collections","source","input_context","extensions"), ())
+    if unknown_context:
+        incomplete = True
+        diagnostics.append(warning('json.input_context_version',
+            'Unknown input context is preserved and requires its reader before INP export',
+            path=('input_context',)))
     extensions = _object(data.get("extensions", {}), ('extensions',))
     for key in extensions:
         try:
@@ -317,7 +331,12 @@ def _read_model(document, *, schema, profile, migrations, locations):
             except ValidationError as error:
                 raise record_error(error, ref, wire, (*item_path, 'value'), value) from error
             result._store._set_origin(ref, (origins or {}).get(ref.canonical, RecordOrigin(kind='untracked')))
-    constraints = (*source_constraints, *((OpaqueConstraint(description="Preserved JSON content has unproven identities, references or units"),) if incomplete else ()))
+    raw_constraints = ()
+    if result._input_context is not None:
+        raw_constraints = tuple(OpaqueConstraint(description=f"Unstructured [{row.section}] input parameters")
+            for row in result._input_context.passthrough if row.section != 'TITLE')
+    constraints = (*source_constraints, *raw_constraints,
+        *((OpaqueConstraint(description="Preserved JSON content has unproven identities, references or units"),) if incomplete else ()))
     result._store.set_opaque_constraints(constraints)
     result._json_source = JsonModelSource(document=document, known=tuple(known), opaque=tuple(opaque),
                                            diagnostics=tuple(diagnostics), incomplete=incomplete, migration=migrated)
@@ -434,6 +453,9 @@ def write_model(model):
     source = _write_source(model, types, original.get("source"))
     if source is not None or "source" in original:
         data["source"] = source
+    if model._input_context is not None:
+        from .input_context import write_context
+        data['input_context'] = write_context(model._input_context)
     if "extensions" not in data:
         data["extensions"] = {}
     if state and equal_json(data, original):
@@ -443,6 +465,7 @@ def write_model(model):
 
 def model_schema(schema):
     from .provenance import origin_schema
+    from .input_context import context_schema
     definitions = schema.json_types.schema()
     definitions["record_key"] = {"anyOf":[{"type":"string","minLength":1},{"type":"array","minItems":1,"items":{"type":"string","minLength":1}}]}
     definitions["record"] = {"type":"object","required":["key","value"],"properties":{
@@ -465,9 +488,11 @@ def model_schema(schema):
         "format":{"const":"swmm-inp"},"encoding":{"type":"string"},"path":{"type":["string","null"]},
         "bytes_base64":{"type":"string","contentEncoding":"base64"},
         "known_records":{"type":"array","items":{"$ref":"#/$defs/core:ref"}}, "origins": origin_schema()}}
+    definitions["input_context"] = context_schema()
     return {"$schema":"https://json-schema.org/draft/2020-12/schema", "$id":"urn:easysewer:model:1.0",
         "title":"EasySewer Model JSON 1.0", "type":"object", "required":["kind","schema_version","profile","collections"],
         "properties":{"kind":{"const":MODEL_KIND}, "schema_version":{"type":"string","pattern":r"^1\.[0-9]+$"},
             "profile":{"type":"string","minLength":1}, "collections":{"type":"array","items":{"$ref":"#/$defs/collection"}},
-            "source":{"anyOf":[{"type":"null"},{"$ref":"#/$defs/source"}]}, "extensions":{"type":"object"}},
+            "source":{"anyOf":[{"type":"null"},{"$ref":"#/$defs/source"}]},
+            "input_context":{"anyOf":[{"type":"null"},{"$ref":"#/$defs/input_context"}]}, "extensions":{"type":"object"}},
         "$defs":definitions}

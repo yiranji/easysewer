@@ -1,10 +1,14 @@
 """Ordered hydrograph declarations and legacy three-response source rows."""
+
+from ...model._trusted import active as _trusted_active
 from dataclasses import fields, is_dataclass
 
 from ...model.rdii import UnitHydrograph, RESPONSES
 
 
 def rdii_sources(source, owner, record, lines):
+    if _trusted_active():
+        return
     def cover(value, path=()):
         if is_dataclass(value):
             for f in fields(value):

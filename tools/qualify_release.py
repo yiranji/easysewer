@@ -56,11 +56,12 @@ def default_test_names(*, pure=False, profile='all', platform=None):
                       'test_native_windows_paths.ExperimentalWindowsNativePathTests']
         return names
     names = ['test_public_api_v2', 'test_edit_workflow_v2', 'test_scenario_v2',
-             'test_project_v2', 'test_json_v2', 'test_runner_v2', 'test_output_v2', 'test_report_v2']
+             'test_project_v2', 'test_json_v2', 'test_runner_v2', 'test_output_v2', 'test_report_v2',
+             'test_fast_inp', 'test_trusted_inp_scope', 'test_fast_inp_context']
     if profile != 'pure':
         names += ['test_native_platform_diagnostics', 'test_native_runtime_registry', 'test_doctor',
                   'test_native_path_aliases', 'test_backend_identity_v2',
-                  'test_native_edit_workflow_v2', 'test_native_v2_runner',
+                  'test_native_edit_workflow_v2', 'test_native_v2_runner', 'test_native_v2_fast_inp',
                   'test_native_v2_scenario', 'test_native_v2_project', 'test_native_core_platform']
         if profile == 'all':
             names += ['test_native_v2_flexible'] + [module for module, _ in _SHARED_NATIVE_CLASSES]

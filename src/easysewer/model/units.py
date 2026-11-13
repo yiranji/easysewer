@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import math
 from typing import Callable
 
+from ._trusted import active as _trusted_active
+
 _FLOW_TO_CMS = {
     "CFS": 0.028316846592, "GPM": 0.003785411784 / 60,
     "MGD": 3785.411784 / 86400, "CMS": 1.0, "LPS": 0.001, "MLD": 1000 / 86400,
@@ -61,6 +63,8 @@ class UnitTransform:
     convert: Callable
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         if not isinstance(self.value_type, type) or not callable(self.convert):
             raise TypeError("Unit transforms require a value type and conversion function")
 
@@ -93,20 +97,20 @@ class UnitRules:
     si_per_us: tuple[tuple[str, float], ...] = ()
 
     def __post_init__(self):
-        if not isinstance(self.key, str) or not self.key:
+        if not _trusted_active() and (not isinstance(self.key, str) or not self.key):
             raise ValueError("Unit rules require a stable identity")
         for name in ("flow_from_cfs", "si_per_us"):
             pairs = tuple(tuple(pair) for pair in getattr(self, name))
-            if any(len(pair) != 2 or not isinstance(pair[0], str) or isinstance(pair[1], bool)
+            if not _trusted_active() and (any(len(pair) != 2 or not isinstance(pair[0], str) or isinstance(pair[1], bool)
                    or not isinstance(pair[1], (int, float)) or not math.isfinite(pair[1]) or pair[1] <= 0
-                   for pair in pairs):
+                   for pair in pairs)):
                 raise ValueError("Unit factors must have a name and a finite positive factor")
-            if len(dict(pairs)) != len(pairs):
+            if not _trusted_active() and (len(dict(pairs)) != len(pairs)):
                 raise ValueError("Duplicate unit conversion factor")
             object.__setattr__(self, name, pairs)
-        if set(dict(self.flow_from_cfs)) != set(_FLOW_TO_CMS):
+        if not _trusted_active() and (set(dict(self.flow_from_cfs)) != set(_FLOW_TO_CMS)):
             raise ValueError("Unit rules must cover all six SWMM flow units")
-        if not set(dict(self.si_per_us)) <= set(_DIMENSIONS):
+        if not _trusted_active() and (not set(dict(self.si_per_us)) <= set(_DIMENSIONS)):
             raise ValueError("Unit rules contain an unknown dimension")
 
 
@@ -116,7 +120,7 @@ class UnitContext:
 
     def __post_init__(self):
         units = self.flow_units.upper()
-        if units not in _FLOW_TO_CMS:
+        if not _trusted_active() and (units not in _FLOW_TO_CMS):
             raise ValueError(f"Unknown SWMM flow units: {self.flow_units}")
         object.__setattr__(self, "flow_units", units)
 

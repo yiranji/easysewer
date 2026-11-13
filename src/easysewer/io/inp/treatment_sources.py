@@ -1,10 +1,14 @@
 """Original treatment assignments and shared-parser expression token positions."""
+
+from ...model._trusted import active as _trusted_active
 from dataclasses import fields, is_dataclass
 
 from ...model.identity import Ref
 
 
 def treatment_sources(source, record, entries):
+    if _trusted_active():
+        return
     owner = Ref(collection='swmm:treatment', key=(record.node.key, record.pollutant.key))
     def cover(value, path=()):
         if is_dataclass(value):

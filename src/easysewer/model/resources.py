@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import math
 from typing import Literal
 
+from ._trusted import active as _trusted_active
 from ..validation import Diagnostic, Severity, ValidationReport
 from ..validation._cooperative import checkpointed
 from .fields import number, validate_fields
@@ -27,6 +28,8 @@ class Resource:
     id: str
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         validate_identifier(self.id)
 
 

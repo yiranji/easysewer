@@ -1,4 +1,6 @@
 """Original street tokens and last-assignment inlet component provenance."""
+
+from ...model._trusted import active as _trusted_active
 from dataclasses import fields, is_dataclass
 
 from ...model import surface as s
@@ -6,6 +8,8 @@ from ...model.identity import Ref
 
 
 def cover(source, owner, value, path=()):
+    if _trusted_active():
+        return
     if is_dataclass(value):
         for f in fields(value):
             p = path + (f.name,); source.cover(owner, p)
@@ -17,6 +21,8 @@ def cover(source, owner, value, path=()):
 
 
 def surface_sources(source, row, lines, street_fields, usage_fields):
+    if _trusted_active():
+        return
     namespace = 'streets' if type(row) is s.StreetSection else 'inlets' if type(row) is s.InletDesign else 'inlet_usage'
     owner = Ref(collection='swmm:' + namespace, key=row.link.key if type(row) is s.InletUsage else row.id)
     cover(source, owner, row)

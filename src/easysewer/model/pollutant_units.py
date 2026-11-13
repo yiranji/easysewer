@@ -8,6 +8,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Callable
 
+from ._trusted import active as _trusted_active
 from ..validation import Diagnostic, DiagnosticSubject, ValidationError, ValidationReport
 from .diagnostics import bind_subject
 from .identity import Ref, ReferenceUse, canonical_key, references, require_immutable
@@ -19,6 +20,8 @@ class PollutantUnitTransform:
     convert: Callable
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         if not isinstance(self.value_type, type) or not callable(self.convert):
             raise TypeError('A pollutant-unit transform requires a type and a callable')
 
@@ -31,9 +34,9 @@ class PollutantResourceConversion:
     value: object
 
     def __post_init__(self):
-        if not isinstance(self.target, Ref):
+        if not _trusted_active() and (not isinstance(self.target, Ref)):
             raise TypeError('A resource proposal requires a Ref target')
-        if type(self.path) is not tuple or not self.path or any(type(p) not in (str, int) for p in self.path):
+        if not _trusted_active() and (type(self.path) is not tuple or not self.path or any(type(p) not in (str, int) for p in self.path)):
             raise TypeError('A resource proposal requires a nonempty immutable field path')
         require_immutable(self.value)
 
@@ -45,7 +48,7 @@ class PollutantUnitConversion:
 
     def __post_init__(self):
         require_immutable(self.value)
-        if type(self.resources) is not tuple or any(type(r) is not PollutantResourceConversion for r in self.resources):
+        if not _trusted_active() and (type(self.resources) is not tuple or any(type(r) is not PollutantResourceConversion for r in self.resources)):
             raise TypeError('Resource proposals must be a tuple of PollutantResourceConversion values')
 
 

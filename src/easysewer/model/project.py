@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from ._trusted import active as _trusted_active
 from .fields import reference, validate_fields
 from .identity import Ref, namespace_key, validate_identifier
 from .store import CollectionSpec
@@ -25,6 +26,8 @@ class ProjectAnnotation:
     key: str
 
     def __post_init__(self):
+        if _trusted_active():
+            return
         namespace_key(self.key)
         if len(self.key) > 100:
             raise ValueError("Annotation key exceeds the portable INP marker limit")

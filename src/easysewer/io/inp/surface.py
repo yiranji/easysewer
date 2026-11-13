@@ -2,6 +2,7 @@
 
 from collections import OrderedDict
 
+from ...model._trusted import active as _trusted_active
 from ...model import surface as s
 from ...model.fields import validate_fields
 from ...model.geometry import RectOpen, Street, Trapezoidal
@@ -57,7 +58,7 @@ class SurfaceCodec:
                 try:
                     name = line.values[0]
                     if section == "STREETS":
-                        if len(lines) != 1:
+                        if not _trusted_active() and (len(lines) != 1):
                             raise ValueError("Street definitions must have unique IDs")
                         if not 5 <= len(line.values) <= 11:
                             raise ValueError("Street requires four mandatory and up to six optional fields")
