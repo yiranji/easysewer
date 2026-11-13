@@ -50,11 +50,11 @@ class FastInputContextTests(unittest.TestCase):
             target.write_text("01/01/2020 00:00 1\n", encoding="utf-8")
             model.timeseries.add(FileTimeSeries(id="Flow", file=FileReference(path=target.name)))
             resolved = model.resolve_files()
-            self.assertEqual(Path(resolved.timeseries["Flow"].file.path), target)
+            self.assertEqual(Path(resolved.timeseries["Flow"].file.path), target.resolve())
             self.assertEqual(model.timeseries["Flow"].file.path, target.name)
             checks = check_files(model, inspect_data=False)
             self.assertEqual(len(checks.checks), 1)
-            self.assertEqual(Path(checks.checks[0].resolved_path), target)
+            self.assertEqual(Path(checks.checks[0].resolved_path), target.resolve())
             self.assertTrue(checks.checks[0].available)
 
     def test_runner_protects_original_input_and_infers_its_directory(self):
@@ -82,8 +82,8 @@ class FastInputContextTests(unittest.TestCase):
             with patch("easysewer.runtime.runner.inventory", side_effect=inspect_inventory), \
                     patch("easysewer.runtime.runner.OutputTransaction", side_effect=transaction):
                 result = Runner(backends={"swmm:standard": backend}).run(model, config)
-            self.assertEqual(observed["input_directory"], root)
-            self.assertIn(source, observed["protected"])
+            self.assertEqual(observed["input_directory"], root.resolve())
+            self.assertIn(source.resolve(), observed["protected"])
             self.assertFalse(result.native_completed)
             self.assertNotEqual(result.status, "succeeded")
             self.assertEqual(source.read_bytes(), original)

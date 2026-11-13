@@ -57,7 +57,7 @@ class NativeFastInputTests(unittest.TestCase):
                 self.assertEqual(result.snapshot.input_bytes, result.input.read_bytes())
                 self.assertEqual(len(result.snapshot.resources), 1)
                 resource = result.snapshot.resources[0]
-                self.assertEqual(resource.original_path, str(data))
+                self.assertEqual(resource.original_path, str(data.resolve()))
                 self.assertEqual(resource.sha256, hashlib.sha256(data_bytes).hexdigest())
             baseline, actual = results
             self.assertEqual(actual.output.read_bytes(), baseline.output.read_bytes())
@@ -69,7 +69,7 @@ class NativeFastInputTests(unittest.TestCase):
 
             restored = actual.snapshot.model()
             self.assertIsNone(restored.document)
-            self.assertEqual(restored.source_path, str(emitted))
+            self.assertEqual(restored.source_path, str(emitted.resolve()))
             self.assertEqual(restored._input_context, fast._input_context)
             self.assertEqual(restored.to_json_document().to_bytes(), fast.to_json_document().to_bytes())
             self.assertEqual(actual.artifact("run:model").read_bytes(), actual.snapshot.model_json)
